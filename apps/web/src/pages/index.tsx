@@ -1,3 +1,6 @@
+import Link from 'next/link'
+import { Button } from '@heroui/button'
+
 export function Index() {
   /*
    * Replace the elements below with your own.
@@ -6,6 +9,9 @@ export function Index() {
    */
   return (
     <div>
+      <Link href="/about">
+        <Button color="primary">About</Button>
+      </Link>
       <div className="wrapper">
         <div className="container">
           <div id="welcome">
@@ -463,7 +469,7 @@ export function Index() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default Index;
+export default Index
