@@ -4,22 +4,34 @@ import { spawn } from 'child_process'
 var __TEARDOWN_MESSAGE__: string
 
 module.exports = async function () {
-  // Start services that that the app needs to run (e.g. database, docker-compose, etc.).
   console.log('\nSetting up...\n')
 
-  // Start the API server
   const server = spawn('nx', ['dev', 'backend'], {
     shell: true,
-    //stdio: 'inherit',
     stdio: 'pipe',
   })
-  // Store the server process in globalThis so it can be accessed in globalTeardown
+
+  // Wait for server to be ready by listening to stdout
+  await new Promise((resolve, reject) => {
+    server.stdout.on('data', (data) => {
+      const output = data.toString()
+      // console.log(output)
+      // Adjust this condition based on your server's actual startup message
+      if (output.includes('Application is running')) {
+        resolve(true)
+      }
+    })
+
+    server.stderr.on('data', (data) => {
+      console.error(`Error: ${data.toString()}`)
+    })
+
+    // Add timeout just in case
+    setTimeout(() => {
+      reject(new Error('Server failed to start within 30 seconds'))
+    }, 30000)
+  })
+
   globalThis.__SERVER_PROCESS__ = server
-
-  // Hint: Use `globalThis` to pass variables to global teardown.
   globalThis.__TEARDOWN_MESSAGE__ = '\nTearing down...\n'
-
-  // You might want to wait for the server to be fully up before proceeding
-  // This is a simplistic approach; consider polling a health endpoint instead
-  await new Promise((resolve) => setTimeout(resolve, 5000))
 }
