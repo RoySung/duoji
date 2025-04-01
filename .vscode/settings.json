@@ -1,0 +1,23 @@
+{
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#f89769",
+    "activityBar.background": "#f89769",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#e1feea",
+    "activityBarBadge.foreground": "#15202b",
+    "commandCenter.border": "#15202b99",
+    "sash.hoverBorder": "#f89769",
+    "statusBar.background": "#f67538",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#f0540b",
+    "statusBarItem.remoteBackground": "#f67538",
+    "statusBarItem.remoteForeground": "#15202b",
+    "titleBar.activeBackground": "#f67538",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#f6753899",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#f67538",
+  "cSpell.words": ["Duoji"]
+}
