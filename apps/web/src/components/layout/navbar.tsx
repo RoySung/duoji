@@ -3,9 +3,15 @@ import styled from '@emotion/styled'
 import { PiHouseFill, PiListPlusFill, PiGearFill } from 'react-icons/pi'
 import { useRouter } from 'next/router'
 
+// @ts-expect-error 暫時忽略，不影響功能
+import tailwindConfig from '../../../tailwind.config' // 根據你的路徑調整
+
+const resolvedConfig = require('tailwindcss/resolveConfig')
+const themeConfig = resolvedConfig(tailwindConfig)
+
 const StyledWrapper = styled.div`
   section {
-    --col-orange: rgb(251, 146, 60);
+    --col-orange: ${themeConfig.theme.colors.orange[400]};
     --col-dark: #0c0f14;
     --col-darkGray: #52555a;
     --col-gray: #aeaeae;
@@ -32,7 +38,7 @@ const StyledWrapper = styled.div`
     width: 42px;
   }
   .label:hover:not(:has(input:checked)) > svg {
-    fill: rgb(251, 146, 60);
+    fill: var(--col-orange);
     opacity: 0.6;
   }
   .label::before {
