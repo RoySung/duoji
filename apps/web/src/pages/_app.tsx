@@ -1,7 +1,7 @@
 import { AppProps } from 'next/app'
 import Head from 'next/head'
 import './styles.css'
-import Layout from '@/components/layout'
+import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
 import { ReactElement, ReactNode } from 'react'
 
@@ -24,9 +24,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
       <Head>
         <title>Welcome to Duoji!</title>
       </Head>
-      <main className="app">
-        <Component {...pageProps} />
-      </main>
+      <Component {...pageProps} />
     </>
   )
 }
