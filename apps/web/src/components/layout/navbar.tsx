@@ -1,10 +1,10 @@
-import { Button } from '@heroui/react'
+import { Button, useDisclosure } from '@heroui/react'
 import styled from '@emotion/styled'
 import { PiHouseFill, PiListPlusFill, PiGearFill } from 'react-icons/pi'
 import { useRouter } from 'next/router'
-
 // @ts-expect-error 暫時忽略，不影響功能
 import tailwindConfig from '../../../tailwind.config' // 根據你的路徑調整
+import { TransactionModal } from '../TransactionModal'
 
 const resolvedConfig = require('tailwindcss/resolveConfig')
 const themeConfig = resolvedConfig(tailwindConfig)
@@ -76,6 +76,12 @@ export default function NavBar() {
   const isHome = router.pathname === '/'
   const isSettings = router.pathname === '/settings'
 
+  // expense modal
+  const { isOpen, onOpen, onOpenChange } = useDisclosure()
+  function openExpenseModal() {
+    onOpen()
+  }
+
   return (
     <div className="navbar h-[72px] flex w-full gap-4  p-4 justify-center">
       <StyledWrapper>
@@ -94,6 +100,7 @@ export default function NavBar() {
             className="bg-gray-600/75 text-white"
             isIconOnly
             style={{ transform: 'scale(1.2)' }}
+            onPress={openExpenseModal}
           >
             <PiListPlusFill size={28}></PiListPlusFill>
           </Button>
@@ -109,6 +116,7 @@ export default function NavBar() {
           </label>
         </section>
       </StyledWrapper>
+      <TransactionModal isOpen={isOpen} onOpenChange={onOpenChange} />
     </div>
   )
 }
