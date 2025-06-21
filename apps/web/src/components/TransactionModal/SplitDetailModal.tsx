@@ -170,6 +170,8 @@ export default function SplitDetailModal({
                     size="sm"
                     label="Amount"
                     type="number"
+                    isClearable
+                    onClear={() => handleAmountChange(user, 0)}
                     placeholder="0"
                     className="flex-1"
                     value={(

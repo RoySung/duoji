@@ -176,6 +176,8 @@ export default function PaidByDetailModal({
                     size="sm"
                     label="Amount"
                     type="number"
+                    isClearable
+                    onClear={() => updateAmountByUser(user, 0)}
                     placeholder="0"
                     className="flex-1"
                     startContent={

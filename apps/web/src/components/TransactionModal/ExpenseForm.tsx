@@ -168,6 +168,10 @@ export default function ExpenseForm() {
           isRequired
           label="Amount"
           type="number"
+          isClearable
+          onClear={() => {
+            setForm((f) => ({ ...f, amount: 0 }))
+          }}
           value={form.amount.toString()}
           startContent={
             <div className="pointer-events-none flex items-center">
@@ -206,6 +210,10 @@ export default function ExpenseForm() {
           size="sm"
           label="Description"
           value={form.description}
+          isClearable
+          onClear={() => {
+            setForm((f) => ({ ...f, description: '' }))
+          }}
           onChange={(value) => {
             setForm((f) => ({ ...f, description: value.target.value }))
           }}
@@ -297,6 +305,7 @@ export default function ExpenseForm() {
               onSelectionChange={(ids) =>
                 selectSplitUser(Array.from(ids) as User['id'][])
               }
+              description="💡 Split equally by default. You can customize amounts if needed."
             >
               {(item) => (
                 <SelectItem
@@ -308,9 +317,6 @@ export default function ExpenseForm() {
                 </SelectItem>
               )}
             </Select>
-            <div className="mt-1 text-xs text-gray-500">
-              💡 Split equally by default. You can customize amounts if needed.
-            </div>
           </div>
 
           <Button
