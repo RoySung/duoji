@@ -40,6 +40,11 @@ const userList: User[] = [
     updatedAt: Date.now(),
   },
 ]
+// TODO: getting account book list from user
+const accountBookOptions = [
+  { id: '1', name: 'Account Book 1' },
+  { id: '2', name: 'Account Book 2' },
+]
 
 // TODO
 /**
@@ -57,7 +62,7 @@ export default function ExpenseForm() {
   const now = new Date()
   const [form, setForm] = useState<Expense>({
     amount: 0,
-    accountBookId: null,
+    accountBookId: accountBookOptions[0].id,
     date: dayjs(now).format(DateFormat),
     description: '',
     tags: [],
@@ -107,12 +112,7 @@ export default function ExpenseForm() {
       paidByDetail: paidBy,
     }))
   }
-  // TODO: 當 amount 改變時，更新 paidBy 的 amount
   // TODO: tags from history
-  const accountBookOptions = [
-    { id: '1', name: 'Account Book 1' },
-    { id: '2', name: 'Account Book 2' },
-  ]
   const date = parseAbsoluteToLocal(new Date(form.date).toISOString())
 
   const [isOpenPaidByOptions, setIsOpenPaidByOptions] = useState(false)
@@ -215,6 +215,7 @@ export default function ExpenseForm() {
           size="sm"
           label="Account Book"
           items={accountBookOptions}
+          selectedKeys={[form.accountBookId || '']}
           placeholder="Select an account book"
           isRequired
           onSelectionChange={(keys) => {
