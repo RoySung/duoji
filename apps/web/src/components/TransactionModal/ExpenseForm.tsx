@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import {
-  NumberInput,
   Select,
   SelectItem,
   Form,
@@ -16,6 +15,7 @@ import { PiGitBranchBold } from 'react-icons/pi'
 import PaidByDetailModal from './PaidByDetailModal'
 import { User } from '@/entities/user'
 import { Expense } from '@/entities/transaction'
+import SplitDetailModal from './SplitDetailModal'
 
 const DateFormat = 'YYYY/MM/DD'
 
@@ -66,8 +66,13 @@ export default function ExpenseForm() {
         user: userList[0], // 預設選擇第一個用戶
         amount: 0, // 預設金額為 0
       },
-    ], // 預設選擇第一個用戶
+    ],
+    splitDetail: userList.map((user) => ({
+      user,
+      amount: 0,
+    })),
   })
+  // paidByDetail
   // 當 amount 改變時，更新 paidByDetail
   useEffect(() => {
     const peopleCount = form.paidByDetail.length
@@ -110,27 +115,72 @@ export default function ExpenseForm() {
   ]
   const date = parseAbsoluteToLocal(new Date(form.date).toISOString())
 
-  const [isOpenSplitOptions, setIsOpenSplitOptions] = useState(false)
-  function openSplitOptionsModal() {
-    setIsOpenSplitOptions(true)
+  const [isOpenPaidByOptions, setIsOpenPaidByOptions] = useState(false)
+  function openPaidByOptionsModal() {
+    setIsOpenPaidByOptions(true)
+  }
+
+  // splitDetail
+  useEffect(() => {
+    // 當 amount 改變時，更新 splitDetail
+    const peopleCount = form.splitDetail.length
+    const availableAmount = form.amount / peopleCount
+    const newSplitDetail = form.splitDetail.map((item) => {
+      return {
+        ...item,
+        amount: availableAmount,
+      }
+    })
+    setForm((f) => ({
+      ...f,
+      splitDetail: newSplitDetail,
+    }))
+  }, [form.amount])
+  const splitUserList = form.splitDetail.map((item) => item.user)
+  function selectSplitUser(userIds: Array<User['id']>) {
+    const split = userIds.map((id) => {
+      const user = userList.find((u) => u.id === id)
+      if (!user) {
+        throw new Error(`User with id ${id} not found`)
+      }
+
+      const amount = form.amount / userIds.length // 均分
+      return {
+        user,
+        amount,
+      }
+    })
+    setForm((f) => ({
+      ...f,
+      splitDetail: split,
+    }))
+  }
+  const [isOpenSplitDetail, setIsOpenSplitDetail] = useState(false)
+  function openSplitDetailModal() {
+    setIsOpenSplitDetail(true)
   }
 
   return (
     <div className="expense-form">
       <Form className="flex flex-col gap-4">
-        <NumberInput
+        <Input
           size="sm"
           isRequired
           label="Amount"
           type="number"
-          value={form.amount}
+          value={form.amount.toString()}
           startContent={
             <div className="pointer-events-none flex items-center">
               <span className="text-default-400 text-small">$</span>
             </div>
           }
-          onValueChange={(value) => {
-            setForm((f) => ({ ...f, amount: value }))
+          onChange={(e) => {
+            const value = parseFloat(e.target.value)
+            if (!isNaN(value)) {
+              setForm((f) => ({ ...f, amount: value }))
+            } else {
+              setForm((f) => ({ ...f, amount: 0 })) // 如果輸入無效，重置為 0
+            }
           }}
         />
         {/* TODO: category */}
@@ -218,18 +268,67 @@ export default function ExpenseForm() {
             color="primary"
             className="ml-2"
             variant="ghost"
-            onPress={openSplitOptionsModal}
+            onPress={openPaidByOptionsModal}
           >
             <PiGitBranchBold size={18} className="transform rotate-90" />
           </Button>
           <PaidByDetailModal
-            isOpen={isOpenSplitOptions}
-            onOpenChange={setIsOpenSplitOptions}
+            isOpen={isOpenPaidByOptions}
+            onOpenChange={setIsOpenPaidByOptions}
             amount={form.amount}
             paidByDetail={form.paidByDetail}
             onPaidByDetailChange={(paidByDetail) => {
               setForm((f) => ({ ...f, paidByDetail }))
             }}
+          />
+        </div>
+        <div className="flex items-start w-full">
+          <div>
+            <Select
+              className="flex-1"
+              size="sm"
+              label="Split With"
+              items={userList}
+              selectionMode="multiple"
+              placeholder="Select users to split with"
+              isRequired
+              selectedKeys={splitUserList.map((user) => user.id)}
+              onSelectionChange={(ids) =>
+                selectSplitUser(Array.from(ids) as User['id'][])
+              }
+            >
+              {(item) => (
+                <SelectItem
+                  key={item.id}
+                  textValue={item.name}
+                  startContent={<Avatar src={item.avatarUrl} alt={item.name} />}
+                >
+                  {item.name}
+                </SelectItem>
+              )}
+            </Select>
+            <div className="mt-1 text-xs text-gray-500">
+              💡 Split equally by default. You can customize amounts if needed.
+            </div>
+          </div>
+
+          <Button
+            isIconOnly
+            color="primary"
+            className="ml-2 mt-1"
+            variant="ghost"
+            onPress={openSplitDetailModal}
+          >
+            <PiGitBranchBold size={18} className="transform rotate-90" />
+          </Button>
+          <SplitDetailModal
+            isOpen={isOpenSplitDetail}
+            onOpenChange={setIsOpenSplitDetail}
+            splitDetail={form.splitDetail}
+            onSplitDetailChange={(splitDetail) => {
+              setForm((f) => ({ ...f, splitDetail }))
+            }}
+            amount={form.amount}
           />
         </div>
       </Form>

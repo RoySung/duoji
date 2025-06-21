@@ -10,4 +10,8 @@ export type Expense = {
     user: User
     amount: number
   }>
+  splitDetail: Array<{
+    user: User
+    amount: number
+  }>
 }

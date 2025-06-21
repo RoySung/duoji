@@ -101,13 +101,18 @@ export default function PaidByDetailModal({
   const isSaveDisabled =
     currentPaidByDetail.length === 0 || currentTotalAmount !== amount
 
+  function setIsOpen(open: boolean) {
+    if (!open) {
+      setCurrentPaidByDetail(paidByDetail)
+    }
+    onOpenChange(open)
+  }
   function handleCancel() {
-    setCurrentPaidByDetail(paidByDetail)
-    onOpenChange(false)
+    setIsOpen(false)
   }
   function handleSave() {
     onPaidByDetailChange(currentPaidByDetail)
-    onOpenChange(false)
+    setIsOpen(false)
   }
 
   const NoticeInFooter = () => {
@@ -130,7 +135,7 @@ export default function PaidByDetailModal({
   return (
     <Modal
       isOpen={isOpen}
-      onOpenChange={onOpenChange}
+      onOpenChange={setIsOpen}
       placement="bottom"
       scrollBehavior="inside"
     >
