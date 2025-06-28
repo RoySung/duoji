@@ -1,81 +1,202 @@
-# NxNextNestjs
+# Duoji
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+A modern full-stack application built with Next.js frontend and NestJS backend, managed in an [Nx workspace](https://nx.dev) monorepo.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+## Project Structure
 
-## Finish your CI setup
+This project is organized as a monorepo with the following structure:
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/aJmyjD1pdQ)
+- **`apps/web`** - Next.js frontend application with TailwindCSS and HeroUI components
+- **`apps/backend`** - NestJS backend API server
+- **`apps/web-e2e`** - End-to-end tests for the frontend using Playwright
+- **`apps/backend-e2e`** - End-to-end tests for the backend API
 
+## Setup Project
 
-## Run tasks
+### Prerequisites
 
-To run the dev server for your app, use:
+- Node.js (version 18.16.9 or later, as specified in `.nvmrc`)
+- pnpm (this project uses pnpm as the package manager)
 
+### Installation
+
+1. **Install pnpm** (if not already installed):
+   ```sh
+   npm install -g pnpm
+   ```
+
+2. **Clone the repository and install dependencies**:
+   ```sh
+   git clone <repository-url>
+   cd duoji
+   pnpm install
+   ```
+
+## How to Develop
+
+### Development Commands
+
+#### Start Both Applications
+To run both frontend and backend in development mode simultaneously:
 ```sh
+pnpm dev
+```
+
+#### Frontend Development (Next.js)
+```sh
+# Start the web application
+pnpm dev:web
+# or
 npx nx dev web
-```
 
-To create a production bundle:
-
-```sh
+# Build the web application
+pnpm build:web
+# or
 npx nx build web
+
+# Run web tests
+pnpm test:web
+# or
+npx nx test web
 ```
 
-To see all available targets to run for a project, run:
+#### Backend Development (NestJS)
+```sh
+# Start the backend server
+pnpm dev:backend
+# or
+npx nx dev backend
 
+# Build the backend application
+pnpm build:backend
+# or
+npx nx build backend
+
+# Run backend tests
+pnpm test:backend
+# or
+npx nx test backend
+```
+
+#### All Projects
+```sh
+# Build all applications
+pnpm build
+# or
+npx nx run-many --target=build --parallel
+
+# Test all applications
+pnpm test
+# or
+npx nx run-many --target=test --parallel
+```
+
+#### E2E Testing
+```sh
+# Run frontend e2e tests
+npx nx e2e web-e2e
+
+# Run backend e2e tests
+npx nx e2e backend-e2e
+```
+
+### Viewing Available Commands
+
+To see all available targets for a specific project:
 ```sh
 npx nx show project web
+npx nx show project backend
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
+To explore the project graph visually:
 ```sh
-npx nx g @nx/next:app demo
+npx nx graph
 ```
 
-To generate a new library, use:
+## Technology Stack
 
+### Frontend (`apps/web`)
+- **Next.js 15** - React framework for production
+- **React 19** - UI library
+- **TailwindCSS** - Utility-first CSS framework
+- **HeroUI** - Modern React UI components
+- **TypeScript** - Type-safe JavaScript
+
+### Backend (`apps/backend`)
+- **NestJS 10** - Progressive Node.js framework
+- **TypeScript** - Type-safe JavaScript
+- **Express** - Web application framework
+
+### Development Tools
+- **Nx Workspace** - Monorepo management and build system
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+- **Jest** - Unit testing framework
+- **Playwright** - End-to-end testing
+
+## Adding New Projects
+
+You can extend this workspace by adding new applications or libraries using Nx generators:
+
+### Generate a New Next.js Application
 ```sh
-npx nx g @nx/react:lib mylib
+npx nx g @nx/next:app my-new-app
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+### Generate a New NestJS Application
+```sh
+npx nx g @nx/nest:app my-api
+```
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Generate a New React Library
+```sh
+npx nx g @nx/react:lib shared-components
+```
 
+### Generate a New TypeScript Library
+```sh
+npx nx g @nx/js:lib shared-utils
+```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+To see all available generators:
+```sh
+npx nx list
+npx nx list @nx/next
+npx nx list @nx/nest
+```
 
-## Install Nx Console
+## Development Tools
 
+### Nx Console
 Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
 
 [Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-## Useful links
+### CI/CD Setup
+This project is configured for continuous integration. You can set up your CI pipeline using the Nx Cloud integration:
 
-Learn more:
+[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/aJmyjD1pdQ)
 
+[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+## Additional Resources
+
+### Learn More About This Project
+- [Next.js Documentation](https://nextjs.org/docs) - Frontend framework
+- [NestJS Documentation](https://docs.nestjs.com/) - Backend framework
+- [TailwindCSS Documentation](https://tailwindcss.com/docs) - CSS framework
+- [HeroUI Documentation](https://heroui.com/) - UI component library
+
+### Learn More About Nx
 - [Learn more about this workspace setup](https://nx.dev/nx-api/next?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
 - [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 - [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- [Browse the plugin registry](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
-And join the Nx community:
+### Join the Nx Community
 - [Discord](https://go.nx.dev/community)
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
