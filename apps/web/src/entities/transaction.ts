@@ -6,12 +6,15 @@ export type Expense = {
   date: string // e.g. '2023/10/01'
   description: string
   tags: string[]
-  paidByDetail: Array<{
-    user: User
-    amount: number
-  }>
-  splitDetail: Array<{
-    user: User
-    amount: number
-  }>
+  paidByDetail: PaidByDetail
+  splitDetail: SplitDetail
 }
+
+type PaidByDetail = Array<{
+  user: User
+  amount: number
+}>
+type SplitDetail = Array<{
+  user: User
+  amount: number
+}>

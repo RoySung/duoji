@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Select,
   SelectItem,
@@ -94,24 +94,26 @@ export default function ExpenseForm() {
     }))
   }, [form.amount])
   const paidByUserList = form.paidByDetail.map((item) => item.user)
-  function selectPaidByUser(userIds: Array<User['id']>) {
-    const paidBy = userIds.map((id) => {
-      const user = userList.find((u) => u.id === id)
-      if (!user) {
-        throw new Error(`User with id ${id} not found`)
-      }
-
-      const amount = form.amount / userIds.length // 均分
-      return {
-        user,
-        amount,
-      }
-    })
-    setForm((f) => ({
-      ...f,
-      paidByDetail: paidBy,
-    }))
-  }
+  const selectPaidByUser = useCallback(
+    (userIds: Array<User['id']>) => {
+      const paidBy = userIds.map((id) => {
+        const user = userList.find((u) => u.id === id)
+        if (!user) {
+          throw new Error(`User with id ${id} not found`)
+        }
+        const amount = form.amount / userIds.length // 均分
+        return {
+          user,
+          amount,
+        }
+      })
+      setForm((f) => ({
+        ...f,
+        paidByDetail: paidBy,
+      }))
+    },
+    [form.amount, userList]
+  )
   // TODO: tags from history
   const date = parseAbsoluteToLocal(new Date(form.date).toISOString())
 
