@@ -16,35 +16,9 @@ import PaidByDetailModal from './PaidByDetailModal'
 import { User } from '@/entities/user'
 import { Expense } from '@/entities/transaction'
 import SplitDetailModal from './SplitDetailModal'
+import { userList, accountBookOptions } from '@/mocks'
 
 const DateFormat = 'YYYY/MM/DD'
-
-// TODO: getting user list from account book
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'Roy',
-    email: 'roy@example.com',
-    avatarUrl:
-      'https://ui-avatars.com/api/?name=Roy&background=random&bold=true',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: '2',
-    name: 'Patty',
-    email: 'patty@example.com',
-    avatarUrl:
-      'https://ui-avatars.com/api/?name=Patty&background=random&bold=true',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-]
-// TODO: getting account book list from user
-const accountBookOptions = [
-  { id: '1', name: 'Account Book 1' },
-  { id: '2', name: 'Account Book 2' },
-]
 
 // TODO
 /**
@@ -63,6 +37,7 @@ export default function ExpenseForm() {
   const [form, setForm] = useState<Expense>({
     amount: 0,
     accountBookId: accountBookOptions[0].id,
+    categoryId: '',
     date: dayjs(now).format(DateFormat),
     description: '',
     tags: [],

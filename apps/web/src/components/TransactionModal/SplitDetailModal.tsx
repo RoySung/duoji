@@ -13,6 +13,7 @@ import {
 import { clsx } from 'clsx'
 import { Expense } from '@/entities/transaction'
 import { User } from '@/entities/user'
+import { userList } from '@/mocks'
 
 type Props = {
   isOpen: boolean
@@ -21,28 +22,6 @@ type Props = {
   onSplitDetailChange: (splitDetail: Expense['splitDetail']) => void
   amount: number
 }
-
-// TODO: getting user list from account book
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'Roy',
-    email: 'roy@example.com',
-    avatarUrl:
-      'https://ui-avatars.com/api/?name=Roy&background=random&bold=true',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: '2',
-    name: 'Patty',
-    email: 'patty@example.com',
-    avatarUrl:
-      'https://ui-avatars.com/api/?name=Patty&background=random&bold=true',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-]
 
 export default function SplitDetailModal({
   isOpen,

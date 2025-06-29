@@ -11,6 +11,7 @@ import {
   Input,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
+import { userList } from '@/mocks'
 
 type Props = {
   isOpen: boolean
@@ -19,28 +20,6 @@ type Props = {
   onOpenChange: (open: boolean) => void
   onPaidByDetailChange: (paidByDetail: Expense['paidByDetail']) => void
 }
-
-// TODO: getting user list from account book
-const userList: User[] = [
-  {
-    id: '1',
-    name: 'Roy',
-    email: 'roy@example.com',
-    avatarUrl:
-      'https://ui-avatars.com/api/?name=Roy&background=random&bold=true',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-  {
-    id: '2',
-    name: 'Patty',
-    email: 'patty@example.com',
-    avatarUrl:
-      'https://ui-avatars.com/api/?name=Patty&background=random&bold=true',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  },
-]
 
 export default function PaidByDetailModal({
   isOpen,
