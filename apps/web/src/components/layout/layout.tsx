@@ -1,8 +1,14 @@
 import { HeroUIProvider } from '@heroui/react'
+import { ToastProvider } from '@heroui/toast'
 import NavBar from './navbar'
 
 function Providers({ children }: { children: React.ReactNode }) {
-  return <HeroUIProvider>{children}</HeroUIProvider>
+  return (
+    <HeroUIProvider>
+      <ToastProvider />
+      {children}
+    </HeroUIProvider>
+  )
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {

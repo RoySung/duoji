@@ -3,7 +3,7 @@ import { User } from './user'
 export type Expense = {
   amount: number
   accountBookId: string | null
-  categoryId: string | null
+  categoryId: string
   date: string // e.g. '2023/10/01'
   description: string
   tags: string[]

@@ -7,6 +7,7 @@ import {
   Input,
   Avatar,
   Button,
+  addToast,
 } from '@heroui/react'
 import { parseAbsoluteToLocal } from '@internationalized/date'
 import dayjs from 'dayjs'
@@ -16,7 +17,8 @@ import PaidByDetailModal from './PaidByDetailModal'
 import { User } from '@/entities/user'
 import { Expense } from '@/entities/transaction'
 import SplitDetailModal from './SplitDetailModal'
-import { userList, accountBookOptions } from '@/mocks'
+import { userList, accountBookOptions, categoryList } from '@/mocks'
+import CategorySelector from './CategorySelector'
 
 const DateFormat = 'YYYY/MM/DD'
 
@@ -37,7 +39,7 @@ export default function ExpenseForm() {
   const [form, setForm] = useState<Expense>({
     amount: 0,
     accountBookId: accountBookOptions[0].id,
-    categoryId: '',
+    categoryId: categoryList[1].children?.[0].id || '',
     date: dayjs(now).format(DateFormat),
     description: '',
     tags: [],
@@ -71,11 +73,17 @@ export default function ExpenseForm() {
   const paidByUserList = form.paidByDetail.map((item) => item.user)
   const selectPaidByUser = useCallback(
     (userIds: Array<User['id']>) => {
-      const paidBy = userIds.map((id) => {
+      const paidByDetail = userIds.map((id) => {
         const user = userList.find((u) => u.id === id)
         if (!user) {
-          throw new Error(`User with id ${id} not found`)
+          addToast({
+            title: 'Error',
+            color: 'danger',
+            description: `User with id:${id} not found`,
+          })
+          throw new Error(`User with id:${id} not found`)
         }
+
         const amount = form.amount / userIds.length // 均分
         return {
           user,
@@ -84,7 +92,7 @@ export default function ExpenseForm() {
       })
       setForm((f) => ({
         ...f,
-        paidByDetail: paidBy,
+        paidByDetail: paidByDetail,
       }))
     },
     [form.amount, userList]
@@ -164,7 +172,16 @@ export default function ExpenseForm() {
             }
           }}
         />
-        {/* TODO: category */}
+        <CategorySelector
+          categoryList={categoryList}
+          selectedCategoryId={form.categoryId}
+          onSelectCategory={(category) => {
+            setForm((f) => ({
+              ...f,
+              categoryId: category.id,
+            }))
+          }}
+        />
         <DatePicker
           isRequired
           size="sm"
@@ -269,7 +286,7 @@ export default function ExpenseForm() {
           />
         </div>
         <div className="flex items-start w-full">
-          <div>
+          <div className="w-full">
             <Select
               className="flex-1"
               size="sm"
