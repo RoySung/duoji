@@ -7,6 +7,7 @@ import {
   Button,
   Tabs,
   Tab,
+  ScrollShadow,
 } from '@heroui/react'
 import { useState } from 'react'
 import ExpenseForm from './ExpenseForm'
@@ -58,7 +59,9 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
           </div>
         </ModalHeader>
         <ModalBody>
-          <Form />
+          <ScrollShadow size={50}>
+            <Form />
+          </ScrollShadow>
         </ModalBody>
         <ModalFooter>
           <Button onPress={() => onOpenChange(false)}>Cancel</Button>

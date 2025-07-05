@@ -15,7 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Providers>
-        <main className="h-[calc(100vh-72px)]">{children}</main>
+        <main className="h-[calc(100dvh-72px)]">{children}</main>
         <NavBar />
       </Providers>
     </>
