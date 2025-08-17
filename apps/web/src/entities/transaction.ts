@@ -49,7 +49,7 @@ export const CategorySchema: z.ZodType<Category> = z.object({
   type: CategoryTypeSchema,
   parentId: z.string().nullable(),
   children: z.array(z.lazy(() => CategorySchema)).optional(),
-})
+}) as z.ZodType<Category>
 
 export type Expense = z.infer<typeof ExpenseSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
