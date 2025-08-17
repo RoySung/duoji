@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { UserSchema, type User } from './user'
+import { UserSchema } from './user'
 
 export const CurrencySchema = z.enum(['USD', 'JPY', 'TWD'])
 export type Currency = z.infer<typeof CurrencySchema>

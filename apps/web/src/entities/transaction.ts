@@ -47,3 +47,15 @@ export const CategorySchema: z.ZodType<Category> = z.object({
 export type Expense = z.infer<typeof ExpenseSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
 export type SplitDetail = z.infer<typeof SplitDetailSchema>
+
+// Category Repository 介面定義
+export interface CategoryRepo {
+  create(category: Category): Promise<Category>
+  findById(id: string): Promise<Category | null>
+  findAll(): Promise<Category[]>
+  findByParent(parentId: string | null): Promise<Category[]>
+  update(id: string, category: Partial<Category>): Promise<Category | null>
+  delete(id: string): Promise<boolean>
+  getTreeStructure(): Promise<Category[]>
+  findLeafCategories(): Promise<Category[]> // 取得所有葉節點分類（無子分類的分類）
+}
