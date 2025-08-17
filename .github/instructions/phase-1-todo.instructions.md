@@ -9,8 +9,9 @@
 
 - [ ] **設計 IndexedDB Schema**
 
-  - [ ] 定義 Account Book 資料結構
-  - [ ] 定義 Transaction 資料結構
+  - [x] 定義 Account Book 資料結構
+  - [x] 定義 Transaction 資料結構
+  - [x] 定義 User 資料結構
   - [ ] 定義 Category 資料結構
 
 ## 🎯 核心功能開發
