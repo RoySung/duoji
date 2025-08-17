@@ -1,0 +1,1 @@
+export { CategoryLocalRepo } from './categoryLocalRepo'

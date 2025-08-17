@@ -28,11 +28,16 @@ export const ExpenseSchema = z.object({
   splitDetail: SplitDetailSchema,
 })
 
+export const CategoryTypeSchema = z.enum(['income', 'expense'])
+export type CategoryType = z.infer<typeof CategoryTypeSchema>
+
 export type Category = {
   id: string
   name: string
   imageUrl: string
   description: string
+  type: CategoryType
+  parentId: string | null
   children?: Category[]
 }
 
@@ -41,9 +46,28 @@ export const CategorySchema: z.ZodType<Category> = z.object({
   name: z.string(),
   imageUrl: z.url(),
   description: z.string(),
+  type: CategoryTypeSchema,
+  parentId: z.string().nullable(),
   children: z.array(z.lazy(() => CategorySchema)).optional(),
 })
 
 export type Expense = z.infer<typeof ExpenseSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
 export type SplitDetail = z.infer<typeof SplitDetailSchema>
+
+// CategoryRepository 介面定義
+export interface CategoryRepository {
+  // 標準 CRUD 操作
+  create(category: Category): Promise<Category>
+  findById(id: string): Promise<Category | null>
+  findAll(): Promise<Category[]>
+  update(id: string, category: Partial<Category>): Promise<Category | null>
+  delete(id: string): Promise<boolean>
+  
+  // 階層分類特有方法
+  findByParent(parentId: string | null): Promise<Category[]>
+  getTreeStructure(): Promise<Category[]>
+  findByName(name: string): Promise<Category[]>
+  getAllLeafCategories(): Promise<Category[]>
+  findByType(type: CategoryType): Promise<Category[]>
+}
