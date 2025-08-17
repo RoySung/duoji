@@ -47,3 +47,20 @@ export const CategorySchema: z.ZodType<Category> = z.object({
 export type Expense = z.infer<typeof ExpenseSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
 export type SplitDetail = z.infer<typeof SplitDetailSchema>
+
+// CategoryRepository 介面定義
+export interface CategoryRepository {
+  // 標準 CRUD 操作
+  create(category: Category): Promise<Category>
+  findById(id: string): Promise<Category | null>
+  findAll(): Promise<Category[]>
+  update(id: string, category: Partial<Category>): Promise<Category | null>
+  delete(id: string): Promise<boolean>
+  
+  // 階層分類特定方法
+  findByParent(parentId: string | null): Promise<Category[]>
+  getTreeStructure(): Promise<Category[]>
+  getRootCategories(): Promise<Category[]>
+  findDescendants(categoryId: string): Promise<Category[]>
+  findAncestors(categoryId: string): Promise<Category[]>
+}
