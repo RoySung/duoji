@@ -1,15 +1,19 @@
-import { User } from './user'
+import { z } from 'zod'
+import { UserSchema, type User } from './user'
 
-export type Currency = 'USD' | 'JPY' | 'TWD'
-export type AccountBook = {
-  id: string
-  name: string
-  currency: Currency
-  description: string
-  createdAt: number
-  updatedAt: number
-  users: User[]
-}
+export const CurrencySchema = z.enum(['USD', 'JPY', 'TWD'])
+export type Currency = z.infer<typeof CurrencySchema>
+
+export const AccountBookSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  currency: CurrencySchema,
+  description: z.string(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  users: z.array(UserSchema),
+})
+export type AccountBook = z.infer<typeof AccountBookSchema>
 
 export interface AccountBookRepo {
   create(accountBook: AccountBook): Promise<AccountBook>

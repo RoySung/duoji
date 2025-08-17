@@ -1,24 +1,32 @@
-import { User } from './user'
+import { z } from 'zod'
+import { UserSchema } from './user'
 
-export type Expense = {
-  amount: number
-  accountBookId: string | null
-  categoryId: string
-  date: string // e.g. '2023/10/01'
-  description: string
-  tags: string[]
-  paidByDetail: PaidByDetail
-  splitDetail: SplitDetail
-}
+const PaidByDetailSchema = z.array(
+  z.object({
+    user: UserSchema,
+    amount: z.number().positive(),
+  })
+)
 
-type PaidByDetail = Array<{
-  user: User
-  amount: number
-}>
-type SplitDetail = Array<{
-  user: User
-  amount: number
-}>
+const SplitDetailSchema = z.array(
+  z.object({
+    user: UserSchema,
+    amount: z.number().positive(),
+  })
+)
+
+export const ExpenseSchema = z.object({
+  amount: z.number().positive(),
+  accountBookId: z.string().nullable(),
+  categoryId: z.string(),
+  date: z
+    .string()
+    .regex(/^\d{4}\/\d{2}\/\d{2}$/, 'Date must be in YYYY/MM/DD format'),
+  description: z.string(),
+  tags: z.array(z.string()),
+  paidByDetail: PaidByDetailSchema,
+  splitDetail: SplitDetailSchema,
+})
 
 export type Category = {
   id: string
@@ -27,3 +35,15 @@ export type Category = {
   description: string
   children?: Category[]
 }
+
+export const CategorySchema: z.ZodType<Category> = z.object({
+  id: z.string(),
+  name: z.string(),
+  imageUrl: z.url(),
+  description: z.string(),
+  children: z.array(z.lazy(() => CategorySchema)).optional(),
+})
+
+export type Expense = z.infer<typeof ExpenseSchema>
+export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
+export type SplitDetail = z.infer<typeof SplitDetailSchema>
