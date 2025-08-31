@@ -33,6 +33,7 @@ export type Category = {
   name: string
   imageUrl: string
   description: string
+  type: 'expense' | 'income'
   children?: Category[]
 }
 
@@ -41,9 +42,21 @@ export const CategorySchema: z.ZodType<Category> = z.object({
   name: z.string(),
   imageUrl: z.url(),
   description: z.string(),
+  type: z.enum(['expense', 'income']),
   children: z.array(z.lazy(() => CategorySchema)).optional(),
 })
 
 export type Expense = z.infer<typeof ExpenseSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
 export type SplitDetail = z.infer<typeof SplitDetailSchema>
+
+// Category Repository 介面定義
+export interface CategoryRepo {
+  create(category: Category, parentId?: string): Promise<Category>
+  findById(id: string): Promise<Category | null>
+  findAll(): Promise<Category[]>
+  findByParent(parentId: string | null): Promise<Category[]>
+  findListByType(type: 'expense' | 'income'): Promise<Category[]>
+  update(id: string, category: Partial<Category>): Promise<Category | null>
+  delete(id: string): Promise<boolean>
+}
