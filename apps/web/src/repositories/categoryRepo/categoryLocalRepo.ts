@@ -73,26 +73,7 @@ class CategoryLocalRepo implements CategoryRepo {
       }))
   }
 
-  /**
-   * 取得所有葉節點分類（遞迴搜尋）
-   */
-  private getLeafCategoriesRecursively(categories: Category[]): Category[] {
-    const leafCategories: Category[] = []
-    
-    for (const category of categories) {
-      if (!category.children || category.children.length === 0) {
-        // 這是葉節點
-        leafCategories.push(category)
-      } else {
-        // 遞迴搜尋子分類
-        leafCategories.push(...this.getLeafCategoriesRecursively(category.children))
-      }
-    }
-    
-    return leafCategories
-  }
-
-  async create(category: Category): Promise<Category> {
+  async create(category: Category, parentId?: string): Promise<Category> {
     const categories = this.getStoredCategories()
     
     // 檢查 ID 是否已存在
@@ -101,8 +82,22 @@ class CategoryLocalRepo implements CategoryRepo {
       throw new Error(`Category with id ${category.id} already exists`)
     }
     
-    // 新增分類到最上層
-    categories.push(category)
+    if (parentId) {
+      // 新增為指定父分類的子分類
+      const parentCategory = this.findCategoryRecursively(categories, parentId)
+      if (!parentCategory) {
+        throw new Error(`Parent category with id ${parentId} not found`)
+      }
+      
+      if (!parentCategory.children) {
+        parentCategory.children = []
+      }
+      parentCategory.children.push(category)
+    } else {
+      // 新增分類到最上層
+      categories.push(category)
+    }
+    
     this.saveCategories(categories)
     
     return category
@@ -157,16 +152,6 @@ class CategoryLocalRepo implements CategoryRepo {
     }
     
     return wasRemoved
-  }
-
-  async getTreeStructure(): Promise<Category[]> {
-    // 回傳完整的階層結構（與 findAll 相同）
-    return this.getStoredCategories()
-  }
-
-  async findLeafCategories(): Promise<Category[]> {
-    const categories = this.getStoredCategories()
-    return this.getLeafCategoriesRecursively(categories)
   }
 }
 

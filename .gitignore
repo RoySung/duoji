@@ -5,6 +5,9 @@ dist
 tmp
 out-tsc
 
+# TypeScript
+*.tsbuildinfo
+
 # dependencies
 node_modules
 

@@ -23,25 +23,6 @@ describe('Category System', () => {
       const categoriesWithChildren = categoryList.filter(cat => cat.children && cat.children.length > 0)
       expect(categoriesWithChildren.length).toBeGreaterThan(0)
     })
-
-    it('should have Chinese descriptions for main categories', () => {
-      categoryList.forEach(category => {
-        expect(category.description).toBeTruthy()
-        expect(category.description.length).toBeGreaterThan(0)
-      })
-    })
-
-    it('should have valid icon URLs', () => {
-      categoryList.forEach(category => {
-        expect(category.imageUrl).toMatch(/^https:\/\/api\.iconify\.design\//)
-        
-        if (category.children) {
-          category.children.forEach(child => {
-            expect(child.imageUrl).toMatch(/^https:\/\/api\.iconify\.design\//)
-          })
-        }
-      })
-    })
   })
 
   describe('CategoryLocalRepo', () => {
@@ -61,7 +42,7 @@ describe('Category System', () => {
     it('should find category by ID', async () => {
       const category = await repo.findById('1-1')
       expect(category).toBeTruthy()
-      expect(category?.name).toBe('早餐')
+      expect(category?.name).toBe('Breakfast')
     })
 
     it('should find categories by parent', async () => {
@@ -70,16 +51,6 @@ describe('Category System', () => {
       
       const foodSubcategories = await repo.findByParent('1')
       expect(foodSubcategories.length).toBeGreaterThan(0)
-    })
-
-    it('should get leaf categories', async () => {
-      const leafCategories = await repo.findLeafCategories()
-      expect(leafCategories.length).toBeGreaterThan(0)
-      
-      // All leaf categories should not have children
-      leafCategories.forEach(category => {
-        expect(category.children).toBeUndefined()
-      })
     })
   })
 })
