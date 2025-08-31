@@ -6,5 +6,8 @@ export default {
     '^.+\\.[tj]sx?$': ['babel-jest', { presets: ['@nx/next/babel'] }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   coverageDirectory: 'test-output/jest/coverage',
-};
+}
