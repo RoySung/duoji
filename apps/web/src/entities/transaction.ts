@@ -56,6 +56,7 @@ export interface CategoryRepo {
   findById(id: string): Promise<Category | null>
   findAll(): Promise<Category[]>
   findByParent(parentId: string | null): Promise<Category[]>
+  findListByType(type: 'expense' | 'income'): Promise<Category[]>
   update(id: string, category: Partial<Category>): Promise<Category | null>
   delete(id: string): Promise<boolean>
 }

@@ -52,5 +52,29 @@ describe('Category System', () => {
       const foodSubcategories = await repo.findByParent('1')
       expect(foodSubcategories.length).toBeGreaterThan(0)
     })
+
+    it('should find categories by type', async () => {
+      const expenseCategories = await repo.findListByType('expense')
+      const incomeCategories = await repo.findListByType('income')
+      
+      // Should return flattened list of categories by type
+      expect(expenseCategories.length).toBeGreaterThan(0)
+      expect(incomeCategories.length).toBeGreaterThan(0)
+      
+      // All returned categories should have the correct type
+      expenseCategories.forEach(cat => {
+        expect(cat.type).toBe('expense')
+      })
+      
+      incomeCategories.forEach(cat => {
+        expect(cat.type).toBe('income')
+      })
+      
+      // Should include both parent and child categories
+      const hasExpenseSubcategories = expenseCategories.some(cat => cat.id.includes('-'))
+      const hasIncomeSubcategories = incomeCategories.some(cat => cat.id.includes('-'))
+      expect(hasExpenseSubcategories).toBe(true)
+      expect(hasIncomeSubcategories).toBe(true)
+    })
   })
 })

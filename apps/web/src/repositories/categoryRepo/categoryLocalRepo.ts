@@ -73,6 +73,27 @@ class CategoryLocalRepo implements CategoryRepo {
       }))
   }
 
+  /**
+   * 遞迴收集指定類型的所有分類（扁平化結果）
+   */
+  private collectCategoriesByType(
+    categories: Category[], 
+    type: 'expense' | 'income'
+  ): Category[] {
+    const result: Category[] = []
+    
+    for (const category of categories) {
+      if (category.type === type) {
+        result.push(category)
+      }
+      if (category.children) {
+        result.push(...this.collectCategoriesByType(category.children, type))
+      }
+    }
+    
+    return result
+  }
+
   async create(category: Category, parentId?: string): Promise<Category> {
     const categories = this.getStoredCategories()
     
@@ -123,6 +144,11 @@ class CategoryLocalRepo implements CategoryRepo {
     // 搜尋指定父分類的子分類
     const parentCategory = this.findCategoryRecursively(categories, parentId)
     return parentCategory?.children || []
+  }
+
+  async findListByType(type: 'expense' | 'income'): Promise<Category[]> {
+    const categories = this.getStoredCategories()
+    return this.collectCategoriesByType(categories, type)
   }
 
   async update(id: string, updates: Partial<Category>): Promise<Category | null> {
