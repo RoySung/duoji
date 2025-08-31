@@ -1,0 +1,76 @@
+import Dexie, { type EntityTable } from 'dexie'
+import { Category } from '@/entities/transaction'
+import { User } from '@/entities/user'
+import { AccountBook } from '@/entities/accountBook'
+import { categoryList, userList } from '@/mocks'
+
+/**
+ * Duoji App 本地資料庫
+ * 使用 Dexie 管理 IndexedDB
+ */
+class DuojiDB extends Dexie {
+  categories!: EntityTable<Category, 'id'>
+  users!: EntityTable<User, 'id'>
+  accountBooks!: EntityTable<AccountBook, 'id'>
+
+  constructor() {
+    super('DuojiDB')
+
+    this.version(1).stores({
+      categories: '&id, name, type, *children',
+      users: '&id, name, email',
+      accountBooks: '&id, name, ownerId, *userIds',
+    })
+  }
+}
+
+// 建立全域資料庫實例
+export const db = new DuojiDB()
+
+// 資料庫初始化函數
+export async function initializeDB(): Promise<void> {
+  try {
+    await db.open()
+    console.log('Database initialized successfully')
+
+    // 初始化預設資料
+    await initializeMockData()
+  } catch (error) {
+    console.error('Failed to initialize database:', error)
+  }
+}
+
+/**
+ * 初始化 Mock 資料
+ */
+async function initializeMockData(): Promise<void> {
+  try {
+    // 初始化分類資料
+    const categoryCount = await db.categories.count()
+    if (categoryCount === 0) {
+      await addCategoriesRecursively(categoryList)
+      console.log('Mock category data initialized')
+    }
+
+    // 初始化用戶資料
+    const userCount = await db.users.count()
+    if (userCount === 0) {
+      await db.users.bulkPut(userList)
+      console.log('Mock user data initialized')
+    }
+  } catch (error) {
+    console.error('Failed to initialize mock data:', error)
+  }
+}
+
+/**
+ * 遞迴新增分類及其子分類到資料庫
+ */
+async function addCategoriesRecursively(categories: Category[]): Promise<void> {
+  for (const category of categories) {
+    await db.categories.put(category)
+    if (category.children && category.children.length > 0) {
+      await addCategoriesRecursively(category.children)
+    }
+  }
+}

@@ -1,183 +1,221 @@
 import { CategoryRepo, Category } from '@/entities/transaction'
-import { categoryList } from '@/mocks'
+import { db } from '@/lib/dexie'
 
 /**
  * 分類本地儲存實作
- * 使用 localStorage 儲存分類資料
+ * 使用 Dexie (IndexedDB) 儲存分類資料
  */
 class CategoryLocalRepo implements CategoryRepo {
-  private storageKey = 'duoji_categories'
-
-  constructor() {
-    this.initializeData()
-  }
-
   /**
-   * 初始化資料 - 如果 localStorage 中沒有資料，則使用預設的 mock 資料
+   * 重建分類樹狀結構
    */
-  private initializeData(): void {
-    const existingData = localStorage.getItem(this.storageKey)
-    if (!existingData) {
-      localStorage.setItem(this.storageKey, JSON.stringify(categoryList))
-    }
-  }
+  private buildCategoryTree(flatCategories: Category[]): Category[] {
+    const categoryMap = new Map<string, Category>()
+    const rootCategories: Category[] = []
 
-  /**
-   * 從 localStorage 取得所有分類
-   */
-  private getStoredCategories(): Category[] {
-    const data = localStorage.getItem(this.storageKey)
-    return data ? JSON.parse(data) : categoryList
-  }
+    // 將所有分類放入 Map
+    flatCategories.forEach((category) => {
+      categoryMap.set(category.id, { ...category, children: [] })
+    })
 
-  /**
-   * 將分類儲存至 localStorage
-   */
-  private saveCategories(categories: Category[]): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(categories))
-  }
+    // 建構樹狀結構
+    flatCategories.forEach((category) => {
+      const cat = categoryMap.get(category.id)!
 
-  /**
-   * 遞迴搜尋分類（包含子分類）
-   */
-  private findCategoryRecursively(
-    categories: Category[], 
-    id: string
-  ): Category | null {
-    for (const category of categories) {
-      if (category.id === id) {
-        return category
+      if (category.children && category.children.length > 0) {
+        category.children.forEach((child) => {
+          const childCategory = categoryMap.get(child.id)
+          if (childCategory) {
+            cat.children!.push(childCategory)
+          }
+        })
       }
-      if (category.children) {
-        const found = this.findCategoryRecursively(category.children, id)
-        if (found) return found
-      }
-    }
-    return null
-  }
 
-  /**
-   * 遞迴移除分類（包含子分類）
-   */
-  private removeCategoryRecursively(
-    categories: Category[], 
-    id: string
-  ): Category[] {
-    return categories
-      .filter(category => category.id !== id)
-      .map(category => ({
-        ...category,
-        children: category.children 
-          ? this.removeCategoryRecursively(category.children, id)
-          : undefined
-      }))
-  }
+      // 判斷是否為根分類（沒有父分類的）
+      const isRoot = !flatCategories.some((c) =>
+        c.children?.some((child) => child.id === category.id)
+      )
 
-  /**
-   * 遞迴收集指定類型的所有分類（扁平化結果）
-   */
-  private collectCategoriesByType(
-    categories: Category[], 
-    type: 'expense' | 'income'
-  ): Category[] {
-    const result: Category[] = []
-    
-    for (const category of categories) {
-      if (category.type === type) {
-        result.push(category)
+      if (isRoot) {
+        rootCategories.push(cat)
       }
-      if (category.children) {
-        result.push(...this.collectCategoriesByType(category.children, type))
-      }
-    }
-    
-    return result
+    })
+
+    return rootCategories
   }
 
   async create(category: Category, parentId?: string): Promise<Category> {
-    const categories = this.getStoredCategories()
-    
-    // 檢查 ID 是否已存在
-    const existing = this.findCategoryRecursively(categories, category.id)
-    if (existing) {
-      throw new Error(`Category with id ${category.id} already exists`)
-    }
-    
-    if (parentId) {
-      // 新增為指定父分類的子分類
-      const parentCategory = this.findCategoryRecursively(categories, parentId)
-      if (!parentCategory) {
-        throw new Error(`Parent category with id ${parentId} not found`)
+    try {
+      // 檢查 ID 是否已存在
+      const existing = await db.categories
+        .where('id')
+        .equals(category.id)
+        .first()
+      if (existing) {
+        throw new Error(`Category with id ${category.id} already exists`)
       }
-      
-      if (!parentCategory.children) {
-        parentCategory.children = []
+
+      if (parentId) {
+        // 處理子分類的情況
+        const parentCategory = await db.categories
+          .where('id')
+          .equals(parentId)
+          .first()
+        if (!parentCategory) {
+          throw new Error(`Parent category with id ${parentId} not found`)
+        }
+
+        // 更新父分類的 children 陣列
+        const updatedParent = {
+          ...parentCategory,
+          children: [...(parentCategory.children || []), category],
+        }
+        await db.categories.put(updatedParent)
       }
-      parentCategory.children.push(category)
-    } else {
-      // 新增分類到最上層
-      categories.push(category)
+
+      // 新增分類到資料庫
+      await db.categories.put(category)
+
+      return category
+    } catch (error) {
+      console.error('Failed to create category:', error)
+      throw error
     }
-    
-    this.saveCategories(categories)
-    
-    return category
   }
 
   async findById(id: string): Promise<Category | null> {
-    const categories = this.getStoredCategories()
-    return this.findCategoryRecursively(categories, id)
+    try {
+      const category = await db.categories.where('id').equals(id).first()
+      return category || null
+    } catch (error) {
+      console.error('Failed to find category by id:', error)
+      return null
+    }
   }
 
   async findAll(): Promise<Category[]> {
-    return this.getStoredCategories()
+    try {
+      const allCategories = await db.categories.toArray()
+      return this.buildCategoryTree(allCategories)
+    } catch (error) {
+      console.error('Failed to find all categories:', error)
+      return []
+    }
   }
 
   async findByParent(parentId: string | null): Promise<Category[]> {
-    const categories = this.getStoredCategories()
-    
-    if (parentId === null) {
-      // 回傳頂層分類
-      return categories
+    try {
+      if (parentId === null) {
+        // 回傳頂層分類 - 沒有被任何分類包含在 children 中的分類
+        const allCategories = await db.categories.toArray()
+        const childIds = new Set<string>()
+
+        // 收集所有子分類的 ID
+        allCategories.forEach((cat) => {
+          if (cat.children) {
+            cat.children.forEach((child) => childIds.add(child.id))
+          }
+        })
+
+        // 回傳不在子分類 ID 集合中的分類
+        return allCategories.filter((cat) => !childIds.has(cat.id))
+      }
+
+      // 搜尋指定父分類的子分類
+      const parentCategory = await db.categories
+        .where('id')
+        .equals(parentId)
+        .first()
+      return parentCategory?.children || []
+    } catch (error) {
+      console.error('Failed to find categories by parent:', error)
+      return []
     }
-    
-    // 搜尋指定父分類的子分類
-    const parentCategory = this.findCategoryRecursively(categories, parentId)
-    return parentCategory?.children || []
   }
 
   async findListByType(type: 'expense' | 'income'): Promise<Category[]> {
-    const categories = this.getStoredCategories()
-    return this.collectCategoriesByType(categories, type)
+    try {
+      const categories = await db.categories
+        .where('type')
+        .equals(type)
+        .toArray()
+      return categories
+    } catch (error) {
+      console.error('Failed to find categories by type:', error)
+      return []
+    }
   }
 
-  async update(id: string, updates: Partial<Category>): Promise<Category | null> {
-    const categories = this.getStoredCategories()
-    const category = this.findCategoryRecursively(categories, id)
-    
-    if (!category) {
+  async update(
+    id: string,
+    updates: Partial<Category>
+  ): Promise<Category | null> {
+    try {
+      const category = await db.categories.where('id').equals(id).first()
+
+      if (!category) {
+        return null
+      }
+
+      // 更新分類資料
+      const updatedCategory = { ...category, ...updates }
+      await db.categories.put(updatedCategory)
+
+      return updatedCategory
+    } catch (error) {
+      console.error('Failed to update category:', error)
       return null
     }
-    
-    // 更新分類資料
-    Object.assign(category, updates)
-    this.saveCategories(categories)
-    
-    return category
   }
 
   async delete(id: string): Promise<boolean> {
-    const categories = this.getStoredCategories()
-    const updatedCategories = this.removeCategoryRecursively(categories, id)
-    
-    // 檢查是否有分類被移除
-    const wasRemoved = JSON.stringify(categories) !== JSON.stringify(updatedCategories)
-    
-    if (wasRemoved) {
-      this.saveCategories(updatedCategories)
+    try {
+      // 檢查分類是否存在
+      const category = await db.categories.where('id').equals(id).first()
+      if (!category) {
+        return false
+      }
+
+      // 遞迴刪除子分類
+      if (category.children && category.children.length > 0) {
+        for (const child of category.children) {
+          await this.delete(child.id)
+        }
+      }
+
+      // 從父分類的 children 中移除此分類
+      const allCategories = await db.categories.toArray()
+      for (const parentCategory of allCategories) {
+        if (parentCategory.children) {
+          const updatedChildren = parentCategory.children.filter(
+            (child) => child.id !== id
+          )
+          if (updatedChildren.length !== parentCategory.children.length) {
+            await db.categories.put({
+              ...parentCategory,
+              children: updatedChildren,
+            })
+          }
+        }
+      }
+
+      // 刪除分類本身
+      await db.categories.where('id').equals(id).delete()
+
+      return true
+    } catch (error) {
+      console.error('Failed to delete category:', error)
+      return false
     }
-    
-    return wasRemoved
+  }
+
+  async clear(): Promise<void> {
+    try {
+      await db.categories.clear()
+    } catch (error) {
+      console.error('Failed to clear categories:', error)
+      throw error
+    }
   }
 }
 

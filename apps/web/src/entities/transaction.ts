@@ -59,4 +59,5 @@ export interface CategoryRepo {
   findListByType(type: 'expense' | 'income'): Promise<Category[]>
   update(id: string, category: Partial<Category>): Promise<Category | null>
   delete(id: string): Promise<boolean>
+  clear(): Promise<void> // for local dev
 }

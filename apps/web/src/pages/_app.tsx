@@ -3,7 +3,8 @@ import Head from 'next/head'
 import './styles.css'
 import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
-import { ReactElement, ReactNode } from 'react'
+import { ReactElement, ReactNode, useEffect } from 'react'
+import { initializeDB } from '@/lib/dexie'
 
 // 擴展 AppProps 類型以包含 getLayout
 type AppPropsWithLayout = AppProps & {
@@ -16,6 +17,11 @@ type NextPageWithLayout = NextPage & {
 }
 
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
+  // 初始化資料庫
+  useEffect(() => {
+    initializeDB()
+  }, [])
+
   // 使用頁面的 getLayout 或使用默認布局
   const getLayout = Component.getLayout ?? ((page) => <Layout>{page}</Layout>)
 

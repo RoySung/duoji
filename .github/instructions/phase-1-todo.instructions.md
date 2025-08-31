@@ -7,31 +7,26 @@
 
 ## 目前進行中/預計進行的項目
 
-- [ ] **設計 IndexedDB Schema**
-
-  - [x] 定義 Account Book 資料結構
-  - [x] 定義 Transaction 資料結構
-  - [x] 定義 User 資料結構
-  - [ ] 定義 Category 資料結構
+- [ ] **Repository 層實作**
+  - [ ] CategoryRepository 實作
+  - [ ] AccountBookRepository 實作
+  - [ ] TransactionRepository 實作
 
 ## 🎯 核心功能開發
 
 ### 1. 資料儲存層 - IndexedDB 本地儲存
 
-- [ ] **設計 IndexedDB Schema**
+- [x] **設計 IndexedDB Schema**
 
-  - [ ] 定義 Account Book 資料結構
-  - [ ] 定義 Transaction 資料結構
-  - [ ] 定義 Category 資料結構
-
-- [ ] **實作 IndexedDB Service**
-
-  - [ ] survey third party libraries (如 idb, dexie.js)
+  - [x] 定義 Account Book 資料結構
+  - [x] 定義 Transaction 資料結構
+  - [x] 定義 User 資料結構
+  - [x] 定義 Category 資料結構
 
 - [ ] **Repository 層實作**
+  - [ ] CategoryRepository 實作
   - [ ] AccountBookRepository 實作
   - [ ] TransactionRepository 實作
-  - [ ] CategoryRepository 實作
 
 ### 2. 狀態管理與資料流
 

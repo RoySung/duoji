@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { UserSchema } from './user'
 
 export const CurrencySchema = z.enum(['USD', 'JPY', 'TWD'])
 export type Currency = z.infer<typeof CurrencySchema>
@@ -11,7 +10,8 @@ export const AccountBookSchema = z.object({
   description: z.string(),
   createdAt: z.number(),
   updatedAt: z.number(),
-  users: z.array(UserSchema),
+  ownerId: z.string(),
+  userIds: z.array(z.string()),
 })
 export type AccountBook = z.infer<typeof AccountBookSchema>
 
@@ -24,4 +24,5 @@ export interface AccountBookRepo {
     accountBook: Partial<AccountBook>
   ): Promise<AccountBook | null>
   delete(id: string): Promise<boolean>
+  clear(): Promise<void> // for local dev
 }
