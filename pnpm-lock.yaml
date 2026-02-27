@@ -20,9 +20,6 @@ importers:
       axios:
         specifier: ^1.6.0
         version: 1.10.0
-      dexie:
-        specifier: ^4.2.0
-        version: 4.2.0
       next:
         specifier: ~15.1.4
         version: 15.1.8(@babel/core@7.27.4)(@playwright/test@1.53.1)(babel-plugin-macros@3.1.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.89.2)
@@ -271,6 +268,9 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
+      dexie:
+        specifier: ^4.2.0
+        version: 4.2.0
       fake-indexeddb:
         specifier: ^6.2.2
         version: 6.2.2
