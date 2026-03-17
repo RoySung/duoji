@@ -14,7 +14,7 @@ permissions:
 
 # Environment for GitHub Pages
 env:
-  BUILD_PATH: 'apps/web/out' # Adjust this to your build output path
+  BUILD_PATH: "apps/web/out" # Adjust this to your build output path
 
 jobs:
   main:
@@ -26,12 +26,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.14.0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 10.9.0
 
       - name: Get pnpm store directory
         shell: bash
