@@ -25,8 +25,8 @@
   - [x] 定義 Category 資料結構
 
 - [ ] **Repository 層實作**
-  - [ ] CategoryRepository 實作
-  - [ ] AccountBookRepository 實作
+  - [x] CategoryRepository 實作
+  - [x] AccountBookRepository 實作
   - [ ] TransactionRepository 實作
 
 ### 2. 狀態管理與資料流
