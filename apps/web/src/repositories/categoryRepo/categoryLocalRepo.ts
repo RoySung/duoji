@@ -4,145 +4,119 @@ import { db } from '@/lib/dexie'
 /**
  * 分類本地儲存實作
  * 使用 Dexie (IndexedDB) 儲存分類資料
+ * 採用平面結構，透過 parentId 建立層級關係
  */
 class CategoryLocalRepo implements CategoryRepo {
-  /**
-   * 重建分類樹狀結構
-   */
-  private buildCategoryTree(flatCategories: Category[]): Category[] {
-    const categoryMap = new Map<string, Category>()
-    const rootCategories: Category[] = []
+  private getCategoryTreeIds(categories: Category[], rootId: string): string[] {
+    const childrenByParent = new Map<string, string[]>()
 
-    // 將所有分類放入 Map
-    flatCategories.forEach((category) => {
-      categoryMap.set(category.id, { ...category, children: [] })
-    })
-
-    // 建構樹狀結構
-    flatCategories.forEach((category) => {
-      const cat = categoryMap.get(category.id)!
-
-      if (category.children && category.children.length > 0) {
-        category.children.forEach((child) => {
-          const childCategory = categoryMap.get(child.id)
-          if (childCategory) {
-            cat.children!.push(childCategory)
-          }
-        })
+    for (const category of categories) {
+      if (category.parentId === null) {
+        continue
       }
 
-      // 判斷是否為根分類（沒有父分類的）
-      const isRoot = !flatCategories.some((c) =>
-        c.children?.some((child) => child.id === category.id)
-      )
+      const childIds = childrenByParent.get(category.parentId) ?? []
+      childIds.push(category.id)
+      childrenByParent.set(category.parentId, childIds)
+    }
 
-      if (isRoot) {
-        rootCategories.push(cat)
+    const idsToDelete: string[] = []
+    const queue = [rootId]
+    const visited = new Set<string>()
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()
+      if (!currentId || visited.has(currentId)) {
+        continue
       }
-    })
 
-    return rootCategories
+      visited.add(currentId)
+      idsToDelete.push(currentId)
+
+      const childIds = childrenByParent.get(currentId) ?? []
+      queue.push(...childIds)
+    }
+
+    return idsToDelete
+  }
+
+  private async validateParentId(
+    categoryId: string,
+    parentId: string | null | undefined
+  ): Promise<void> {
+    if (parentId === undefined || parentId === null) {
+      return
+    }
+
+    if (parentId === categoryId) {
+      throw new Error(`Category ${categoryId} cannot be its own parent`)
+    }
+
+    const parent = await db.categories.get(parentId)
+    if (!parent) {
+      throw new Error(`Parent category with ID ${parentId} not found`)
+    }
   }
 
   async create(category: Category, parentId?: string): Promise<Category> {
     try {
       // 檢查 ID 是否已存在
-      const existing = await db.categories
-        .where('id')
-        .equals(category.id)
-        .first()
+      const existing = await db.categories.get(category.id)
       if (existing) {
-        throw new Error(`Category with id ${category.id} already exists`)
+        throw new Error(`Category with ID ${category.id} already exists`)
       }
 
-      if (parentId) {
-        // 處理子分類的情況
-        const parentCategory = await db.categories
-          .where('id')
-          .equals(parentId)
-          .first()
-        if (!parentCategory) {
-          throw new Error(`Parent category with id ${parentId} not found`)
-        }
+      // 如果提供了 parentId，覆蓋 category 的 parentId
+      const categoryToCreate = parentId ? { ...category, parentId } : category
 
-        // 更新父分類的 children 陣列
-        const updatedParent = {
-          ...parentCategory,
-          children: [...(parentCategory.children || []), category],
-        }
-        await db.categories.put(updatedParent)
-      }
+      await this.validateParentId(
+        categoryToCreate.id,
+        categoryToCreate.parentId
+      )
 
-      // 新增分類到資料庫
-      await db.categories.put(category)
-
-      return category
+      await db.categories.add(categoryToCreate)
+      return categoryToCreate
     } catch (error) {
-      console.error('Failed to create category:', error)
+      console.error('Error creating category:', error)
       throw error
     }
   }
 
   async findById(id: string): Promise<Category | null> {
     try {
-      const category = await db.categories.where('id').equals(id).first()
+      const category = await db.categories.get(id)
       return category || null
     } catch (error) {
-      console.error('Failed to find category by id:', error)
-      return null
+      console.error('Error finding category by ID:', error)
+      throw error
     }
   }
 
   async findAll(): Promise<Category[]> {
     try {
-      const allCategories = await db.categories.toArray()
-      return this.buildCategoryTree(allCategories)
+      return await db.categories.toArray()
     } catch (error) {
-      console.error('Failed to find all categories:', error)
-      return []
+      console.error('Error finding all categories:', error)
+      throw error
     }
   }
 
   async findByParent(parentId: string | null): Promise<Category[]> {
     try {
-      if (parentId === null) {
-        // 回傳頂層分類 - 沒有被任何分類包含在 children 中的分類
-        const allCategories = await db.categories.toArray()
-        const childIds = new Set<string>()
-
-        // 收集所有子分類的 ID
-        allCategories.forEach((cat) => {
-          if (cat.children) {
-            cat.children.forEach((child) => childIds.add(child.id))
-          }
-        })
-
-        // 回傳不在子分類 ID 集合中的分類
-        return allCategories.filter((cat) => !childIds.has(cat.id))
-      }
-
-      // 搜尋指定父分類的子分類
-      const parentCategory = await db.categories
-        .where('id')
-        .equals(parentId)
-        .first()
-      return parentCategory?.children || []
+      const allCategories = await db.categories.toArray()
+      return allCategories.filter((category) => category.parentId === parentId)
     } catch (error) {
-      console.error('Failed to find categories by parent:', error)
-      return []
+      console.error('Error finding categories by parent:', error)
+      throw error
     }
   }
 
   async findListByType(type: 'expense' | 'income'): Promise<Category[]> {
     try {
-      const categories = await db.categories
-        .where('type')
-        .equals(type)
-        .toArray()
-      return categories
+      return await db.categories.where('type').equals(type).toArray()
     } catch (error) {
-      console.error('Failed to find categories by type:', error)
-      return []
+      console.error('Error finding categories by type:', error)
+      throw error
     }
   }
 
@@ -151,61 +125,39 @@ class CategoryLocalRepo implements CategoryRepo {
     updates: Partial<Category>
   ): Promise<Category | null> {
     try {
-      const category = await db.categories.where('id').equals(id).first()
-
-      if (!category) {
+      const existing = await db.categories.get(id)
+      if (!existing) {
         return null
       }
 
-      // 更新分類資料
-      const updatedCategory = { ...category, ...updates }
-      await db.categories.put(updatedCategory)
+      await this.validateParentId(id, updates.parentId)
 
+      const updatedCategory = { ...existing, ...updates }
+      await db.categories.put(updatedCategory)
       return updatedCategory
     } catch (error) {
-      console.error('Failed to update category:', error)
-      return null
+      console.error('Error updating category:', error)
+      throw error
     }
   }
 
   async delete(id: string): Promise<boolean> {
     try {
-      // 檢查分類是否存在
-      const category = await db.categories.where('id').equals(id).first()
-      if (!category) {
-        return false
-      }
-
-      // 遞迴刪除子分類
-      if (category.children && category.children.length > 0) {
-        for (const child of category.children) {
-          await this.delete(child.id)
+      return await db.transaction('rw', db.categories, async () => {
+        const existing = await db.categories.get(id)
+        if (!existing) {
+          return false
         }
-      }
 
-      // 從父分類的 children 中移除此分類
-      const allCategories = await db.categories.toArray()
-      for (const parentCategory of allCategories) {
-        if (parentCategory.children) {
-          const updatedChildren = parentCategory.children.filter(
-            (child) => child.id !== id
-          )
-          if (updatedChildren.length !== parentCategory.children.length) {
-            await db.categories.put({
-              ...parentCategory,
-              children: updatedChildren,
-            })
-          }
-        }
-      }
+        const allCategories = await db.categories.toArray()
+        const idsToDelete = this.getCategoryTreeIds(allCategories, id)
 
-      // 刪除分類本身
-      await db.categories.where('id').equals(id).delete()
-
-      return true
+        await db.categories.bulkDelete(idsToDelete)
+        return true
+      })
     } catch (error) {
-      console.error('Failed to delete category:', error)
-      return false
+      console.error('Error deleting category:', error)
+      throw error
     }
   }
 
@@ -213,7 +165,7 @@ class CategoryLocalRepo implements CategoryRepo {
     try {
       await db.categories.clear()
     } catch (error) {
-      console.error('Failed to clear categories:', error)
+      console.error('Error clearing categories:', error)
       throw error
     }
   }

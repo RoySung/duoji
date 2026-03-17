@@ -26,11 +26,20 @@ describe('Category System', () => {
       })
     })
 
-    it('should have hierarchical structure', () => {
-      const categoriesWithChildren = categoryList.filter(
-        (cat) => cat.children && cat.children.length > 0
+    it('should represent hierarchy with parentId references', () => {
+      const rootCategories = categoryList.filter((cat) => cat.parentId === null)
+      const childCategories = categoryList.filter(
+        (cat) => cat.parentId !== null
       )
-      expect(categoriesWithChildren.length).toBeGreaterThan(0)
+
+      expect(rootCategories.length).toBeGreaterThan(0)
+      expect(childCategories.length).toBeGreaterThan(0)
+
+      childCategories.forEach((category) => {
+        expect(
+          categoryList.some((parent) => parent.id === category.parentId)
+        ).toBe(true)
+      })
     })
   })
 
@@ -48,11 +57,6 @@ describe('Category System', () => {
       // might not run in test environment
       for (const category of categoryList) {
         await db.categories.put(category)
-        if (category.children) {
-          for (const child of category.children) {
-            await db.categories.put(child)
-          }
-        }
       }
     })
 
@@ -73,10 +77,20 @@ describe('Category System', () => {
 
     it('should find categories by parent', async () => {
       const topLevelCategories = await repo.findByParent(null)
-      expect(topLevelCategories.length).toBe(categoryList.length)
+      expect(topLevelCategories.length).toBe(
+        categoryList.filter((category) => category.parentId === null).length
+      )
+      topLevelCategories.forEach((category) => {
+        expect(category.parentId).toBeNull()
+      })
 
       const foodSubcategories = await repo.findByParent('1')
-      expect(foodSubcategories.length).toBeGreaterThan(0)
+      expect(foodSubcategories.length).toBe(
+        categoryList.filter((category) => category.parentId === '1').length
+      )
+      foodSubcategories.forEach((category) => {
+        expect(category.parentId).toBe('1')
+      })
     })
 
     it('should find categories by type', async () => {
@@ -95,6 +109,45 @@ describe('Category System', () => {
       incomeCategories.forEach((cat) => {
         expect(cat.type).toBe('income')
       })
+    })
+
+    it('should reject self-parent references', async () => {
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined)
+
+      try {
+        await expect(
+          repo.update('1', {
+            parentId: '1',
+          })
+        ).rejects.toThrow('cannot be its own parent')
+      } finally {
+        consoleErrorSpy.mockRestore()
+      }
+    })
+
+    it('should delete child categories recursively', async () => {
+      await repo.create({
+        id: '1-1-1',
+        name: 'Cafe Breakfast',
+        description: 'Nested breakfast category',
+        type: 'expense',
+        imageUrl:
+          'https://api.iconify.design/lucide:cup-soda.svg?color=%23666666&width=100&height=100',
+        parentId: '1-1',
+      })
+
+      await expect(repo.delete('1')).resolves.toBe(true)
+
+      await expect(repo.findById('1')).resolves.toBeNull()
+      await expect(repo.findById('1-1')).resolves.toBeNull()
+      await expect(repo.findById('1-1-1')).resolves.toBeNull()
+      await expect(repo.findById('2')).resolves.toBeTruthy()
+    })
+
+    it('should return false when deleting a missing category', async () => {
+      await expect(repo.delete('missing-category')).resolves.toBe(false)
     })
   })
 })

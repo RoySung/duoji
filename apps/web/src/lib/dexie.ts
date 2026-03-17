@@ -17,7 +17,7 @@ class DuojiDB extends Dexie {
     super('DuojiDB')
 
     this.version(1).stores({
-      categories: '&id, name, type, *children',
+      categories: '&id, name, type, parentId',
       users: '&id, name, email',
       accountBooks: '&id, name, ownerId, *userIds',
     })
@@ -48,7 +48,7 @@ async function initializeMockData(): Promise<void> {
     // 初始化分類資料
     const categoryCount = await db.categories.count()
     if (categoryCount === 0) {
-      await addCategoriesRecursively(categoryList)
+      await addCategories(categoryList)
       console.log('Mock category data initialized')
     }
 
@@ -64,13 +64,10 @@ async function initializeMockData(): Promise<void> {
 }
 
 /**
- * 遞迴新增分類及其子分類到資料庫
+ * 批量新增分類到資料庫
  */
-async function addCategoriesRecursively(categories: Category[]): Promise<void> {
+async function addCategories(categories: Category[]): Promise<void> {
   for (const category of categories) {
     await db.categories.put(category)
-    if (category.children && category.children.length > 0) {
-      await addCategoriesRecursively(category.children)
-    }
   }
 }

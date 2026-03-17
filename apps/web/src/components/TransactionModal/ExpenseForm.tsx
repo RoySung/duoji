@@ -39,7 +39,7 @@ export default function ExpenseForm() {
   const [form, setForm] = useState<Expense>({
     amount: 0,
     accountBookId: accountBookOptions[0].id,
-    categoryId: categoryList[1].children?.[0].id || '',
+    categoryId: categoryList.filter((item) => !!item.parentId)[0]?.id || '',
     date: dayjs(now).format(DateFormat),
     description: '',
     tags: [],

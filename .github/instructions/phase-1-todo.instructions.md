@@ -8,8 +8,9 @@
 ## 目前進行中/預計進行的項目
 
 - [ ] **Repository 層實作**
-  - [ ] CategoryRepository 實作
-  - [ ] AccountBookRepository 實作
+  - [x] CategoryRepository 實作
+  - [x] AccountBookRepository 實作
+  - [x] Refactor CategoryRepository
   - [ ] TransactionRepository 實作
 
 ## 🎯 核心功能開發

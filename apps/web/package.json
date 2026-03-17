@@ -3,7 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "web"
+    "name": "web",
+    "targets": {
+      "dev": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "apps/web",
+          "command": "next dev -p 3010"
+        }
+      }
+    }
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

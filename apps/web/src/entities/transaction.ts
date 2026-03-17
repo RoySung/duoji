@@ -34,7 +34,7 @@ export type Category = {
   imageUrl: string
   description: string
   type: 'expense' | 'income'
-  children?: Category[]
+  parentId: string | null
 }
 
 export const CategorySchema: z.ZodType<Category> = z.object({
@@ -43,7 +43,7 @@ export const CategorySchema: z.ZodType<Category> = z.object({
   imageUrl: z.url(),
   description: z.string(),
   type: z.enum(['expense', 'income']),
-  children: z.array(z.lazy(() => CategorySchema)).optional(),
+  parentId: z.string().nullable(),
 })
 
 export type Expense = z.infer<typeof ExpenseSchema>
