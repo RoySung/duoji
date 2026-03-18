@@ -15,7 +15,7 @@ import TagsInput from '../ui/TagInput'
 import { PiGitBranchBold } from 'react-icons/pi'
 import PaidByDetailModal from './PaidByDetailModal'
 import { User } from '@/entities/user'
-import { Expense, Category } from '@/entities/transaction'
+import { Transaction } from '@/entities/transaction'
 import SplitDetailModal from './SplitDetailModal'
 import { userList, accountBookOptions, categoryList } from '@/mocks'
 import CategorySelector from './CategorySelector'
@@ -36,23 +36,31 @@ const DateFormat = 'YYYY/MM/DD'
  */
 export default function ExpenseForm() {
   const now = new Date()
-  const [form, setForm] = useState<Expense>({
-    amount: 0,
-    accountBookId: accountBookOptions[0].id,
-    categoryId: categoryList.filter((item) => !!item.parentId)[0]?.id || '',
-    date: dayjs(now).format(DateFormat),
-    description: '',
-    tags: [],
-    paidByDetail: [
-      {
-        user: userList[0], // 預設選擇第一個用戶
-        amount: 0, // 預設金額為 0
-      },
-    ],
-    splitDetail: userList.map((user) => ({
-      user,
+  const [form, setForm] = useState<Transaction>(() => {
+    const timestamp = Date.now()
+
+    return {
+      id: `draft-expense-${timestamp}`,
+      type: 'expense',
       amount: 0,
-    })),
+      accountBookId: accountBookOptions[0]?.id || '',
+      categoryId: categoryList.filter((item) => !!item.parentId)[0]?.id || '',
+      date: dayjs(timestamp).format(DateFormat),
+      description: '',
+      tags: [],
+      paidByDetail: [
+        {
+          user: userList[0], // 預設選擇第一個用戶
+          amount: 0, // 預設金額為 0
+        },
+      ],
+      splitDetail: userList.map((user) => ({
+        user,
+        amount: 0,
+      })),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    }
   })
   // paidByDetail
   // 當 amount 改變時，更新 paidByDetail
@@ -217,11 +225,11 @@ export default function ExpenseForm() {
           size="sm"
           label="Account Book"
           items={accountBookOptions}
-          selectedKeys={[form.accountBookId || '']}
+          selectedKeys={[form.accountBookId]}
           placeholder="Select an account book"
           isRequired
           onSelectionChange={(keys) => {
-            const key = (Array.from(keys)[0] as string) || null
+            const key = (Array.from(keys)[0] as string) || ''
             setForm((f) => ({ ...f, accountBookId: key }))
           }}
         >

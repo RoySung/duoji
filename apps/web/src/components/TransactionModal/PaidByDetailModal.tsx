@@ -1,4 +1,4 @@
-import { Expense } from '@/entities/transaction'
+import { Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
 import {
   Modal,
@@ -15,10 +15,10 @@ import { userList } from '@/mocks'
 
 type Props = {
   isOpen: boolean
-  paidByDetail: Expense['paidByDetail']
+  paidByDetail: Transaction['paidByDetail']
   amount: number
   onOpenChange: (open: boolean) => void
-  onPaidByDetailChange: (paidByDetail: Expense['paidByDetail']) => void
+  onPaidByDetailChange: (paidByDetail: Transaction['paidByDetail']) => void
 }
 
 export default function PaidByDetailModal({
@@ -29,7 +29,7 @@ export default function PaidByDetailModal({
   onPaidByDetailChange,
 }: Props) {
   const [currentPaidByDetail, setCurrentPaidByDetail] =
-    useState<Expense['paidByDetail']>(paidByDetail)
+    useState<Transaction['paidByDetail']>(paidByDetail)
   useEffect(() => {
     setCurrentPaidByDetail(paidByDetail)
   }, [paidByDetail])

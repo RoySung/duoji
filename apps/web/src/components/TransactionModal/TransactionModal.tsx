@@ -10,6 +10,7 @@ import {
   ScrollShadow,
 } from '@heroui/react'
 import { useState } from 'react'
+import { TransactionType } from '@/entities/transaction'
 import ExpenseForm from './ExpenseForm'
 import IncomeForm from './IncomeForm'
 
@@ -17,8 +18,6 @@ type Props = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
 }
-
-type TransactionType = 'expense' | 'income'
 
 const formMap = {
   expense: ExpenseForm,

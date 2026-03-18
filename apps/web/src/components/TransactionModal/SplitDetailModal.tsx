@@ -11,15 +11,15 @@ import {
   Avatar,
 } from '@heroui/react'
 import { clsx } from 'clsx'
-import { Expense } from '@/entities/transaction'
+import { Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
 import { userList } from '@/mocks'
 
 type Props = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  splitDetail: Expense['splitDetail']
-  onSplitDetailChange: (splitDetail: Expense['splitDetail']) => void
+  splitDetail: Transaction['splitDetail']
+  onSplitDetailChange: (splitDetail: Transaction['splitDetail']) => void
   amount: number
 }
 
@@ -31,7 +31,7 @@ export default function SplitDetailModal({
   amount,
 }: Props) {
   const [currentSplitDetail, setCurrentSplitDetail] = useState<
-    Expense['splitDetail']
+    Transaction['splitDetail']
   >([])
   useEffect(() => {
     setCurrentSplitDetail(splitDetail)
@@ -44,7 +44,7 @@ export default function SplitDetailModal({
 
   // 勾選時均分
   function handleUserCheckboxChange(user: User, checked: boolean) {
-    let newDetail: Expense['splitDetail']
+    let newDetail: Transaction['splitDetail']
     if (checked) {
       // 新增
       const selected = [...currentSplitDetail, { user, amount: 0 }]

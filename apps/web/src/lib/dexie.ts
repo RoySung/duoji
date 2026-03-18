@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import { Category } from '@/entities/transaction'
+import { Category, Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
 import { categoryList, userList } from '@/mocks'
@@ -10,6 +10,7 @@ import { categoryList, userList } from '@/mocks'
  */
 class DuojiDB extends Dexie {
   categories!: EntityTable<Category, 'id'>
+  transactions!: EntityTable<Transaction, 'id'>
   users!: EntityTable<User, 'id'>
   accountBooks!: EntityTable<AccountBook, 'id'>
 
@@ -18,6 +19,13 @@ class DuojiDB extends Dexie {
 
     this.version(1).stores({
       categories: '&id, name, type, parentId',
+      users: '&id, name, email',
+      accountBooks: '&id, name, ownerId, *userIds',
+    })
+
+    this.version(2).stores({
+      categories: '&id, name, type, parentId',
+      transactions: '&id, accountBookId, date, type, categoryId',
       users: '&id, name, email',
       accountBooks: '&id, name, ownerId, *userIds',
     })

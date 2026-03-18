@@ -7,11 +7,10 @@
 
 ## 目前進行中/預計進行的項目
 
-- [ ] **Repository 層實作**
-  - [x] CategoryRepository 實作
-  - [x] AccountBookRepository 實作
-  - [x] Refactor CategoryRepository
-  - [ ] TransactionRepository 實作
+- [ ] **Zustand Store 設計**
+  - [ ] AccountBook Store
+  - [ ] Transaction Store
+  - [ ] Category Store
 
 ## 🎯 核心功能開發
 
@@ -24,10 +23,10 @@
   - [x] 定義 User 資料結構
   - [x] 定義 Category 資料結構
 
-- [ ] **Repository 層實作**
+- [x] **Repository 層實作**
   - [x] CategoryRepository 實作
   - [x] AccountBookRepository 實作
-  - [ ] TransactionRepository 實作
+  - [x] TransactionRepository 實作
 
 ### 2. 狀態管理與資料流
 
