@@ -1,0 +1,42 @@
+schema: spec-driven
+locale: en
+
+context: |
+	Project: DuoJi, a personal expense tracking and split-billing web app.
+	Current migration focus: Phase 1 personal accounting foundations only. Long-term roadmap items such as split billing, cloud sync, notifications, and advanced reporting are not current truth unless captured in an active change.
+
+	Repository shape:
+	- Nx monorepo
+	- apps/web: Next.js Pages Router frontend
+	- apps/backend: NestJS backend
+	- apps/web-e2e and apps/backend-e2e: end-to-end tests
+
+	Frontend stack and conventions:
+	- React with Next.js Pages Router
+	- Zustand for state management
+	- Tailwind CSS plus HeroUI as the primary UI component library
+	- Framer Motion is available for animation
+	- IndexedDB is the local persistence mechanism
+	- Zod-first entity modeling with TypeScript type inference
+	- Repository interfaces live in entity files and implementations live under src/repositories
+	- Absolute imports use the @/ prefix mapped to src/
+	- Feature components use feature folders, layout components live under src/components/layout, UI primitives live under src/components/ui
+
+	Product and UX context:
+	- Primary users track daily expenses, shared meals, and roommate-style spending
+	- Mobile-first usability is the baseline, with desktop layouts still required to remain usable
+	- User-facing copy and internal documentation commonly mix Traditional Chinese and English
+
+	Delivery conventions:
+	- Prefer mock-first development before integrating real data flows
+	- Keep specs as the canonical product truth, changes as planned work, and agent instructions as behavior guidance only
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours

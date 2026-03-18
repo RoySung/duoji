@@ -49,3 +49,5 @@ Thumbs.db
 out
 
 test-output
+.spectra/
+openspec/.vector-search.db*
