@@ -3,7 +3,11 @@ import Head from 'next/head'
 import './styles.css'
 import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
-import { ReactElement, ReactNode, useEffect } from 'react'
+import { ReactElement, ReactNode, useEffect, useState } from 'react'
+import {
+  AccountBookStoreProvider,
+  createAccountBookStore,
+} from '@/stores/accountBook/index'
 import { initializeDB } from '@/lib/dexie'
 
 // 擴展 AppProps 類型以包含 getLayout
@@ -17,25 +21,47 @@ type NextPageWithLayout = NextPage & {
 }
 
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
+  const [accountBookStore] = useState(createAccountBookStore)
+
   // 初始化資料庫
   useEffect(() => {
-    initializeDB()
-  }, [])
+    let isMounted = true
+
+    async function bootstrap() {
+      await initializeDB()
+
+      if (!isMounted) {
+        return
+      }
+
+      await accountBookStore.getState().initialize()
+    }
+
+    void bootstrap()
+
+    return () => {
+      isMounted = false
+    }
+  }, [accountBookStore])
 
   // 使用頁面的 getLayout 或使用默認布局
   const getLayout = Component.getLayout ?? ((page) => <Layout>{page}</Layout>)
 
-  return getLayout(
-    <>
-      <Head>
-        <title>Welcome to Duoji!</title>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
-      </Head>
-      <Component {...pageProps} />
-    </>
+  return (
+    <AccountBookStoreProvider store={accountBookStore}>
+      {getLayout(
+        <>
+          <Head>
+            <title>Welcome to Duoji!</title>
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+            />
+          </Head>
+          <Component {...pageProps} />
+        </>
+      )}
+    </AccountBookStoreProvider>
   )
 }
 

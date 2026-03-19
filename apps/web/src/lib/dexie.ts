@@ -2,7 +2,7 @@ import Dexie, { type EntityTable } from 'dexie'
 import { Category, Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
-import { categoryList, userList } from '@/mocks'
+import { accountBookList, categoryList, userList } from '@/mocks'
 
 /**
  * Duoji App 本地資料庫
@@ -65,6 +65,12 @@ async function initializeMockData(): Promise<void> {
     if (userCount === 0) {
       await db.users.bulkPut(userList)
       console.log('Mock user data initialized')
+    }
+
+    const accountBookCount = await db.accountBooks.count()
+    if (accountBookCount === 0) {
+      await db.accountBooks.bulkPut(accountBookList)
+      console.log('Mock account book data initialized')
     }
   } catch (error) {
     console.error('Failed to initialize mock data:', error)

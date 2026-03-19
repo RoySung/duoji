@@ -14,10 +14,12 @@ import dayjs from 'dayjs'
 import TagsInput from '../ui/TagInput'
 import { PiGitBranchBold } from 'react-icons/pi'
 import PaidByDetailModal from './PaidByDetailModal'
+import { AccountBook } from '@/entities/accountBook'
 import { User } from '@/entities/user'
 import { Transaction } from '@/entities/transaction'
+import { useAccountBookStore } from '@/stores/accountBook/index'
 import SplitDetailModal from './SplitDetailModal'
-import { userList, accountBookOptions, categoryList } from '@/mocks'
+import { userList, categoryList } from '@/mocks'
 import CategorySelector from './CategorySelector'
 
 const DateFormat = 'YYYY/MM/DD'
@@ -36,6 +38,11 @@ const DateFormat = 'YYYY/MM/DD'
  */
 export default function ExpenseForm() {
   const now = new Date()
+  const accountBooks = useAccountBookStore((state) => state.accountBooks)
+  const activeAccountBookId = useAccountBookStore(
+    (state) => state.activeAccountBookId
+  )
+
   const [form, setForm] = useState<Transaction>(() => {
     const timestamp = Date.now()
 
@@ -43,7 +50,7 @@ export default function ExpenseForm() {
       id: `draft-expense-${timestamp}`,
       type: 'expense',
       amount: 0,
-      accountBookId: accountBookOptions[0]?.id || '',
+      accountBookId: activeAccountBookId || '',
       categoryId: categoryList.filter((item) => !!item.parentId)[0]?.id || '',
       date: dayjs(timestamp).format(DateFormat),
       description: '',
@@ -62,6 +69,29 @@ export default function ExpenseForm() {
       updatedAt: timestamp,
     }
   })
+
+  useEffect(() => {
+    if (!activeAccountBookId) {
+      return
+    }
+
+    setForm((currentForm) => {
+      if (
+        currentForm.accountBookId &&
+        accountBooks.some(
+          (accountBook) => accountBook.id === currentForm.accountBookId
+        )
+      ) {
+        return currentForm
+      }
+
+      return {
+        ...currentForm,
+        accountBookId: activeAccountBookId,
+      }
+    })
+  }, [accountBooks, activeAccountBookId])
+
   // paidByDetail
   // 當 amount 改變時，更新 paidByDetail
   useEffect(() => {
@@ -224,16 +254,17 @@ export default function ExpenseForm() {
         <Select
           size="sm"
           label="Account Book"
-          items={accountBookOptions}
-          selectedKeys={[form.accountBookId]}
+          items={accountBooks}
+          selectedKeys={form.accountBookId ? [form.accountBookId] : []}
           placeholder="Select an account book"
           isRequired
+          isDisabled={accountBooks.length === 0}
           onSelectionChange={(keys) => {
             const key = (Array.from(keys)[0] as string) || ''
             setForm((f) => ({ ...f, accountBookId: key }))
           }}
         >
-          {(item) => (
+          {(item: AccountBook) => (
             <SelectItem key={item.id} textValue={item.name}>
               {item.name}
             </SelectItem>
