@@ -5,7 +5,7 @@ import { AccountBookLocalRepo } from '@/repositories/accountBookRepo'
 
 type AccountBookStoreState = {
   accountBooks: AccountBook[]
-  activeAccountBookId: string | null
+  currentAccountBookId: string | null
   initialized: boolean
   isLoading: boolean
   error: string | null
@@ -14,10 +14,7 @@ type AccountBookStoreState = {
 type AccountBookStoreActions = {
   initialize: () => Promise<void>
   loadAccountBooks: () => Promise<AccountBook[]>
-  ensureActiveAccountBook: (
-    preferredAccountBookId?: string | null
-  ) => string | null
-  setActiveAccountBook: (accountBookId: string | null) => void
+  setCurrentAccountBook: (accountBookId: string | null) => void
   createAccountBook: (accountBook: AccountBook) => Promise<AccountBook>
   updateAccountBook: (
     id: string,
@@ -32,7 +29,7 @@ export type AccountBookStoreApi = ReturnType<typeof createAccountBookStore>
 
 const initialAccountBookStoreState: AccountBookStoreState = {
   accountBooks: [],
-  activeAccountBookId: null,
+  currentAccountBookId: null,
   initialized: false,
   isLoading: false,
   error: null,
@@ -49,12 +46,12 @@ function hasAccountBookId(
   return accountBooks.some((accountBook) => accountBook.id === accountBookId)
 }
 
-function resolveFallbackActiveAccountBookId(
+function resolveFallbackCurrentAccountBookId(
   accountBooks: AccountBook[],
-  currentActiveAccountBookId: string | null
+  existingCurrentAccountBookId: string | null
 ): string | null {
-  if (hasAccountBookId(accountBooks, currentActiveAccountBookId)) {
-    return currentActiveAccountBookId
+  if (hasAccountBookId(accountBooks, existingCurrentAccountBookId)) {
+    return existingCurrentAccountBookId
   }
 
   return accountBooks[0]?.id ?? null
@@ -66,20 +63,6 @@ function toErrorMessage(error: unknown): string {
   }
 
   return 'Unknown account book error'
-}
-
-export function selectActiveAccountBook(
-  state: Pick<AccountBookStoreState, 'accountBooks' | 'activeAccountBookId'>
-): AccountBook | null {
-  if (!state.activeAccountBookId) {
-    return null
-  }
-
-  return (
-    state.accountBooks.find(
-      (accountBook) => accountBook.id === state.activeAccountBookId
-    ) ?? null
-  )
 }
 
 export function createAccountBookStore(
@@ -104,9 +87,9 @@ export function createAccountBookStore(
 
             set((state) => ({
               accountBooks,
-              activeAccountBookId: resolveFallbackActiveAccountBookId(
+              currentAccountBookId: resolveFallbackCurrentAccountBookId(
                 accountBooks,
-                state.activeAccountBookId
+                state.currentAccountBookId
               ),
               initialized: true,
               isLoading: false,
@@ -125,43 +108,24 @@ export function createAccountBookStore(
           }
         },
 
-        ensureActiveAccountBook: (preferredAccountBookId) => {
-          const { accountBooks, activeAccountBookId } = get()
-          const nextActiveAccountBookId = hasAccountBookId(
-            accountBooks,
-            preferredAccountBookId
-          )
-            ? preferredAccountBookId ?? null
-            : resolveFallbackActiveAccountBookId(
-                accountBooks,
-                activeAccountBookId
-              )
-
-          if (nextActiveAccountBookId !== activeAccountBookId) {
-            set({ activeAccountBookId: nextActiveAccountBookId })
-          }
-
-          return nextActiveAccountBookId
-        },
-
-        setActiveAccountBook: (accountBookId) => {
+        setCurrentAccountBook: (accountBookId) => {
           if (accountBookId === null) {
-            set({ activeAccountBookId: null })
+            set({ currentAccountBookId: null })
             return
           }
 
-          const { accountBooks, activeAccountBookId } = get()
+          const { accountBooks, currentAccountBookId } = get()
           if (!hasAccountBookId(accountBooks, accountBookId)) {
             set({
-              activeAccountBookId: resolveFallbackActiveAccountBookId(
+              currentAccountBookId: resolveFallbackCurrentAccountBookId(
                 accountBooks,
-                activeAccountBookId
+                currentAccountBookId
               ),
             })
             return
           }
 
-          set({ activeAccountBookId: accountBookId })
+          set({ currentAccountBookId: accountBookId })
         },
 
         createAccountBook: async (accountBook) => {
@@ -170,15 +134,15 @@ export function createAccountBookStore(
           try {
             const createdAccountBook = await accountBookRepo.create(accountBook)
             const accountBooks = await accountBookRepo.findAll()
-            const { activeAccountBookId } = get()
+            const { currentAccountBookId } = get()
 
             set({
               accountBooks,
-              activeAccountBookId: hasAccountBookId(
+              currentAccountBookId: hasAccountBookId(
                 accountBooks,
-                activeAccountBookId
+                currentAccountBookId
               )
-                ? activeAccountBookId
+                ? currentAccountBookId
                 : createdAccountBook.id,
               initialized: true,
               isLoading: false,
@@ -201,13 +165,13 @@ export function createAccountBookStore(
           try {
             const updatedAccountBook = await accountBookRepo.update(id, updates)
             const accountBooks = await accountBookRepo.findAll()
-            const { activeAccountBookId } = get()
+            const { currentAccountBookId } = get()
 
             set({
               accountBooks,
-              activeAccountBookId: resolveFallbackActiveAccountBookId(
+              currentAccountBookId: resolveFallbackCurrentAccountBookId(
                 accountBooks,
-                activeAccountBookId
+                currentAccountBookId
               ),
               initialized: true,
               isLoading: false,
@@ -230,16 +194,16 @@ export function createAccountBookStore(
           try {
             const deleted = await accountBookRepo.delete(id)
             const accountBooks = await accountBookRepo.findAll()
-            const { activeAccountBookId } = get()
+            const { currentAccountBookId } = get()
 
             set({
               accountBooks,
-              activeAccountBookId:
-                deleted && activeAccountBookId === id
-                  ? resolveFallbackActiveAccountBookId(accountBooks, null)
-                  : resolveFallbackActiveAccountBookId(
+              currentAccountBookId:
+                deleted && currentAccountBookId === id
+                  ? resolveFallbackCurrentAccountBookId(accountBooks, null)
+                  : resolveFallbackCurrentAccountBookId(
                       accountBooks,
-                      activeAccountBookId
+                      currentAccountBookId
                     ),
               initialized: true,
               isLoading: false,

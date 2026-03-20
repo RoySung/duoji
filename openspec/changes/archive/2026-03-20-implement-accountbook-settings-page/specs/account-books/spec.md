@@ -1,10 +1,4 @@
-# account-books Specification
-
-## Purpose
-
-TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Update Purpose after archive.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Users can manage personal account books
 
@@ -35,31 +29,6 @@ The system SHALL allow users to create, rename, edit, and delete private account
 - **WHEN** a user confirms deletion of an existing personal account book
 - **THEN** the system SHALL remove that account book from the available account book list
 
-<!-- @trace
-source: implement-accountbook-settings-page
-updated: 2026-03-20
-code:
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/components/layout/navbar.tsx
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/utils/accountBookUtils.ts
-  - apps/web/src/pages/styles.css
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
-  - apps/web/src/stores/accountBook/index.ts
-tests:
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/accountBookSettings.spec.tsx
--->
-
----
-
 ### Requirement: The application maintains an active account book
 
 The system SHALL maintain one current account book context for transaction creation, transaction listing, and account-book-scoped summaries. After local persistence initializes and personal account books become available, the system SHALL establish a current account book before the user performs account-book-scoped actions.
@@ -89,31 +58,6 @@ The system SHALL maintain one current account book context for transaction creat
 - **WHEN** a user deletes the currently selected account book and no other account books remain
 - **THEN** the system SHALL clear the current account book context until another account book becomes available
 
-<!-- @trace
-source: implement-accountbook-settings-page
-updated: 2026-03-20
-code:
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/components/layout/navbar.tsx
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/utils/accountBookUtils.ts
-  - apps/web/src/pages/styles.css
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
-  - apps/web/src/stores/accountBook/index.ts
-tests:
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/accountBookSettings.spec.tsx
--->
-
----
-
 ### Requirement: The account book list indicates the current selection
 
 The system SHALL present an account-book selection interface and clearly indicate which account book is currently selected.
@@ -122,26 +66,3 @@ The system SHALL present an account-book selection interface and clearly indicat
 
 - **WHEN** a user opens the home page selector or another account-book selection interface
 - **THEN** the system SHALL display the current account book distinctly from the other available account books
-
-<!-- @trace
-source: implement-accountbook-settings-page
-updated: 2026-03-20
-code:
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/components/layout/navbar.tsx
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/utils/accountBookUtils.ts
-  - apps/web/src/pages/styles.css
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
-  - apps/web/src/stores/accountBook/index.ts
-tests:
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/accountBookSettings.spec.tsx
--->

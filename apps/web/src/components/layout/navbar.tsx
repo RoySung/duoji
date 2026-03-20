@@ -74,7 +74,7 @@ const StyledWrapper = styled.div`
 export default function NavBar() {
   const router = useRouter()
   const isHome = router.pathname === '/'
-  const isSettings = router.pathname === '/settings'
+  const isSettings = router.pathname.startsWith('/settings')
 
   // expense modal
   const { isOpen, onOpen, onOpenChange } = useDisclosure()

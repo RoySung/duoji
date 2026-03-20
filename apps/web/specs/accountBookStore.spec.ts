@@ -1,8 +1,5 @@
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
-import {
-  createAccountBookStore,
-  selectActiveAccountBook,
-} from '../src/stores/accountBook/index'
+import { createAccountBookStore } from '../src/stores/accountBook/index'
 import { accountBookList } from '../src/mocks'
 import { db, initializeDB } from '../src/lib/dexie'
 
@@ -79,7 +76,7 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 }
 
 describe('AccountBook Store', () => {
-  it('should load account books and bootstrap a deterministic active account book', async () => {
+  it('should load account books and bootstrap a deterministic current account book', async () => {
     const store = createAccountBookStore(
       new InMemoryAccountBookRepo([
         createAccountBookFixture({ id: '1', name: 'Daily Life' }),
@@ -90,11 +87,10 @@ describe('AccountBook Store', () => {
     await store.getState().initialize()
 
     expect(store.getState().accountBooks).toHaveLength(2)
-    expect(store.getState().activeAccountBookId).toBe('1')
-    expect(selectActiveAccountBook(store.getState())?.name).toBe('Daily Life')
+    expect(store.getState().currentAccountBookId).toBe('1')
   })
 
-  it('should switch the active account book manually', async () => {
+  it('should switch the current account book manually', async () => {
     const store = createAccountBookStore(
       new InMemoryAccountBookRepo([
         createAccountBookFixture({ id: '1' }),
@@ -103,26 +99,25 @@ describe('AccountBook Store', () => {
     )
 
     await store.getState().initialize()
-    store.getState().setActiveAccountBook('2')
+    store.getState().setCurrentAccountBook('2')
 
-    expect(store.getState().activeAccountBookId).toBe('2')
-    expect(selectActiveAccountBook(store.getState())?.name).toBe('Tokyo Trip')
+    expect(store.getState().currentAccountBookId).toBe('2')
   })
 
-  it('should activate the first created account book when there is no active account book', async () => {
+  it('should use the first created account book when there is no current account book', async () => {
     const store = createAccountBookStore(new InMemoryAccountBookRepo())
     const createdAccountBook = createAccountBookFixture({ id: 'first-book' })
 
     await store.getState().initialize()
-    expect(store.getState().activeAccountBookId).toBeNull()
+    expect(store.getState().currentAccountBookId).toBeNull()
 
     await store.getState().createAccountBook(createdAccountBook)
 
-    expect(store.getState().activeAccountBookId).toBe('first-book')
+    expect(store.getState().currentAccountBookId).toBe('first-book')
     expect(store.getState().accountBooks).toHaveLength(1)
   })
 
-  it('should fall back to another account book when deleting the active account book', async () => {
+  it('should fall back to another account book when deleting the current account book', async () => {
     const store = createAccountBookStore(
       new InMemoryAccountBookRepo([
         createAccountBookFixture({ id: '1', name: 'Daily Life' }),
@@ -131,15 +126,15 @@ describe('AccountBook Store', () => {
     )
 
     await store.getState().initialize()
-    store.getState().setActiveAccountBook('2')
+    store.getState().setCurrentAccountBook('2')
 
     await store.getState().deleteAccountBook('2')
 
-    expect(store.getState().activeAccountBookId).toBe('1')
+    expect(store.getState().currentAccountBookId).toBe('1')
     expect(store.getState().accountBooks).toHaveLength(1)
   })
 
-  it('should clear the active account book when deleting the last remaining account book', async () => {
+  it('should clear the current account book when deleting the last remaining account book', async () => {
     const store = createAccountBookStore(
       new InMemoryAccountBookRepo([createAccountBookFixture({ id: '1' })])
     )
@@ -148,8 +143,7 @@ describe('AccountBook Store', () => {
     await store.getState().deleteAccountBook('1')
 
     expect(store.getState().accountBooks).toEqual([])
-    expect(store.getState().activeAccountBookId).toBeNull()
-    expect(selectActiveAccountBook(store.getState())).toBeNull()
+    expect(store.getState().currentAccountBookId).toBeNull()
   })
 })
 
@@ -169,9 +163,6 @@ describe('AccountBook Store runtime composition', () => {
     await store.getState().initialize()
 
     expect(store.getState().accountBooks).toHaveLength(accountBookList.length)
-    expect(store.getState().activeAccountBookId).toBe(accountBookList[0].id)
-    expect(selectActiveAccountBook(store.getState())?.id).toBe(
-      accountBookList[0].id
-    )
+    expect(store.getState().currentAccountBookId).toBe(accountBookList[0].id)
   })
 })

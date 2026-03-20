@@ -39,8 +39,8 @@ const DateFormat = 'YYYY/MM/DD'
 export default function ExpenseForm() {
   const now = new Date()
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
-  const activeAccountBookId = useAccountBookStore(
-    (state) => state.activeAccountBookId
+  const currentAccountBookId = useAccountBookStore(
+    (state) => state.currentAccountBookId
   )
 
   const [form, setForm] = useState<Transaction>(() => {
@@ -50,7 +50,7 @@ export default function ExpenseForm() {
       id: `draft-expense-${timestamp}`,
       type: 'expense',
       amount: 0,
-      accountBookId: activeAccountBookId || '',
+      accountBookId: currentAccountBookId || '',
       categoryId: categoryList.filter((item) => !!item.parentId)[0]?.id || '',
       date: dayjs(timestamp).format(DateFormat),
       description: '',
@@ -71,7 +71,7 @@ export default function ExpenseForm() {
   })
 
   useEffect(() => {
-    if (!activeAccountBookId) {
+    if (!currentAccountBookId) {
       return
     }
 
@@ -87,10 +87,10 @@ export default function ExpenseForm() {
 
       return {
         ...currentForm,
-        accountBookId: activeAccountBookId,
+        accountBookId: currentAccountBookId,
       }
     })
-  }, [accountBooks, activeAccountBookId])
+  }, [accountBooks, currentAccountBookId])
 
   // paidByDetail
   // 當 amount 改變時，更新 paidByDetail

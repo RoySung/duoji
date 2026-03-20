@@ -33,15 +33,3 @@ export function useAccountBookStore<T>(
 
   return useStore(store, selector)
 }
-
-export function useAccountBookStoreApi(): AccountBookStoreApi {
-  const store = useContext(AccountBookStoreContext)
-
-  if (!store) {
-    throw new Error(
-      'useAccountBookStoreApi must be used within AccountBookStoreProvider'
-    )
-  }
-
-  return store
-}

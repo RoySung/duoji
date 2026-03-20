@@ -5,7 +5,7 @@ import NavBar from './navbar'
 function Providers({ children }: { children: React.ReactNode }) {
   return (
     <HeroUIProvider>
-      <ToastProvider />
+      <ToastProvider placement="top-center" />
       {children}
     </HeroUIProvider>
   )
