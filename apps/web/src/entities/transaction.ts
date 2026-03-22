@@ -3,6 +3,15 @@ import { UserSchema } from './user'
 
 export const TransactionTypeSchema = z.enum(['expense', 'income'])
 export type TransactionType = z.infer<typeof TransactionTypeSchema>
+export const PaymentMethodValues = [
+  'Cash',
+  'Line Pay',
+  'JKO Pay',
+  'Credit Card',
+] as const
+export const PaymentMethodSchema = z.enum(PaymentMethodValues)
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
+export const DefaultPaymentMethod: PaymentMethod = PaymentMethodValues[0]
 
 export const PaidByDetailItemSchema = z.object({
   user: UserSchema,
@@ -25,6 +34,8 @@ const TransactionFieldsSchema = z.object({
     .string()
     .regex(/^\d{4}\/\d{2}\/\d{2}$/, 'Date must be in YYYY/MM/DD format'),
   description: z.string(),
+  paymentMethod: PaymentMethodSchema,
+  receivedByUserId: z.string().nullable(),
   tags: z.array(z.string()),
   paidByDetail: PaidByDetailSchema,
   splitDetail: SplitDetailSchema,
@@ -36,6 +47,23 @@ export const TransactionSchema = TransactionFieldsSchema.extend({
   accountBookId: z.string(),
   createdAt: z.number().int().nonnegative(),
   updatedAt: z.number().int().nonnegative(),
+  deletedAt: z.number().int().nonnegative().nullable().default(null),
+}).superRefine((transaction, context) => {
+  if (transaction.type === 'income' && !transaction.receivedByUserId) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Income transactions must include a recipient.',
+      path: ['receivedByUserId'],
+    })
+  }
+
+  if (transaction.type === 'expense' && transaction.receivedByUserId !== null) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Expense transactions must not include an income recipient.',
+      path: ['receivedByUserId'],
+    })
+  }
 })
 
 export type Category = {

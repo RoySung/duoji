@@ -1,7 +1,10 @@
-import { Button } from '@heroui/react'
+import { Button, Chip, Select, SelectItem } from '@heroui/react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { PiBooksBold, PiCaretRightBold } from 'react-icons/pi'
+import TransactionList from '@/components/transaction/TransactionList'
 import { useAccountBookStore } from '@/stores/accountBook'
+import { useTransactionStore } from '@/stores/transaction'
 
 export function Index() {
   const router = useRouter()
@@ -9,10 +12,25 @@ export function Index() {
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
   )
-  const isLoading = useAccountBookStore((state) => state.isLoading)
+  const isAccountBooksLoading = useAccountBookStore((state) => state.isLoading)
   const setCurrentAccountBook = useAccountBookStore(
     (state) => state.setCurrentAccountBook
   )
+  const transactions = useTransactionStore((state) => state.transactions)
+  const transactionError = useTransactionStore((state) => state.error)
+  const isTransactionsLoading = useTransactionStore((state) => state.isLoading)
+  const loadTransactions = useTransactionStore(
+    (state) => state.loadTransactions
+  )
+  const openEditModal = useTransactionStore((state) => state.openEditModal)
+  const currentAccountBook = accountBooks.find(
+    (accountBook) => accountBook.id === currentAccountBookId
+  )
+  const isBookSelectorLoading = isAccountBooksLoading || isTransactionsLoading
+
+  useEffect(() => {
+    void loadTransactions(currentAccountBookId)
+  }, [currentAccountBookId, loadTransactions])
 
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground">
@@ -70,47 +88,88 @@ export function Index() {
           ) : (
             <div className="mt-6 grid gap-4">
               <div data-testid="home-account-book-selector">
-                <label
-                  className="mb-2 block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground"
-                  htmlFor="home-account-book-select"
+                <Select
+                  aria-label="Current account book"
+                  classNames={{
+                    base: 'w-full',
+                    label:
+                      'mb-2 block text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground',
+                    trigger:
+                      'min-h-[72px] rounded-3xl border border-border bg-background px-4 text-base font-semibold text-foreground shadow-sm transition data-[hover=true]:bg-accent/70',
+                    value: 'text-base font-semibold text-foreground',
+                  }}
+                  data-testid="home-account-book-select-input"
+                  isLoading={isBookSelectorLoading}
+                  isDisabled={isBookSelectorLoading}
+                  label="Account book"
+                  labelPlacement="outside"
+                  placeholder="Select an account book"
+                  selectedKeys={
+                    currentAccountBookId ? [currentAccountBookId] : []
+                  }
+                  onSelectionChange={(keys) => {
+                    const nextAccountBookId = Array.from(keys)[0]
+
+                    if (
+                      typeof nextAccountBookId !== 'string' ||
+                      !nextAccountBookId ||
+                      nextAccountBookId === currentAccountBookId
+                    ) {
+                      return
+                    }
+
+                    setCurrentAccountBook(nextAccountBookId)
+                  }}
                 >
-                  Account book
-                </label>
-                <div className="relative overflow-hidden rounded-3xl border border-border bg-background shadow-sm transition hover:bg-accent/70">
-                  <select
-                    aria-label="Current account book"
-                    className="min-h-[72px] w-full appearance-none bg-transparent px-4 pr-14 text-base font-semibold text-foreground outline-none disabled:cursor-wait"
-                    data-testid="home-account-book-select-input"
-                    disabled={isLoading}
-                    id="home-account-book-select"
-                    value={currentAccountBookId ?? ''}
-                    onChange={(event) => {
-                      const nextAccountBookId = event.target.value
-
-                      if (
-                        !nextAccountBookId ||
-                        nextAccountBookId === currentAccountBookId
-                      ) {
-                        return
-                      }
-
-                      setCurrentAccountBook(nextAccountBookId)
-                    }}
-                  >
-                    {accountBooks.map((accountBook) => (
-                      <option key={accountBook.id} value={accountBook.id}>
-                        {accountBook.name} ({accountBook.currency})
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <PiCaretRightBold className="rotate-90" />
-                  </span>
-                </div>
+                  {accountBooks.map((accountBook) => (
+                    <SelectItem
+                      key={accountBook.id}
+                      textValue={`${accountBook.name} (${accountBook.currency})`}
+                    >
+                      {accountBook.name} ({accountBook.currency})
+                    </SelectItem>
+                  ))}
+                </Select>
               </div>
             </div>
           )}
         </section>
+
+        {accountBooks.length > 0 ? (
+          <section className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
+                  Transactions
+                </p>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    Current account book history
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Select a transaction row to reopen it in edit without
+                    leaving Home.
+                  </p>
+                </div>
+              </div>
+              <Chip
+                className="self-start bg-accent text-muted-foreground"
+                size="sm"
+                variant="flat"
+              >
+                {transactions.length} records
+              </Chip>
+            </div>
+
+            <TransactionList
+              currency={currentAccountBook?.currency ?? null}
+              error={transactionError}
+              isLoading={isTransactionsLoading}
+              transactions={transactions}
+              onEditTransaction={openEditModal}
+            />
+          </section>
+        ) : null}
       </div>
     </div>
   )

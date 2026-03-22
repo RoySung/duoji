@@ -1,10 +1,11 @@
-import { Button, useDisclosure } from '@heroui/react'
+import { Button } from '@heroui/react'
 import styled from '@emotion/styled'
 import { PiHouseFill, PiListPlusFill, PiGearFill } from 'react-icons/pi'
 import { useRouter } from 'next/router'
 // @ts-expect-error 暫時忽略，不影響功能
 import tailwindConfig from '../../../tailwind.config' // 根據你的路徑調整
 import { TransactionModal } from '../TransactionModal'
+import { useTransactionStore } from '@/stores/transaction'
 
 const resolvedConfig = require('tailwindcss/resolveConfig')
 const themeConfig = resolvedConfig(tailwindConfig)
@@ -75,11 +76,17 @@ export default function NavBar() {
   const router = useRouter()
   const isHome = router.pathname === '/'
   const isSettings = router.pathname.startsWith('/settings')
+  const isOpen = useTransactionStore((state) => state.isModalOpen)
+  const openCreateModal = useTransactionStore((state) => state.openCreateModal)
+  const closeModal = useTransactionStore((state) => state.closeModal)
 
-  // expense modal
-  const { isOpen, onOpen, onOpenChange } = useDisclosure()
-  function openExpenseModal() {
-    onOpen()
+  function handleOpenChange(open: boolean) {
+    if (open) {
+      openCreateModal()
+      return
+    }
+
+    closeModal()
   }
 
   return (
@@ -100,7 +107,7 @@ export default function NavBar() {
             className="bg-gray-600/75 text-white"
             isIconOnly
             style={{ transform: 'scale(1.2)' }}
-            onPress={openExpenseModal}
+            onPress={openCreateModal}
           >
             <PiListPlusFill size={28}></PiListPlusFill>
           </Button>
@@ -116,7 +123,7 @@ export default function NavBar() {
           </label>
         </section>
       </StyledWrapper>
-      <TransactionModal isOpen={isOpen} onOpenChange={onOpenChange} />
+      <TransactionModal isOpen={isOpen} onOpenChange={handleOpenChange} />
     </div>
   )
 }

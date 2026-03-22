@@ -19,20 +19,13 @@ class DuojiDB extends Dexie {
 
     this.version(1).stores({
       categories: '&id, name, type, parentId',
-      users: '&id, name, email',
-      accountBooks: '&id, name, ownerId, *userIds',
-    })
-
-    this.version(2).stores({
-      categories: '&id, name, type, parentId',
-      transactions: '&id, accountBookId, date, type, categoryId',
+      transactions:
+        '&id, accountBookId, date, type, categoryId, [accountBookId+deletedAt]',
       users: '&id, name, email',
       accountBooks: '&id, name, ownerId, *userIds',
     })
   }
 }
-
-// 建立全域資料庫實例
 export const db = new DuojiDB()
 
 // 資料庫初始化函數

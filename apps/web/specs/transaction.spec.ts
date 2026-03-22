@@ -1,4 +1,8 @@
-import { Transaction, TransactionSchema } from '../src/entities/transaction'
+import {
+  DefaultPaymentMethod,
+  Transaction,
+  TransactionSchema,
+} from '../src/entities/transaction'
 import { db } from '../src/lib/dexie'
 import { userList } from '../src/mocks/user'
 import TransactionLocalRepo from '../src/repositories/transactionRepo/transactionLocalRepo'
@@ -8,14 +12,18 @@ const baseTimestamp = 1710000000000
 function createTransactionFixture(
   overrides: Partial<Transaction> = {}
 ): Transaction {
+  const type = overrides.type ?? 'expense'
+
   return {
     id: 'tx-1',
-    type: 'expense',
+    type,
     accountBookId: '1',
-    categoryId: '1-1',
+    categoryId: type === 'income' ? '101-1' : '1-1',
     amount: 120,
     date: '2026/03/18',
     description: 'Breakfast with friends',
+    paymentMethod: DefaultPaymentMethod,
+    receivedByUserId: type === 'income' ? userList[0]?.id ?? null : null,
     tags: ['meal'],
     paidByDetail: [
       {
@@ -35,6 +43,7 @@ function createTransactionFixture(
     ],
     createdAt: baseTimestamp,
     updatedAt: baseTimestamp,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -109,6 +118,46 @@ describe('TransactionLocalRepo', () => {
     }
   })
 
+  it('should reject invalid payment methods', async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    try {
+      await expect(
+        repo.create(
+          createTransactionFixture({
+            id: 'tx-invalid-payment',
+            paymentMethod: 'Bank Transfer' as Transaction['paymentMethod'],
+          })
+        )
+      ).rejects.toThrow()
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
+  })
+
+  it('should reject income transactions without a recipient', async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined)
+
+    try {
+      await expect(
+        repo.create(
+          createTransactionFixture({
+            id: 'tx-invalid-income-recipient',
+            type: 'income',
+            categoryId: '101-1',
+            receivedByUserId: null,
+          })
+        )
+      ).rejects.toThrow()
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
+  })
+
   it('should return transactions scoped to the requested account book', async () => {
     const accountBookOneTransactions = [
       createTransactionFixture({ id: 'tx-1', accountBookId: '1' }),
@@ -130,6 +179,7 @@ describe('TransactionLocalRepo', () => {
       description: 'Salary',
       type: 'income',
       categoryId: '101',
+      receivedByUserId: userList[0].id,
       paidByDetail: [{ user: userList[0], amount: 5000 }],
       splitDetail: [{ user: userList[0], amount: 5000 }],
       amount: 5000,

@@ -9,6 +9,10 @@ import {
   createAccountBookStore,
 } from '@/stores/accountBook/index'
 import { initializeDB } from '@/lib/dexie'
+import {
+  TransactionStoreProvider,
+  createTransactionStore,
+} from '@/stores/transaction'
 
 // 擴展 AppProps 類型以包含 getLayout
 type AppPropsWithLayout = AppProps & {
@@ -22,6 +26,7 @@ type NextPageWithLayout = NextPage & {
 
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const [accountBookStore] = useState(createAccountBookStore)
+  const [transactionStore] = useState(createTransactionStore)
 
   // 初始化資料庫
   useEffect(() => {
@@ -49,18 +54,20 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
 
   return (
     <AccountBookStoreProvider store={accountBookStore}>
-      {getLayout(
-        <>
-          <Head>
-            <title>Welcome to Duoji!</title>
-            <meta
-              name="viewport"
-              content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-            />
-          </Head>
-          <Component {...pageProps} />
-        </>
-      )}
+      <TransactionStoreProvider store={transactionStore}>
+        {getLayout(
+          <>
+            <Head>
+              <title>Welcome to Duoji!</title>
+              <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+              />
+            </Head>
+            <Component {...pageProps} />
+          </>
+        )}
+      </TransactionStoreProvider>
     </AccountBookStoreProvider>
   )
 }

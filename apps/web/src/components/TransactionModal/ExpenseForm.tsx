@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Select,
   SelectItem,
@@ -9,20 +9,26 @@ import {
   Button,
   addToast,
 } from '@heroui/react'
-import { parseAbsoluteToLocal } from '@internationalized/date'
-import dayjs from 'dayjs'
 import TagsInput from '../ui/TagInput'
 import { PiGitBranchBold } from 'react-icons/pi'
 import PaidByDetailModal from './PaidByDetailModal'
 import { AccountBook } from '@/entities/accountBook'
 import { User } from '@/entities/user'
-import { Transaction } from '@/entities/transaction'
+import {
+  DefaultPaymentMethod,
+  PaymentMethodValues,
+  Transaction,
+} from '@/entities/transaction'
 import { useAccountBookStore } from '@/stores/accountBook/index'
 import SplitDetailModal from './SplitDetailModal'
-import { userList, categoryList } from '@/mocks'
+import { expenseCategoryList, userList } from '@/mocks'
 import CategorySelector from './CategorySelector'
-
-const DateFormat = 'YYYY/MM/DD'
+import {
+  formatTransactionDateValue,
+  parseTransactionDateValue,
+  buildUserAmountDetails,
+  distributeTransactionAmount,
+} from '@/utils/transactionUtils'
 
 // TODO
 /**
@@ -36,147 +42,75 @@ const DateFormat = 'YYYY/MM/DD'
  * - paidByDetail
  * - splitDetail
  */
-export default function ExpenseForm() {
+type Props = {
+  value: Transaction
+  onChange: (nextValue: Transaction) => void
+}
+
+export default function ExpenseForm({ value, onChange }: Props) {
   const now = new Date()
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
   )
 
-  const [form, setForm] = useState<Transaction>(() => {
-    const timestamp = Date.now()
-
-    return {
-      id: `draft-expense-${timestamp}`,
-      type: 'expense',
-      amount: 0,
-      accountBookId: currentAccountBookId || '',
-      categoryId: categoryList.filter((item) => !!item.parentId)[0]?.id || '',
-      date: dayjs(timestamp).format(DateFormat),
-      description: '',
-      tags: [],
-      paidByDetail: [
-        {
-          user: userList[0], // 預設選擇第一個用戶
-          amount: 0, // 預設金額為 0
-        },
-      ],
-      splitDetail: userList.map((user) => ({
-        user,
-        amount: 0,
-      })),
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    }
-  })
-
   useEffect(() => {
     if (!currentAccountBookId) {
       return
     }
 
-    setForm((currentForm) => {
-      if (
-        currentForm.accountBookId &&
-        accountBooks.some(
-          (accountBook) => accountBook.id === currentForm.accountBookId
-        )
-      ) {
-        return currentForm
-      }
+    if (
+      value.accountBookId &&
+      accountBooks.some((accountBook) => accountBook.id === value.accountBookId)
+    ) {
+      return
+    }
 
-      return {
-        ...currentForm,
-        accountBookId: currentAccountBookId,
-      }
+    onChange({
+      ...value,
+      accountBookId: currentAccountBookId,
     })
-  }, [accountBooks, currentAccountBookId])
+  }, [accountBooks, currentAccountBookId, onChange, value])
 
-  // paidByDetail
-  // 當 amount 改變時，更新 paidByDetail
-  useEffect(() => {
-    const peopleCount = form.paidByDetail.length
-    const availableAmount = form.amount / peopleCount
-    const newPaidByDetail = form.paidByDetail.map((item) => {
-      return {
-        ...item,
-        amount: availableAmount,
-      }
-    })
-    setForm((f) => ({
-      ...f,
-      paidByDetail: newPaidByDetail,
-    }))
-  }, [form.amount])
-  const paidByUserList = form.paidByDetail.map((item) => item.user)
-  const selectPaidByUser = useCallback(
-    (userIds: Array<User['id']>) => {
-      const paidByDetail = userIds.map((id) => {
-        const user = userList.find((u) => u.id === id)
+  const paidByUserList = value.paidByDetail.map((item) => item.user)
+  function selectPaidByUser(userIds: Array<User['id']>) {
+    const selectedUsers = userIds
+      .map((id) => userList.find((user) => user.id === id))
+      .filter((user): user is User => {
         if (!user) {
           addToast({
             title: 'Error',
             color: 'danger',
-            description: `User with id:${id} not found`,
+            description: 'Selected user was not found.',
           })
-          throw new Error(`User with id:${id} not found`)
         }
 
-        const amount = form.amount / userIds.length // 均分
-        return {
-          user,
-          amount,
-        }
+        return Boolean(user)
       })
-      setForm((f) => ({
-        ...f,
-        paidByDetail: paidByDetail,
-      }))
-    },
-    [form.amount, userList]
-  )
-  // TODO: tags from history
-  const date = parseAbsoluteToLocal(new Date(form.date).toISOString())
+
+    onChange({
+      ...value,
+      paidByDetail: buildUserAmountDetails(selectedUsers, value.amount),
+    })
+  }
+
+  const date = parseTransactionDateValue(value.date)
 
   const [isOpenPaidByOptions, setIsOpenPaidByOptions] = useState(false)
   function openPaidByOptionsModal() {
     setIsOpenPaidByOptions(true)
   }
 
-  // splitDetail
-  useEffect(() => {
-    // 當 amount 改變時，更新 splitDetail
-    const peopleCount = form.splitDetail.length
-    const availableAmount = form.amount / peopleCount
-    const newSplitDetail = form.splitDetail.map((item) => {
-      return {
-        ...item,
-        amount: availableAmount,
-      }
-    })
-    setForm((f) => ({
-      ...f,
-      splitDetail: newSplitDetail,
-    }))
-  }, [form.amount])
-  const splitUserList = form.splitDetail.map((item) => item.user)
+  const splitUserList = value.splitDetail.map((item) => item.user)
   function selectSplitUser(userIds: Array<User['id']>) {
-    const split = userIds.map((id) => {
-      const user = userList.find((u) => u.id === id)
-      if (!user) {
-        throw new Error(`User with id ${id} not found`)
-      }
+    const selectedUsers = userIds
+      .map((id) => userList.find((user) => user.id === id))
+      .filter((user): user is User => Boolean(user))
 
-      const amount = form.amount / userIds.length // 均分
-      return {
-        user,
-        amount,
-      }
+    onChange({
+      ...value,
+      splitDetail: buildUserAmountDetails(selectedUsers, value.amount),
     })
-    setForm((f) => ({
-      ...f,
-      splitDetail: split,
-    }))
   }
   const [isOpenSplitDetail, setIsOpenSplitDetail] = useState(false)
   function openSplitDetailModal() {
@@ -193,31 +127,31 @@ export default function ExpenseForm() {
           type="number"
           isClearable
           onClear={() => {
-            setForm((f) => ({ ...f, amount: 0 }))
+            onChange(distributeTransactionAmount(value, 0))
           }}
-          value={form.amount.toString()}
+          value={value.amount.toString()}
           startContent={
             <div className="pointer-events-none flex items-center">
               <span className="text-default-400 text-small">$</span>
             </div>
           }
           onChange={(e) => {
-            const value = parseFloat(e.target.value)
-            if (!isNaN(value)) {
-              setForm((f) => ({ ...f, amount: value }))
+            const nextAmount = parseFloat(e.target.value)
+            if (!isNaN(nextAmount)) {
+              onChange(distributeTransactionAmount(value, nextAmount))
             } else {
-              setForm((f) => ({ ...f, amount: 0 })) // 如果輸入無效，重置為 0
+              onChange(distributeTransactionAmount(value, 0))
             }
           }}
         />
         <CategorySelector
-          categoryList={categoryList}
-          selectedCategoryId={form.categoryId}
+          categoryList={expenseCategoryList}
+          selectedCategoryId={value.categoryId}
           onSelectCategory={(category) => {
-            setForm((f) => ({
-              ...f,
+            onChange({
+              ...value,
               categoryId: category.id,
-            }))
+            })
           }}
         />
         <DatePicker
@@ -226,42 +160,66 @@ export default function ExpenseForm() {
           label="Date"
           granularity="day"
           value={date}
-          onChange={(value) => {
-            const isoDate = value
-              ? value?.toAbsoluteString()
-              : now.toISOString()
-            const date = dayjs(isoDate).format(DateFormat)
-
-            setForm((f) => ({
-              ...f,
-              date,
-            }))
+          onChange={(nextDate) => {
+            onChange({
+              ...value,
+              date: formatTransactionDateValue(nextDate, now),
+            })
           }}
         />
         <Input
           size="sm"
           label="Description"
-          value={form.description}
+          value={value.description}
           isClearable
           onClear={() => {
-            setForm((f) => ({ ...f, description: '' }))
+            onChange({ ...value, description: '' })
           }}
-          onChange={(value) => {
-            setForm((f) => ({ ...f, description: value.target.value }))
+          onChange={(event) => {
+            onChange({ ...value, description: event.target.value })
           }}
           placeholder='Enter a description (e.g. "Lunch with friends")'
         />
         <Select
           size="sm"
+          isRequired
+          label="Payment Method"
+          selectedKeys={value.paymentMethod ? [value.paymentMethod] : []}
+          placeholder="Select a payment method"
+          onSelectionChange={(keys) => {
+            const paymentMethod = Array.from(keys)[0]
+
+            if (typeof paymentMethod !== 'string') {
+              onChange({
+                ...value,
+                paymentMethod: DefaultPaymentMethod,
+              })
+              return
+            }
+
+            onChange({
+              ...value,
+              paymentMethod: paymentMethod as Transaction['paymentMethod'],
+            })
+          }}
+        >
+          {PaymentMethodValues.map((paymentMethod) => (
+            <SelectItem key={paymentMethod} textValue={paymentMethod}>
+              {paymentMethod}
+            </SelectItem>
+          ))}
+        </Select>
+        <Select
+          size="sm"
           label="Account Book"
           items={accountBooks}
-          selectedKeys={form.accountBookId ? [form.accountBookId] : []}
+          selectedKeys={value.accountBookId ? [value.accountBookId] : []}
           placeholder="Select an account book"
           isRequired
           isDisabled={accountBooks.length === 0}
           onSelectionChange={(keys) => {
             const key = (Array.from(keys)[0] as string) || ''
-            setForm((f) => ({ ...f, accountBookId: key }))
+            onChange({ ...value, accountBookId: key })
           }}
         >
           {(item: AccountBook) => (
@@ -275,10 +233,10 @@ export default function ExpenseForm() {
           className="w-full"
           label="Tags"
           data={{
-            keywords: form.tags,
+            keywords: value.tags,
           }}
           onTagsChange={(tags) => {
-            setForm((f) => ({ ...f, tags }))
+            onChange({ ...value, tags })
           }}
         />
         <div className="flex items-center w-full">
@@ -317,10 +275,10 @@ export default function ExpenseForm() {
           <PaidByDetailModal
             isOpen={isOpenPaidByOptions}
             onOpenChange={setIsOpenPaidByOptions}
-            amount={form.amount}
-            paidByDetail={form.paidByDetail}
+            amount={value.amount}
+            paidByDetail={value.paidByDetail}
             onPaidByDetailChange={(paidByDetail) => {
-              setForm((f) => ({ ...f, paidByDetail }))
+              onChange({ ...value, paidByDetail })
             }}
           />
         </div>
@@ -364,11 +322,11 @@ export default function ExpenseForm() {
           <SplitDetailModal
             isOpen={isOpenSplitDetail}
             onOpenChange={setIsOpenSplitDetail}
-            splitDetail={form.splitDetail}
+            splitDetail={value.splitDetail}
             onSplitDetailChange={(splitDetail) => {
-              setForm((f) => ({ ...f, splitDetail }))
+              onChange({ ...value, splitDetail })
             }}
-            amount={form.amount}
+            amount={value.amount}
           />
         </div>
       </Form>

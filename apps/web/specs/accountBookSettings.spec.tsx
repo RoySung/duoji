@@ -1,5 +1,6 @@
 import { HeroUIProvider } from '@heroui/react'
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -13,10 +14,15 @@ import Settings from '../src/pages/settings'
 import AccountBookSettingsRoute from '../src/pages/settings/account-books'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
+import { Transaction, TransactionRepo } from '../src/entities/transaction'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,
 } from '../src/stores/accountBook'
+import {
+  TransactionStoreProvider,
+  createTransactionStore,
+} from '../src/stores/transaction'
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
@@ -24,10 +30,72 @@ jest.mock('next/router', () => ({
 
 jest.mock('@heroui/react', () => {
   const actual = jest.requireActual('@heroui/react')
+  const React = jest.requireActual('react')
+
+  function getOptionElements(children: any, items?: any[]) {
+    const renderedChildren =
+      typeof children === 'function' && items
+        ? items.map((item) => children(item))
+        : React.Children.toArray(children)
+
+    return React.Children.toArray(renderedChildren)
+      .filter(React.isValidElement)
+      .map((child: any) => {
+        const optionValue = String(child.key ?? '').replace(/^[.$]+/, '')
+
+        return (
+          <option key={optionValue} value={optionValue}>
+            {child.props.children}
+          </option>
+        )
+      })
+  }
 
   return {
     ...actual,
     addToast: jest.fn(),
+    Select: ({
+      'aria-label': ariaLabel,
+      children,
+      'data-testid': dataTestId,
+      id,
+      isDisabled,
+      items,
+      label,
+      onSelectionChange,
+      selectedKeys,
+      selectionMode,
+    }: any) => {
+      const isMultiple = selectionMode === 'multiple'
+      const selectedValues = Array.from(selectedKeys ?? [], String)
+
+      return (
+        <label>
+          {label ? <span>{label}</span> : null}
+          <select
+            aria-label={ariaLabel ?? label}
+            data-testid={dataTestId}
+            disabled={isDisabled}
+            id={id}
+            multiple={isMultiple}
+            value={isMultiple ? selectedValues : selectedValues[0] ?? ''}
+            onChange={(event) => {
+              const nextValues = isMultiple
+                ? Array.from(
+                    event.currentTarget.selectedOptions,
+                    (option) => option.value
+                  )
+                : [event.currentTarget.value]
+
+              onSelectionChange?.(new Set(nextValues.filter(Boolean)))
+            }}
+          >
+            {getOptionElements(children, items)}
+          </select>
+        </label>
+      )
+    },
+    SelectItem: () => null,
   }
 })
 
@@ -105,6 +173,36 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
   }
 }
 
+class InMemoryTransactionRepo implements TransactionRepo {
+  async create(transaction: Transaction): Promise<Transaction> {
+    return transaction
+  }
+
+  async findById(): Promise<Transaction | null> {
+    return null
+  }
+
+  async findAll(): Promise<Transaction[]> {
+    return []
+  }
+
+  async findByAccountBookId(): Promise<Transaction[]> {
+    return []
+  }
+
+  async update(): Promise<Transaction | null> {
+    return null
+  }
+
+  async delete(): Promise<boolean> {
+    return false
+  }
+
+  async clear(): Promise<void> {
+    return undefined
+  }
+}
+
 const mockedUseRouter = useRouter as jest.Mock
 
 type RenderOptions = {
@@ -142,15 +240,31 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
     store.getState().setCurrentAccountBook(options.currentAccountBookId)
   }
 
+  const transactionStore = createTransactionStore(new InMemoryTransactionRepo())
+  await transactionStore
+    .getState()
+    .initialize(store.getState().currentAccountBookId)
+
+  let renderResult: ReturnType<typeof render>
+
+  await act(async () => {
+    renderResult = render(
+      <HeroUIProvider>
+        <AccountBookStoreProvider store={store}>
+          <TransactionStoreProvider store={transactionStore}>
+            {ui}
+          </TransactionStoreProvider>
+        </AccountBookStoreProvider>
+      </HeroUIProvider>
+    )
+  })
+
   return {
     push,
     back,
     store,
-    ...render(
-      <HeroUIProvider>
-        <AccountBookStoreProvider store={store}>{ui}</AccountBookStoreProvider>
-      </HeroUIProvider>
-    ),
+    transactionStore,
+    ...renderResult!,
   }
 }
 
@@ -180,7 +294,11 @@ describe('Account book settings pages', () => {
 
     expect(selector.value).toBe('2')
     expect(
-      screen.getByRole('option', { name: 'Tokyo Trip (JPY)' }).selected
+      (
+        screen.getByRole('option', {
+          name: 'Tokyo Trip (JPY)',
+        }) as HTMLOptionElement
+      ).selected
     ).toBe(true)
   })
 
@@ -222,10 +340,11 @@ describe('Account book settings pages', () => {
       currentAccountBookId: '2',
     })
 
-    const dailyLifeCard = screen.getByTestId('account-book-card-1')
-    const tokyoTripCard = screen.getByTestId('account-book-card-2')
+    function getAccountBookCard(accountBookId: string) {
+      return screen.getByTestId(`account-book-card-${accountBookId}`)
+    }
 
-    expect(within(tokyoTripCard).getByText('Current')).toBeTruthy()
+    expect(within(getAccountBookCard('2')).getByText('Current')).toBeTruthy()
     expect(
       screen.queryByRole('button', { name: /Set current|Current now/i })
     ).toBeNull()
@@ -248,9 +367,7 @@ describe('Account book settings pages', () => {
       throw new Error('Weekend Trip card was not rendered')
     }
 
-    fireEvent.click(
-      within(weekendTripCard).getByRole('button', { name: 'Edit' })
-    )
+    fireEvent.click(within(weekendTripCard).getByText('Edit'))
     fireEvent.change(screen.getByLabelText('Name'), {
       target: { value: 'Weekend Trip Plus' },
     })
@@ -261,7 +378,7 @@ describe('Account book settings pages', () => {
     })
 
     fireEvent.click(
-      within(tokyoTripCard).getByRole('button', { name: 'Delete' })
+      within(getAccountBookCard('2')).getByRole('button', { name: 'Delete' })
     )
 
     await waitFor(() => {
@@ -277,7 +394,7 @@ describe('Account book settings pages', () => {
     })
 
     await waitFor(() => {
-      expect(within(dailyLifeCard).getByText('Current')).toBeTruthy()
+      expect(within(getAccountBookCard('1')).getByText('Current')).toBeTruthy()
     })
   })
 })
