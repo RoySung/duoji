@@ -5,6 +5,7 @@ import { PiBooksBold, PiCaretRightBold } from 'react-icons/pi'
 import TransactionList from '@/components/transaction/TransactionList'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useTransactionStore } from '@/stores/transaction'
+import { useCategoryStore } from '@/stores/category'
 
 export function Index() {
   const router = useRouter()
@@ -22,6 +23,7 @@ export function Index() {
   const loadTransactions = useTransactionStore(
     (state) => state.loadTransactions
   )
+  const initializeCategories = useCategoryStore((state) => state.initialize)
   const openEditModal = useTransactionStore((state) => state.openEditModal)
   const currentAccountBook = accountBooks.find(
     (accountBook) => accountBook.id === currentAccountBookId
@@ -31,6 +33,10 @@ export function Index() {
   useEffect(() => {
     void loadTransactions(currentAccountBookId)
   }, [currentAccountBookId, loadTransactions])
+
+  useEffect(() => {
+    void initializeCategories(currentAccountBookId)
+  }, [currentAccountBookId, initializeCategories])
 
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground">

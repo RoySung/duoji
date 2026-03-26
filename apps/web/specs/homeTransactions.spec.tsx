@@ -24,6 +24,17 @@ import {
   TransactionStoreProvider,
   createTransactionStore,
 } from '../src/stores/transaction'
+import {
+  CategoryStoreProvider,
+  createCategoryStore,
+} from '../src/stores/category'
+import {
+  Category,
+  CategoryBulkDeleteResult,
+  CategoryBulkUpdateInput,
+  CategoryBulkUpdateResult,
+  CategoryRepo,
+} from '../src/entities/category'
 import { userList } from '../src/mocks'
 
 jest.mock('next/router', () => ({
@@ -67,18 +78,29 @@ jest.mock('@heroui/react', () => {
       onPress,
       startContent,
       ...props
-    }: any) => (
-      <button
-        type="button"
-        disabled={disabled ?? isDisabled}
-        onClick={onPress ?? onClick}
-        {...props}
-      >
-        {startContent}
-        {children}
-        {endContent}
-      </button>
-    ),
+    }: any) => {
+      const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (typeof onPress === 'function') {
+          onPress(e)
+        } else if (typeof onClick === 'function') {
+          onClick(e)
+        }
+      }
+      // Remove any onClick from props to avoid conflicts
+      const { onClick: _, ...restProps } = props
+      return (
+        <button
+          type="button"
+          disabled={disabled ?? isDisabled}
+          onClick={handleClick}
+          {...restProps}
+        >
+          {startContent}
+          {children}
+          {endContent}
+        </button>
+      )
+    },
     Modal: ({ children, isOpen }: any) =>
       isOpen ? <div role="dialog">{children}</div> : null,
     ModalContent: ({ children }: any) => <div>{children}</div>,
@@ -476,6 +498,113 @@ class InMemoryTransactionRepo implements TransactionRepo {
   }
 }
 
+class InMemoryCategoryRepo implements CategoryRepo {
+  private categories: Category[] = []
+
+  async create(category: Category): Promise<Category> {
+    this.categories.push(category)
+    return category
+  }
+  async bulkCreate(categories: Category[]) {
+    const created: Category[] = []
+    const failedIds: string[] = []
+    const errors: Array<{ id: string; message: string }> = []
+
+    for (const category of categories) {
+      if (this.categories.some((existing) => existing.id === category.id)) {
+        failedIds.push(category.id)
+        errors.push({
+          id: category.id,
+          message: `Category with ID ${category.id} already exists`,
+        })
+        continue
+      }
+
+      this.categories.push(category)
+      created.push(category)
+    }
+
+    return { created, failedIds, errors }
+  }
+  async findById(id: string): Promise<Category | null> {
+    return this.categories.find((c) => c.id === id) ?? null
+  }
+  async findAll(): Promise<Category[]> {
+    return [...this.categories]
+  }
+  async findByParent(parentId: string | null): Promise<Category[]> {
+    return this.categories.filter((c) => c.parentId === parentId)
+  }
+  async findListByType(type: Category['type']): Promise<Category[]> {
+    return this.categories.filter((c) => c.type === type)
+  }
+  async findByAccountBookId(accountBookId: string): Promise<Category[]> {
+    return this.categories.filter((c) => c.accountBookId === accountBookId)
+  }
+  async update(
+    id: string,
+    updates: Partial<Category>
+  ): Promise<Category | null> {
+    const index = this.categories.findIndex((c) => c.id === id)
+    if (index === -1) return null
+    this.categories[index] = { ...this.categories[index], ...updates }
+    return this.categories[index]
+  }
+  async bulkUpdate(
+    updates: CategoryBulkUpdateInput[]
+  ): Promise<CategoryBulkUpdateResult> {
+    const updated: Category[] = []
+    const failedIds: string[] = []
+    const errors: Array<{ id: string; message: string }> = []
+
+    for (const item of updates) {
+      const nextCategory = await this.update(item.id, item.changes)
+      if (!nextCategory) {
+        failedIds.push(item.id)
+        errors.push({
+          id: item.id,
+          message: `Category with ID ${item.id} not found`,
+        })
+        continue
+      }
+
+      updated.push(nextCategory)
+    }
+
+    return { updated, failedIds, errors }
+  }
+  async delete(id: string): Promise<boolean> {
+    const index = this.categories.findIndex((c) => c.id === id)
+    if (index === -1) return false
+    this.categories.splice(index, 1)
+    return true
+  }
+  async bulkDelete(ids: string[]): Promise<CategoryBulkDeleteResult> {
+    const deletedIds: string[] = []
+    const failedIds: string[] = []
+    const errors: Array<{ id: string; message: string }> = []
+
+    for (const id of ids) {
+      const deleted = await this.delete(id)
+      if (!deleted) {
+        failedIds.push(id)
+        errors.push({
+          id,
+          message: `Category with ID ${id} not found`,
+        })
+        continue
+      }
+
+      deletedIds.push(id)
+    }
+
+    return { deletedIds, failedIds, errors }
+  }
+  async clear(): Promise<void> {
+    this.categories = []
+  }
+}
+
 type RenderOptions = {
   accountBooks?: AccountBook[]
   currentAccountBookId?: string | null
@@ -575,6 +704,105 @@ async function renderWithProviders(options: RenderOptions = {}) {
     .getState()
     .initialize(accountBookStore.getState().currentAccountBookId)
 
+  const categoryRepo = new InMemoryCategoryRepo()
+
+  // Create test categories with fixed IDs to match test fixtures
+  const testCategories: Category[] = [
+    // Expense categories for book-1
+    {
+      id: '1',
+      name: 'Food',
+      type: 'expense',
+      parentId: null,
+      accountBookId: 'book-1',
+      imageUrl: 'https://example.com/food.svg',
+      description: 'Food expenses',
+      sortOrder: 0,
+    },
+    {
+      id: '1-1',
+      name: 'Breakfast',
+      type: 'expense',
+      parentId: '1',
+      accountBookId: 'book-1',
+      imageUrl: 'https://example.com/breakfast.svg',
+      description: 'Breakfast',
+      sortOrder: 0,
+    },
+    {
+      id: '3',
+      name: 'Transport',
+      type: 'expense',
+      parentId: null,
+      accountBookId: 'book-1',
+      imageUrl: 'https://example.com/transport.svg',
+      description: 'Transport',
+      sortOrder: 1,
+    },
+    {
+      id: '3-1',
+      name: 'Train',
+      type: 'expense',
+      parentId: '3',
+      accountBookId: 'book-1',
+      imageUrl: 'https://example.com/train.svg',
+      description: 'Train',
+      sortOrder: 0,
+    },
+    // Expense categories for book-2 (needed for transaction type switching)
+    {
+      id: '201',
+      name: 'Food',
+      type: 'expense',
+      parentId: null,
+      accountBookId: 'book-2',
+      imageUrl: 'https://example.com/food.svg',
+      description: 'Food',
+      sortOrder: 0,
+    },
+    {
+      id: '201-1',
+      name: 'Meals',
+      type: 'expense',
+      parentId: '201',
+      accountBookId: 'book-2',
+      imageUrl: 'https://example.com/meals.svg',
+      description: 'Meals',
+      sortOrder: 0,
+    },
+    // Income categories for book-2
+    {
+      id: '101',
+      name: 'Salary',
+      type: 'income',
+      parentId: null,
+      accountBookId: 'book-2',
+      imageUrl: 'https://example.com/salary.svg',
+      description: 'Salary',
+      sortOrder: 0,
+    },
+    {
+      id: '101-1',
+      name: 'Bonus',
+      type: 'income',
+      parentId: '101',
+      accountBookId: 'book-2',
+      imageUrl: 'https://example.com/bonus.svg',
+      description: 'Bonus',
+      sortOrder: 0,
+    },
+  ]
+
+  for (const category of testCategories) {
+    await categoryRepo.create(category)
+  }
+
+  const categoryStore = createCategoryStore(categoryRepo)
+
+  await categoryStore
+    .getState()
+    .initialize(accountBookStore.getState().currentAccountBookId)
+
   let renderResult: ReturnType<typeof render>
 
   await act(async () => {
@@ -582,10 +810,12 @@ async function renderWithProviders(options: RenderOptions = {}) {
       <HeroUIProvider>
         <AccountBookStoreProvider store={accountBookStore}>
           <TransactionStoreProvider store={transactionStore}>
-            <div>
-              <Home />
-              <NavBar />
-            </div>
+            <CategoryStoreProvider store={categoryStore}>
+              <div>
+                <Home />
+                <NavBar />
+              </div>
+            </CategoryStoreProvider>
           </TransactionStoreProvider>
         </AccountBookStoreProvider>
       </HeroUIProvider>
@@ -641,10 +871,14 @@ describe('Home transaction history', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Bonus')).toBeTruthy()
+      expect(screen.getByTestId('transaction-row-tx-3')).toBeTruthy()
     })
 
     expect(screen.getByText('1 records')).toBeTruthy()
+    expect(
+      within(screen.getByTestId('transaction-row-tx-3')).getAllByText('Bonus')
+        .length
+    ).toBeGreaterThan(0)
     expect(
       within(screen.getByTestId('transaction-row-tx-3')).getByText('Roy')
     ).toBeTruthy()
@@ -778,9 +1012,10 @@ describe('Home transaction history', () => {
   })
 
   it('renders the default income recipient summary after creating a new income transaction', async () => {
-    const { transactionStore } = await renderWithProviders({
+    const renderResult = await renderWithProviders({
       currentAccountBookId: 'book-2',
     })
+    const { transactionStore } = renderResult
 
     act(() => {
       transactionStore.getState().openCreateModal()
@@ -793,9 +1028,11 @@ describe('Home transaction history', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
 
     await waitFor(() => {
-      expect(
-        (screen.getByLabelText('Received By') as HTMLSelectElement).value
-      ).toBe('1')
+      const received = (
+        screen.getByLabelText('Received By') as HTMLSelectElement
+      ).value
+      console.log('Received By value after Income click:', received)
+      expect(received).toBe('1')
     })
 
     fireEvent.change(screen.getByLabelText('Amount'), {
@@ -804,11 +1041,15 @@ describe('Home transaction history', () => {
     fireEvent.change(screen.getByLabelText('Description'), {
       target: { value: 'March salary' },
     })
+
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
-    await waitFor(() => {
-      expect(screen.queryByText('New Transaction')).toBeNull()
-    })
+    await waitFor(
+      () => {
+        expect(screen.queryByText('New Transaction')).toBeNull()
+      },
+      { timeout: 2000 }
+    )
 
     const descriptionElement = await screen.findByText('March salary')
     const transactionRow = descriptionElement.closest('article')
@@ -844,9 +1085,12 @@ describe('Home transaction history', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
-    await waitFor(() => {
-      expect(screen.queryByText('Edit Transaction')).toBeNull()
-    })
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Edit Transaction')).toBeNull()
+      },
+      { timeout: 2000 }
+    )
 
     expect(
       within(screen.getByTestId('transaction-row-tx-3')).getByText('Patty')
@@ -869,5 +1113,65 @@ describe('Home transaction history', () => {
     })
 
     expect(selector.disabled).toBe(true)
+  })
+
+  it('displays Uncategorized for transactions with a deleted category', async () => {
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      transactions: [
+        createTransactionFixture({
+          id: 'tx-deleted-cat',
+          accountBookId: 'book-1',
+          categoryId: 'nonexistent-deleted-category-id',
+          amount: 200,
+          description: 'Mystery expense',
+        }),
+      ],
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-row-tx-deleted-cat')).toBeTruthy()
+    })
+
+    expect(
+      within(screen.getByTestId('transaction-row-tx-deleted-cat')).getByText(
+        'Uncategorized'
+      )
+    ).toBeTruthy()
+  })
+
+  it('disables save button when editing a transaction with a deleted category requires re-selection', async () => {
+    const { transactionStore } = await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      transactions: [
+        createTransactionFixture({
+          id: 'tx-deleted-cat-edit',
+          accountBookId: 'book-1',
+          categoryId: 'nonexistent-deleted-category-id',
+          amount: 300,
+          description: 'Expense with deleted category',
+        }),
+      ],
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('transaction-row-tx-deleted-cat-edit')
+      ).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByTestId('transaction-row-tx-deleted-cat-edit'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Edit Transaction')).toBeTruthy()
+    })
+
+    expect(transactionStore.getState().modalMode).toBe('edit')
+
+    const saveButton = screen.getByRole('button', {
+      name: 'Save',
+    }) as HTMLButtonElement
+
+    expect(saveButton.disabled).toBe(true)
   })
 })

@@ -16,6 +16,7 @@ import ExpenseForm from './ExpenseForm'
 import IncomeForm from './IncomeForm'
 import { useTransactionStore } from '@/stores/transaction'
 import { useAccountBookStore } from '@/stores/accountBook'
+import { useCategoryStore } from '@/stores/category'
 import {
   changeTransactionDraftType,
   createTransactionDraft,
@@ -52,11 +53,13 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
     (state) => state.currentAccountBookId
   )
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
+  const categories = useCategoryStore((state) => state.categories)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [draft, setDraft] = useState(() =>
     createTransactionDraft({
       accountBookId: currentAccountBookId ?? '',
       accountBooks,
+      categories,
     })
   )
 
@@ -70,6 +73,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
         createTransactionDraft({
           baseTransaction: selectedTransaction,
           accountBooks,
+          categories,
         })
       )
       return
@@ -79,10 +83,12 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
       createTransactionDraft({
         accountBookId: currentAccountBookId ?? '',
         accountBooks,
+        categories,
       })
     )
   }, [
     accountBooks,
+    categories,
     currentAccountBookId,
     isOpen,
     modalMode,
@@ -211,7 +217,8 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
                     changeTransactionDraftType(
                       currentDraft,
                       key as TransactionType,
-                      accountBooks
+                      accountBooks,
+                      categories
                     )
                   )
                 }}

@@ -1,7 +1,9 @@
 import { addToast, Button, Chip } from '@heroui/react'
+import Link from 'next/link'
 import { useState } from 'react'
 import { AccountBook } from '@/entities/accountBook'
 import { useAccountBookStore } from '@/stores/accountBook'
+import { useCategoryStore } from '@/stores/category'
 import {
   AccountBookFormValues,
   buildAccountBookPayload,
@@ -37,6 +39,9 @@ export default function AccountBookSettingsPage() {
   )
   const deleteAccountBook = useAccountBookStore(
     (state) => state.deleteAccountBook
+  )
+  const seedDefaultCategories = useCategoryStore(
+    (state) => state.seedDefaultCategories
   )
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -97,6 +102,8 @@ export default function AccountBookSettingsPage() {
         const createdAccountBook = await createAccountBook(
           buildAccountBookPayload(values)
         )
+
+        await seedDefaultCategories(createdAccountBook.id)
 
         addToast({
           title: 'Account book created',
@@ -226,6 +233,14 @@ export default function AccountBookSettingsPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 md:justify-end">
+                      <Button
+                        as={Link}
+                        disableRipple
+                        href={`/settings/account-books/${accountBook.id}/categories`}
+                        variant="flat"
+                      >
+                        Category Settings
+                      </Button>
                       <Button
                         disableRipple
                         isDisabled={isLoading}

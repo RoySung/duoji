@@ -1,8 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie'
-import { Category, Transaction } from '@/entities/transaction'
+import { Category } from '@/entities/category'
+import { Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
-import { accountBookList, categoryList, userList } from '@/mocks'
+import { accountBookList, userList } from '@/mocks'
 
 /**
  * Duoji App 本地資料庫
@@ -18,7 +19,7 @@ class DuojiDB extends Dexie {
     super('DuojiDB')
 
     this.version(1).stores({
-      categories: '&id, name, type, parentId',
+      categories: '&id, name, type, parentId, accountBookId, sortOrder',
       transactions:
         '&id, accountBookId, date, type, categoryId, [accountBookId+deletedAt]',
       users: '&id, name, email',
@@ -46,13 +47,6 @@ export async function initializeDB(): Promise<void> {
  */
 async function initializeMockData(): Promise<void> {
   try {
-    // 初始化分類資料
-    const categoryCount = await db.categories.count()
-    if (categoryCount === 0) {
-      await addCategories(categoryList)
-      console.log('Mock category data initialized')
-    }
-
     // 初始化用戶資料
     const userCount = await db.users.count()
     if (userCount === 0) {
@@ -67,14 +61,5 @@ async function initializeMockData(): Promise<void> {
     }
   } catch (error) {
     console.error('Failed to initialize mock data:', error)
-  }
-}
-
-/**
- * 批量新增分類到資料庫
- */
-async function addCategories(categories: Category[]): Promise<void> {
-  for (const category of categories) {
-    await db.categories.put(category)
   }
 }

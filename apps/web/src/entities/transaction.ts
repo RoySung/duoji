@@ -66,24 +66,6 @@ export const TransactionSchema = TransactionFieldsSchema.extend({
   }
 })
 
-export type Category = {
-  id: string
-  name: string
-  imageUrl: string
-  description: string
-  type: TransactionType
-  parentId: string | null
-}
-
-export const CategorySchema: z.ZodType<Category> = z.object({
-  id: z.string(),
-  name: z.string(),
-  imageUrl: z.url(),
-  description: z.string(),
-  type: TransactionTypeSchema,
-  parentId: z.string().nullable(),
-})
-
 export type Transaction = z.infer<typeof TransactionSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
 export type SplitDetail = z.infer<typeof SplitDetailSchema>
@@ -101,14 +83,4 @@ export interface TransactionRepo {
   clear(): Promise<void>
 }
 
-// Category Repository 介面定義
-export interface CategoryRepo {
-  create(category: Category, parentId?: string): Promise<Category>
-  findById(id: string): Promise<Category | null>
-  findAll(): Promise<Category[]>
-  findByParent(parentId: string | null): Promise<Category[]>
-  findListByType(type: TransactionType): Promise<Category[]>
-  update(id: string, category: Partial<Category>): Promise<Category | null>
-  delete(id: string): Promise<boolean>
-  clear(): Promise<void> // for local dev
-}
+// Category Repository 介面定義已移至 entities/category.ts

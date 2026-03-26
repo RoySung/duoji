@@ -8,7 +8,8 @@ import {
   Transaction,
   TransactionType,
 } from '@/entities/transaction'
-import { categoryList, userList } from '@/mocks'
+import { userList } from '@/mocks'
+import { Category } from '@/entities/category'
 import { User } from '@/entities/user'
 
 export const TransactionDateFormat = 'YYYY/MM/DD'
@@ -217,29 +218,40 @@ export function distributeTransactionAmount(
   }
 }
 
-export function getDefaultTransactionCategoryId(type: TransactionType): string {
+export function getDefaultTransactionCategoryId(
+  type: TransactionType,
+  categories: Category[] = []
+): string {
   return (
-    categoryList.find(
+    categories.find(
       (category) => category.type === type && category.parentId !== null
     )?.id ??
-    categoryList.find((category) => category.type === type)?.id ??
+    categories.find((category) => category.type === type)?.id ??
     ''
   )
 }
 
 function resolveTransactionCategoryId(
   type: TransactionType,
-  currentCategoryId: string
+  currentCategoryId: string,
+  categories: Category[] = []
 ): string {
-  const currentCategory = categoryList.find(
+  const currentCategory = categories.find(
     (category) => category.id === currentCategoryId
   )
 
-  if (currentCategory?.type === type) {
+  // Category not found at all (deleted) → return empty to signal "uncategorized"
+  if (!currentCategory) {
+    return ''
+  }
+
+  // Category exists and type matches → keep it
+  if (currentCategory.type === type) {
     return currentCategoryId
   }
 
-  return getDefaultTransactionCategoryId(type)
+  // Category exists but type mismatch (type switch expense↔income) → use default for new type
+  return getDefaultTransactionCategoryId(type, categories)
 }
 
 function buildDefaultSplitDetail(
@@ -254,10 +266,12 @@ export function createTransactionDraft(options?: {
   accountBookId?: string
   accountBooks?: AccountBook[]
   baseTransaction?: Transaction | null
+  categories?: Category[]
 }): Transaction {
   const baseTransaction = options?.baseTransaction
   const type = options?.type ?? baseTransaction?.type ?? 'expense'
   const accountBooks = options?.accountBooks ?? []
+  const categories = options?.categories ?? []
 
   if (baseTransaction) {
     const clonedTransaction = cloneTransaction(baseTransaction)
@@ -278,7 +292,8 @@ export function createTransactionDraft(options?: {
       accountBookId: nextAccountBookId,
       categoryId: resolveTransactionCategoryId(
         type,
-        clonedTransaction.categoryId
+        clonedTransaction.categoryId,
+        categories
       ),
       paymentMethod: resolvePaymentMethod(clonedTransaction.paymentMethod),
       receivedByUserId,
@@ -324,7 +339,7 @@ export function createTransactionDraft(options?: {
     type,
     amount: 0,
     accountBookId: options?.accountBookId ?? '',
-    categoryId: getDefaultTransactionCategoryId(type),
+    categoryId: getDefaultTransactionCategoryId(type, categories),
     date: dayjs(timestamp).format(TransactionDateFormat),
     description: '',
     paymentMethod: DefaultPaymentMethod,
@@ -334,6 +349,7 @@ export function createTransactionDraft(options?: {
     splitDetail: buildDefaultSplitDetail(type, 0),
     createdAt: timestamp,
     updatedAt: timestamp,
+    deletedAt: null,
   }
 
   return type === 'income'
@@ -344,13 +360,15 @@ export function createTransactionDraft(options?: {
 export function changeTransactionDraftType(
   transaction: Transaction,
   type: TransactionType,
-  accountBooks: AccountBook[] = []
+  accountBooks: AccountBook[] = [],
+  categories: Category[] = []
 ): Transaction {
   return createTransactionDraft({
     type,
     accountBookId: transaction.accountBookId,
     accountBooks,
     baseTransaction: transaction,
+    categories,
   })
 }
 

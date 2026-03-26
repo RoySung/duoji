@@ -13,6 +13,7 @@ import {
   TransactionStoreProvider,
   createTransactionStore,
 } from '@/stores/transaction'
+import { CategoryStoreProvider, createCategoryStore } from '@/stores/category'
 
 // 擴展 AppProps 類型以包含 getLayout
 type AppPropsWithLayout = AppProps & {
@@ -27,6 +28,7 @@ type NextPageWithLayout = NextPage & {
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const [accountBookStore] = useState(createAccountBookStore)
   const [transactionStore] = useState(createTransactionStore)
+  const [categoryStore] = useState(createCategoryStore)
 
   // 初始化資料庫
   useEffect(() => {
@@ -55,18 +57,20 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   return (
     <AccountBookStoreProvider store={accountBookStore}>
       <TransactionStoreProvider store={transactionStore}>
-        {getLayout(
-          <>
-            <Head>
-              <title>Welcome to Duoji!</title>
-              <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-              />
-            </Head>
-            <Component {...pageProps} />
-          </>
-        )}
+        <CategoryStoreProvider store={categoryStore}>
+          {getLayout(
+            <>
+              <Head>
+                <title>Welcome to Duoji!</title>
+                <meta
+                  name="viewport"
+                  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+                />
+              </Head>
+              <Component {...pageProps} />
+            </>
+          )}
+        </CategoryStoreProvider>
       </TransactionStoreProvider>
     </AccountBookStoreProvider>
   )

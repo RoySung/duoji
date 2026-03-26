@@ -20,8 +20,9 @@ import {
   Transaction,
 } from '@/entities/transaction'
 import { useAccountBookStore } from '@/stores/accountBook/index'
+import { useCategoryStore } from '@/stores/category'
+import { userList } from '@/mocks'
 import SplitDetailModal from './SplitDetailModal'
-import { expenseCategoryList, userList } from '@/mocks'
 import CategorySelector from './CategorySelector'
 import {
   formatTransactionDateValue,
@@ -53,6 +54,7 @@ export default function ExpenseForm({ value, onChange }: Props) {
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
   )
+  const expenseCategories = useCategoryStore((state) => state.expenseCategories)
 
   useEffect(() => {
     if (!currentAccountBookId) {
@@ -145,7 +147,7 @@ export default function ExpenseForm({ value, onChange }: Props) {
           }}
         />
         <CategorySelector
-          categoryList={expenseCategoryList}
+          categoryList={expenseCategories}
           selectedCategoryId={value.categoryId}
           onSelectCategory={(category) => {
             onChange({

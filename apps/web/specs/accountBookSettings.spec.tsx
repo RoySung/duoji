@@ -23,6 +23,17 @@ import {
   TransactionStoreProvider,
   createTransactionStore,
 } from '../src/stores/transaction'
+import {
+  CategoryStoreProvider,
+  createCategoryStore,
+} from '../src/stores/category'
+import {
+  Category,
+  CategoryBulkDeleteResult,
+  CategoryBulkUpdateInput,
+  CategoryBulkUpdateResult,
+  CategoryRepo,
+} from '../src/entities/category'
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
@@ -203,6 +214,113 @@ class InMemoryTransactionRepo implements TransactionRepo {
   }
 }
 
+class InMemoryCategoryRepo implements CategoryRepo {
+  private categories: Category[] = []
+
+  async create(category: Category): Promise<Category> {
+    this.categories.push(category)
+    return category
+  }
+  async bulkCreate(categories: Category[]) {
+    const created: Category[] = []
+    const failedIds: string[] = []
+    const errors: Array<{ id: string; message: string }> = []
+
+    for (const category of categories) {
+      if (this.categories.some((existing) => existing.id === category.id)) {
+        failedIds.push(category.id)
+        errors.push({
+          id: category.id,
+          message: `Category with ID ${category.id} already exists`,
+        })
+        continue
+      }
+
+      this.categories.push(category)
+      created.push(category)
+    }
+
+    return { created, failedIds, errors }
+  }
+  async findById(id: string): Promise<Category | null> {
+    return this.categories.find((c) => c.id === id) ?? null
+  }
+  async findAll(): Promise<Category[]> {
+    return [...this.categories]
+  }
+  async findByParent(parentId: string | null): Promise<Category[]> {
+    return this.categories.filter((c) => c.parentId === parentId)
+  }
+  async findListByType(type: Category['type']): Promise<Category[]> {
+    return this.categories.filter((c) => c.type === type)
+  }
+  async findByAccountBookId(accountBookId: string): Promise<Category[]> {
+    return this.categories.filter((c) => c.accountBookId === accountBookId)
+  }
+  async update(
+    id: string,
+    updates: Partial<Category>
+  ): Promise<Category | null> {
+    const index = this.categories.findIndex((c) => c.id === id)
+    if (index === -1) return null
+    this.categories[index] = { ...this.categories[index], ...updates }
+    return this.categories[index]
+  }
+  async bulkUpdate(
+    updates: CategoryBulkUpdateInput[]
+  ): Promise<CategoryBulkUpdateResult> {
+    const updated: Category[] = []
+    const failedIds: string[] = []
+    const errors: Array<{ id: string; message: string }> = []
+
+    for (const item of updates) {
+      const nextCategory = await this.update(item.id, item.changes)
+      if (!nextCategory) {
+        failedIds.push(item.id)
+        errors.push({
+          id: item.id,
+          message: `Category with ID ${item.id} not found`,
+        })
+        continue
+      }
+
+      updated.push(nextCategory)
+    }
+
+    return { updated, failedIds, errors }
+  }
+  async delete(id: string): Promise<boolean> {
+    const index = this.categories.findIndex((c) => c.id === id)
+    if (index === -1) return false
+    this.categories.splice(index, 1)
+    return true
+  }
+  async bulkDelete(ids: string[]): Promise<CategoryBulkDeleteResult> {
+    const deletedIds: string[] = []
+    const failedIds: string[] = []
+    const errors: Array<{ id: string; message: string }> = []
+
+    for (const id of ids) {
+      const deleted = await this.delete(id)
+      if (!deleted) {
+        failedIds.push(id)
+        errors.push({
+          id,
+          message: `Category with ID ${id} not found`,
+        })
+        continue
+      }
+
+      deletedIds.push(id)
+    }
+
+    return { deletedIds, failedIds, errors }
+  }
+  async clear(): Promise<void> {
+    this.categories = []
+  }
+}
+
 const mockedUseRouter = useRouter as jest.Mock
 
 type RenderOptions = {
@@ -245,6 +363,8 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
     .getState()
     .initialize(store.getState().currentAccountBookId)
 
+  const categoryStore = createCategoryStore(new InMemoryCategoryRepo())
+
   let renderResult: ReturnType<typeof render>
 
   await act(async () => {
@@ -252,7 +372,9 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
       <HeroUIProvider>
         <AccountBookStoreProvider store={store}>
           <TransactionStoreProvider store={transactionStore}>
-            {ui}
+            <CategoryStoreProvider store={categoryStore}>
+              {ui}
+            </CategoryStoreProvider>
           </TransactionStoreProvider>
         </AccountBookStoreProvider>
       </HeroUIProvider>

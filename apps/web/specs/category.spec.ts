@@ -3,7 +3,7 @@ import {
   expenseCategoryList,
   incomeCategoryList,
 } from '../src/mocks'
-import { CategorySchema } from '../src/entities/transaction'
+import { CategorySchema } from '../src/entities/category'
 import CategoryLocalRepo from '../src/repositories/categoryRepo/categoryLocalRepo'
 import { db } from '../src/lib/dexie'
 
@@ -111,6 +111,17 @@ describe('Category System', () => {
       })
     })
 
+    it('should find categories by accountBookId', async () => {
+      const categories = await repo.findByAccountBookId('1')
+      expect(categories.length).toBe(categoryList.length)
+      categories.forEach((cat) => {
+        expect(cat.accountBookId).toBe('1')
+      })
+
+      const emptyResult = await repo.findByAccountBookId('nonexistent')
+      expect(emptyResult.length).toBe(0)
+    })
+
     it('should reject self-parent references', async () => {
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
@@ -127,6 +138,105 @@ describe('Category System', () => {
       }
     })
 
+    it('should bulk create categories and report failedIds with errors', async () => {
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined)
+
+      try {
+        const result = await repo.bulkCreate([
+          {
+            id: 'bulk-root',
+            name: 'Bulk Root',
+            description: 'Created in bulk',
+            type: 'expense',
+            imageUrl: 'https://example.com/bulk-root.svg',
+            parentId: null,
+            accountBookId: '1',
+            sortOrder: 999,
+          },
+          {
+            id: 'bulk-child-invalid',
+            name: 'Bulk Child Invalid',
+            description: 'Invalid parent reference',
+            type: 'expense',
+            imageUrl: 'https://example.com/bulk-child.svg',
+            parentId: 'missing-parent',
+            accountBookId: '1',
+            sortOrder: 1000,
+          },
+        ])
+
+        expect(
+          result.created.map((category: { id: string }) => category.id)
+        ).toEqual(['bulk-root'])
+        expect(result.failedIds).toEqual(['bulk-child-invalid'])
+        expect(result.errors).toEqual([
+          {
+            id: 'bulk-child-invalid',
+            message: 'Parent category with ID missing-parent not found',
+          },
+        ])
+        await expect(repo.findById('bulk-root')).resolves.toMatchObject({
+          id: 'bulk-root',
+        })
+        await expect(repo.findById('bulk-child-invalid')).resolves.toBeNull()
+      } finally {
+        consoleErrorSpy.mockRestore()
+      }
+    })
+
+    it('should bulk update categories and report failedIds with errors', async () => {
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined)
+
+      try {
+        const result = await repo.bulkUpdate([
+          {
+            id: '1',
+            changes: {
+              name: 'Food & Dining Updated',
+            },
+          },
+          {
+            id: 'missing-category',
+            changes: {
+              name: 'Missing',
+            },
+          },
+          {
+            id: '2',
+            changes: {
+              parentId: '2',
+            },
+          },
+        ])
+
+        expect(result.updated).toHaveLength(1)
+        expect(result.updated[0]).toMatchObject({
+          id: '1',
+          name: 'Food & Dining Updated',
+        })
+        expect(result.failedIds).toEqual(['missing-category', '2'])
+        expect(result.errors).toEqual([
+          {
+            id: 'missing-category',
+            message: 'Category with ID missing-category not found',
+          },
+          {
+            id: '2',
+            message: 'Category 2 cannot be its own parent',
+          },
+        ])
+        await expect(repo.findById('1')).resolves.toMatchObject({
+          name: 'Food & Dining Updated',
+        })
+      } finally {
+        consoleErrorSpy.mockRestore()
+      }
+    })
+
     it('should delete child categories recursively', async () => {
       await repo.create({
         id: '1-1-1',
@@ -136,6 +246,8 @@ describe('Category System', () => {
         imageUrl:
           'https://api.iconify.design/lucide:cup-soda.svg?color=%23666666&width=100&height=100',
         parentId: '1-1',
+        accountBookId: '1',
+        sortOrder: 0,
       })
 
       await expect(repo.delete('1')).resolves.toBe(true)
@@ -148,6 +260,33 @@ describe('Category System', () => {
 
     it('should return false when deleting a missing category', async () => {
       await expect(repo.delete('missing-category')).resolves.toBe(false)
+    })
+
+    it('should bulk delete categories recursively and report failedIds with errors', async () => {
+      await repo.create({
+        id: '1-1-1',
+        name: 'Cafe Breakfast',
+        description: 'Nested breakfast category',
+        type: 'expense',
+        imageUrl: 'https://example.com/cafe-breakfast.svg',
+        parentId: '1-1',
+        accountBookId: '1',
+        sortOrder: 1001,
+      })
+
+      const result = await repo.bulkDelete(['1', '1-1', 'missing-category'])
+
+      expect(result.deletedIds.sort()).toEqual(['1', '1-1'].sort())
+      expect(result.failedIds).toEqual(['missing-category'])
+      expect(result.errors).toEqual([
+        {
+          id: 'missing-category',
+          message: 'Category with ID missing-category not found',
+        },
+      ])
+      await expect(repo.findById('1')).resolves.toBeNull()
+      await expect(repo.findById('1-1')).resolves.toBeNull()
+      await expect(repo.findById('1-1-1')).resolves.toBeNull()
     })
   })
 })

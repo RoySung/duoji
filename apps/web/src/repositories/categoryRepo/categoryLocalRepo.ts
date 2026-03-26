@@ -1,4 +1,12 @@
-import { CategoryRepo, Category } from '@/entities/transaction'
+import {
+  CategoryRepo,
+  Category,
+  CategoryBulkCreateResult,
+  CategoryBulkDeleteResult,
+  CategoryBulkError,
+  CategoryBulkUpdateInput,
+  CategoryBulkUpdateResult,
+} from '@/entities/category'
 import { db } from '@/lib/dexie'
 
 /**
@@ -7,6 +15,36 @@ import { db } from '@/lib/dexie'
  * 採用平面結構，透過 parentId 建立層級關係
  */
 class CategoryLocalRepo implements CategoryRepo {
+  private toBulkError(id: string, error: unknown): CategoryBulkError {
+    return {
+      id,
+      message:
+        error instanceof Error ? error.message : 'Unknown category error',
+    }
+  }
+
+  private hasRequestedAncestor(
+    categoryId: string,
+    categoryById: Map<string, Category>,
+    requestedIds: Set<string>
+  ): boolean {
+    let currentParentId = categoryById.get(categoryId)?.parentId ?? null
+
+    while (currentParentId) {
+      if (requestedIds.has(currentParentId)) {
+        return true
+      }
+
+      currentParentId = categoryById.get(currentParentId)?.parentId ?? null
+    }
+
+    return false
+  }
+
+  private buildCategoryMap(categories: Category[]): Map<string, Category> {
+    return new Map(categories.map((category) => [category.id, category]))
+  }
+
   private getCategoryTreeIds(categories: Category[], rootId: string): string[] {
     const childrenByParent = new Map<string, string[]>()
 
@@ -82,6 +120,57 @@ class CategoryLocalRepo implements CategoryRepo {
     }
   }
 
+  async bulkCreate(categories: Category[]): Promise<CategoryBulkCreateResult> {
+    try {
+      const existingCategories = await db.categories.toArray()
+      const categoryById = this.buildCategoryMap(existingCategories)
+      const created: Category[] = []
+      const failedIds: string[] = []
+      const errors: CategoryBulkError[] = []
+
+      for (const category of categories) {
+        try {
+          if (categoryById.has(category.id)) {
+            throw new Error(`Category with ID ${category.id} already exists`)
+          }
+
+          if (category.parentId !== undefined && category.parentId !== null) {
+            if (category.parentId === category.id) {
+              throw new Error(
+                `Category ${category.id} cannot be its own parent`
+              )
+            }
+
+            if (!categoryById.has(category.parentId)) {
+              throw new Error(
+                `Parent category with ID ${category.parentId} not found`
+              )
+            }
+          }
+
+          created.push(category)
+          categoryById.set(category.id, category)
+        } catch (error) {
+          failedIds.push(category.id)
+          errors.push(this.toBulkError(category.id, error))
+        }
+      }
+
+      if (created.length > 0) {
+        await db.categories.bulkAdd(created)
+      }
+
+      return {
+        created,
+        failedIds,
+        errors,
+      }
+    } catch (error) {
+      console.error('Error bulk creating categories:', error)
+      throw error
+    }
+  }
+
   async findById(id: string): Promise<Category | null> {
     try {
       const category = await db.categories.get(id)
@@ -120,6 +209,19 @@ class CategoryLocalRepo implements CategoryRepo {
     }
   }
 
+  async findByAccountBookId(accountBookId: string): Promise<Category[]> {
+    try {
+      const results = await db.categories
+        .where('accountBookId')
+        .equals(accountBookId)
+        .toArray()
+      return results.sort((a, b) => a.sortOrder - b.sortOrder)
+    } catch (error) {
+      console.error('Error finding categories by accountBookId:', error)
+      throw error
+    }
+  }
+
   async update(
     id: string,
     updates: Partial<Category>
@@ -141,6 +243,39 @@ class CategoryLocalRepo implements CategoryRepo {
     }
   }
 
+  async bulkUpdate(
+    updates: CategoryBulkUpdateInput[]
+  ): Promise<CategoryBulkUpdateResult> {
+    const updated: Category[] = []
+    const failedIds: string[] = []
+    const errors: CategoryBulkError[] = []
+
+    for (const item of updates) {
+      try {
+        const nextCategory = await this.update(item.id, item.changes)
+        if (!nextCategory) {
+          failedIds.push(item.id)
+          errors.push({
+            id: item.id,
+            message: `Category with ID ${item.id} not found`,
+          })
+          continue
+        }
+
+        updated.push(nextCategory)
+      } catch (error) {
+        failedIds.push(item.id)
+        errors.push(this.toBulkError(item.id, error))
+      }
+    }
+
+    return {
+      updated,
+      failedIds,
+      errors,
+    }
+  }
+
   async delete(id: string): Promise<boolean> {
     try {
       return await db.transaction('rw', db.categories, async () => {
@@ -157,6 +292,59 @@ class CategoryLocalRepo implements CategoryRepo {
       })
     } catch (error) {
       console.error('Error deleting category:', error)
+      throw error
+    }
+  }
+
+  async bulkDelete(ids: string[]): Promise<CategoryBulkDeleteResult> {
+    try {
+      return await db.transaction('rw', db.categories, async () => {
+        const uniqueIds = [...new Set(ids)]
+        const categories = await db.categories.toArray()
+        const categoryById = this.buildCategoryMap(categories)
+        const requestedIds = new Set(uniqueIds)
+        const failedIds: string[] = []
+        const errors: CategoryBulkError[] = []
+        const deleteRootIds: string[] = []
+
+        for (const id of uniqueIds) {
+          if (!categoryById.has(id)) {
+            failedIds.push(id)
+            errors.push({
+              id,
+              message: `Category with ID ${id} not found`,
+            })
+            continue
+          }
+
+          if (this.hasRequestedAncestor(id, categoryById, requestedIds)) {
+            continue
+          }
+
+          deleteRootIds.push(id)
+        }
+
+        const idsToDelete = new Set<string>()
+
+        for (const rootId of deleteRootIds) {
+          const treeIds = this.getCategoryTreeIds(categories, rootId)
+          treeIds.forEach((id) => idsToDelete.add(id))
+        }
+
+        if (idsToDelete.size > 0) {
+          await db.categories.bulkDelete([...idsToDelete])
+        }
+
+        const deletedIds = uniqueIds.filter((id) => categoryById.has(id))
+
+        return {
+          deletedIds,
+          failedIds,
+          errors,
+        }
+      })
+    } catch (error) {
+      console.error('Error bulk deleting categories:', error)
       throw error
     }
   }

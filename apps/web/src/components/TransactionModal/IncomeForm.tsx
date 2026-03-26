@@ -8,8 +8,8 @@ import {
 } from '@/entities/transaction'
 import CategorySelector from './CategorySelector'
 import TagsInput from '../ui/TagInput'
-import { incomeCategoryList } from '@/mocks'
 import { useAccountBookStore } from '@/stores/accountBook'
+import { useCategoryStore } from '@/stores/category'
 import {
   applyIncomeRecipient,
   distributeTransactionAmount,
@@ -30,6 +30,7 @@ export default function IncomeForm({ value, onChange }: Props) {
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
   )
+  const incomeCategories = useCategoryStore((state) => state.incomeCategories)
 
   const participantUsers = getAccountBookParticipantUsers(
     accountBooks,
@@ -102,7 +103,7 @@ export default function IncomeForm({ value, onChange }: Props) {
           }}
         />
         <CategorySelector
-          categoryList={incomeCategoryList}
+          categoryList={incomeCategories}
           selectedCategoryId={value.categoryId}
           onSelectCategory={(category) => {
             onChange({

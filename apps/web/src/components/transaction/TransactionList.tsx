@@ -1,7 +1,8 @@
 import { Avatar, Chip } from '@heroui/react'
-import { PiReceiptBold } from 'react-icons/pi'
+import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
 import { Transaction } from '@/entities/transaction'
-import { categoryList, userList } from '@/mocks'
+import { userList } from '@/mocks'
+import { useCategoryStore } from '@/stores/category'
 
 type Props = {
   currency: string | null
@@ -11,9 +12,6 @@ type Props = {
   onEditTransaction: (transactionId: string) => void
 }
 
-const categoryMap = new Map(
-  categoryList.map((category) => [category.id, category])
-)
 const userMap = new Map(userList.map((user) => [user.id, user]))
 
 const equalSplitTolerance = 0.01
@@ -72,6 +70,11 @@ export default function TransactionList({
   transactions,
   onEditTransaction,
 }: Props) {
+  const categories = useCategoryStore((state) => state.categories)
+  const categoryMap = new Map(
+    categories.map((category) => [category.id, category])
+  )
+
   return (
     <>
       {error ? (
@@ -125,11 +128,17 @@ export default function TransactionList({
                   onClick={() => onEditTransaction(transaction.id)}
                 >
                   <div className="flex items-start gap-3">
-                    <Avatar
-                      className="mt-1 h-10 w-10 bg-content2"
-                      name={category?.name ?? 'Transaction'}
-                      src={category?.imageUrl}
-                    />
+                    {category ? (
+                      <Avatar
+                        className="mt-1 h-10 w-10 bg-content2"
+                        name={category.name}
+                        src={category.imageUrl}
+                      />
+                    ) : (
+                      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">
+                        <PiQuestionMark size={18} />
+                      </div>
+                    )}
 
                     <div className="min-w-0 flex-1 space-y-3">
                       <div className="flex items-start justify-between gap-3">
