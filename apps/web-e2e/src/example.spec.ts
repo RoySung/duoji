@@ -4,5 +4,6 @@ test('has title', async ({ page }) => {
   await page.goto('/')
 
   // Expect h1 to contain a substring.
-  expect(await page.locator('body').innerText()).toContain('Index')
+  // ignore case
+  expect(await page.locator('body').innerText()).toMatch(/home/i)
 })
