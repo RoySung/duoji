@@ -173,46 +173,41 @@ tests:
 ---
 ### Requirement: Users can navigate to category settings from an account book card
 
-The system SHALL provide a navigation entry point on each account book card in the Account Books Settings page that leads to the category settings page for that account book.
+The system SHALL use the account book card in the Account Books Settings page as the entry point to that account book's dedicated settings page, and the card SHALL NOT expose a direct Category Settings action.
 
-#### Scenario: Navigate to category settings from account book card
+#### Scenario: Open account book settings from account book card
 
-- **WHEN** a user presses the "Category Settings" button on an account book card
-- **THEN** the system SHALL navigate to the category settings page for that account book
+- **WHEN** a user presses the primary manage action on an account book card
+- **THEN** the system SHALL navigate to that account book's dedicated settings page
+
+#### Scenario: Category settings is not shown on account book card
+
+- **WHEN** a user views the available actions on an account book card
+- **THEN** the system SHALL NOT display a direct Category Settings action on that card
+
 
 <!-- @trace
-source: add-category-settings
-updated: 2026-03-23
+source: pageify-account-book-settings-flow
+updated: 2026-03-28
 code:
-  - apps/web/src/components/transaction/TransactionList.tsx
-  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
-  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
-  - apps/web/src/components/categorySettings/index.ts
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/mocks/index.ts
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - apps/web/src/components/TransactionModal/CategorySelector.tsx
-  - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
-  - apps/web/src/stores/category/index.ts
-  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
-  - apps/web/src/constants/categoryIcons.ts
-  - apps/web/src/utils/transactionUtils.ts
-  - apps/web/src/entities/category.ts
-  - apps/web/src/stores/category/categoryStoreProvider.tsx
-  - apps/web/src/stores/category/categoryStore.ts
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/pages/index.tsx
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
+  - apps/web/package.json
   - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/mocks/category.ts
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/constants/theme.ts
+  - apps/web/tailwind.config.js
+  - .impeccable.md
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/test-setup.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/pages/styles.css
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
   - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/constants/defaultCategories.ts
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/pages/_document.tsx
 tests:
-  - apps/web/specs/category.spec.ts
   - apps/web/specs/homeTransactions.spec.tsx
   - apps/web/specs/accountBookSettings.spec.tsx
 -->
@@ -278,4 +273,45 @@ tests:
   - apps/web/specs/accountBookSettings.spec.tsx
   - apps/web/specs/category.spec.ts
   - apps/web/specs/homeTransactions.spec.tsx
+-->
+
+---
+### Requirement: Users can navigate to category settings from an account book settings page
+
+The system SHALL provide a Category Settings action inside each account book's dedicated settings page, and that action SHALL lead to the category settings page for the same account book.
+
+#### Scenario: Navigate to category settings from an account book settings page
+
+- **WHEN** a user presses the "Category Settings" action on an existing account book's settings page
+- **THEN** the system SHALL navigate to the category settings page for that same account book
+
+#### Scenario: Return from category settings to account book settings
+
+- **WHEN** a user uses back navigation from the category settings page for an account book
+- **THEN** the system SHALL return to that account book's settings page
+
+<!-- @trace
+source: pageify-account-book-settings-flow
+updated: 2026-03-28
+code:
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
+  - apps/web/package.json
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/constants/theme.ts
+  - apps/web/tailwind.config.js
+  - .impeccable.md
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/test-setup.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/pages/styles.css
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/pages/_document.tsx
+tests:
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/accountBookSettings.spec.tsx
 -->

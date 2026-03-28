@@ -1,4 +1,5 @@
 import { HeroUIProvider } from '@heroui/react'
+import { ThemeProvider } from 'next-themes'
 import {
   act,
   fireEvent,
@@ -12,6 +13,9 @@ import { useRouter } from 'next/router'
 import Home from '../src/pages/index'
 import Settings from '../src/pages/settings'
 import AccountBookSettingsRoute from '../src/pages/settings/account-books'
+import NewAccountBookRoute from '../src/pages/settings/account-books/new'
+import AccountBookDetailsRoute from '../src/pages/settings/account-books/[id]'
+import CategorySettingsRoute from '../src/pages/settings/account-books/[id]/categories'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import { Transaction, TransactionRepo } from '../src/entities/transaction'
@@ -27,6 +31,7 @@ import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
+import { THEME_STORAGE_KEY } from '../src/constants/theme'
 import {
   Category,
   CategoryBulkDeleteResult,
@@ -327,12 +332,14 @@ type RenderOptions = {
   accountBooks?: AccountBook[]
   currentAccountBookId?: string | null
   pathname?: string
+  query?: Record<string, unknown>
 }
 
 async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
   const push = jest.fn()
   const back = jest.fn()
   mockedUseRouter.mockReturnValue({
+    query: options.query ?? {},
     pathname: options.pathname ?? '/settings',
     push,
     back,
@@ -369,15 +376,23 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
 
   await act(async () => {
     renderResult = render(
-      <HeroUIProvider>
-        <AccountBookStoreProvider store={store}>
-          <TransactionStoreProvider store={transactionStore}>
-            <CategoryStoreProvider store={categoryStore}>
-              {ui}
-            </CategoryStoreProvider>
-          </TransactionStoreProvider>
-        </AccountBookStoreProvider>
-      </HeroUIProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem={false}
+        storageKey={THEME_STORAGE_KEY}
+        themes={['light', 'dark']}
+      >
+        <HeroUIProvider>
+          <AccountBookStoreProvider store={store}>
+            <TransactionStoreProvider store={transactionStore}>
+              <CategoryStoreProvider store={categoryStore}>
+                {ui}
+              </CategoryStoreProvider>
+            </TransactionStoreProvider>
+          </AccountBookStoreProvider>
+        </HeroUIProvider>
+      </ThemeProvider>
     )
   })
 
@@ -434,7 +449,7 @@ describe('Account book settings pages', () => {
 
   it('keeps the settings navigation active for settings descendant routes', async () => {
     const { container } = await renderWithProviders(<NavBar />, {
-      pathname: '/settings/account-books',
+      pathname: '/settings/account-books/2',
     })
 
     const settingsInput = container.querySelector<HTMLInputElement>('#settings')
@@ -456,8 +471,8 @@ describe('Account book settings pages', () => {
     expect(push).toHaveBeenCalledWith('/settings')
   })
 
-  it('shows the current account book in settings and supports CRUD interactions without selection controls', async () => {
-    await renderWithProviders(<AccountBookSettingsRoute />, {
+  it('shows the current account book on the list page and opens account-book settings from cards', async () => {
+    const { push } = await renderWithProviders(<AccountBookSettingsRoute />, {
       pathname: '/settings/account-books',
       currentAccountBookId: '2',
     })
@@ -466,12 +481,37 @@ describe('Account book settings pages', () => {
       return screen.getByTestId(`account-book-card-${accountBookId}`)
     }
 
-    expect(within(getAccountBookCard('2')).getByText('Current')).toBeTruthy()
+    expect(
+      within(getAccountBookCard('2')).getByText('Current on Home')
+    ).toBeTruthy()
     expect(
       screen.queryByRole('button', { name: /Set current|Current now/i })
     ).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Category Settings' })
+    ).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+    fireEvent.click(
+      within(getAccountBookCard('2')).getByRole('button', {
+        name: 'View settings',
+      })
+    )
+
+    expect(push).toHaveBeenCalledWith('/settings/account-books/2')
+  })
+
+  it('renders the new account book page and creates a new account book', async () => {
+    const { push, store } = await renderWithProviders(<NewAccountBookRoute />, {
+      pathname: '/settings/account-books/new',
+    })
+
+    expect(screen.getByText('Create account book')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+    expect(push).toHaveBeenCalledWith('/settings/account-books')
+
+    push.mockClear()
+
     fireEvent.change(screen.getByLabelText('Name'), {
       target: { value: 'Weekend Trip' },
     })
@@ -481,27 +521,53 @@ describe('Account book settings pages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Weekend Trip')).toBeTruthy()
+      expect(
+        store
+          .getState()
+          .accountBooks.some(
+            (accountBook) => accountBook.name === 'Weekend Trip'
+          )
+      ).toBe(true)
     })
 
-    const weekendTripCard = screen.getByText('Weekend Trip').closest('article')
-    if (!weekendTripCard) {
-      throw new Error('Weekend Trip card was not rendered')
-    }
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith(
+        expect.stringMatching(/^\/settings\/account-books\/.+/)
+      )
+    })
+  })
 
-    fireEvent.click(within(weekendTripCard).getByText('Edit'))
+  it('renders an existing account book settings page and supports update, category navigation, and delete', async () => {
+    const { push, store } = await renderWithProviders(
+      <AccountBookDetailsRoute />,
+      {
+        pathname: '/settings/account-books/2',
+        query: { id: '2' },
+        currentAccountBookId: '2',
+      }
+    )
+
+    expect(screen.getByDisplayValue('Tokyo Trip')).toBeTruthy()
+
     fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: 'Weekend Trip Plus' },
+      target: { value: 'Tokyo Trip Plus' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Weekend Trip Plus')).toBeTruthy()
+      expect(
+        store
+          .getState()
+          .accountBooks.find((accountBook) => accountBook.id === '2')?.name
+      ).toBe('Tokyo Trip Plus')
     })
 
-    fireEvent.click(
-      within(getAccountBookCard('2')).getByRole('button', { name: 'Delete' })
-    )
+    fireEvent.click(screen.getByRole('button', { name: /Manage categories/i }))
+    expect(push).toHaveBeenCalledWith('/settings/account-books/2/categories')
+
+    push.mockClear()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account book' }))
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeTruthy()
@@ -512,11 +578,24 @@ describe('Account book settings pages', () => {
     )
 
     await waitFor(() => {
-      expect(screen.queryByText('Tokyo Trip')).toBeNull()
+      expect(
+        store
+          .getState()
+          .accountBooks.find((accountBook) => accountBook.id === '2')
+      ).toBeUndefined()
     })
 
-    await waitFor(() => {
-      expect(within(getAccountBookCard('1')).getByText('Current')).toBeTruthy()
+    expect(push).toHaveBeenCalledWith('/settings/account-books')
+  })
+
+  it('returns from category settings to the originating account book settings page', async () => {
+    const { push } = await renderWithProviders(<CategorySettingsRoute />, {
+      pathname: '/settings/account-books/2/categories',
+      query: { id: '2' },
     })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
+
+    expect(push).toHaveBeenCalledWith('/settings/account-books/2')
   })
 })

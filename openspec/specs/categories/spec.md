@@ -278,3 +278,73 @@ tests:
   - apps/web/specs/category.spec.ts
   - apps/web/specs/homeTransactions.spec.tsx
 -->
+
+---
+### Requirement: Transactions with a deleted category display as uncategorized
+
+When a transaction's `categoryId` no longer exists in the category store (because the category was deleted), the system SHALL display the transaction as "未分類" rather than hiding the transaction or silently using another category.
+
+#### Scenario: Display transaction with deleted category
+
+- **WHEN** the transaction list renders a transaction whose `categoryId` does not match any category in the category store
+- **THEN** the system SHALL display "未分類" as the category label for that transaction
+
+#### Scenario: Display transaction with empty categoryId
+
+- **WHEN** the transaction list renders a transaction whose `categoryId` is an empty string
+- **THEN** the system SHALL display "未分類" as the category label for that transaction
+
+<!-- @trace
+source: handle-deleted-category-as-uncategorized
+updated: 2026-03-28
+code:
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/stores/category/categoryStoreProvider.tsx
+  - apps/web/src/components/TransactionModal/CategorySelector.tsx
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - .impeccable.md
+  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
+  - apps/web/src/pages/_document.tsx
+  - apps/web/package.json
+  - apps/web/src/stores/category/index.ts
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/pages/index.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/tailwind.config.js
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
+  - apps/web/src/mocks/category.ts
+  - apps/web/src/components/categorySettings/DeleteConfirmModal.tsx
+  - apps/web/src/constants/defaultCategories.ts
+  - apps/web/src/constants/categoryIcons.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/test-setup.ts
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/utils/genUuid.ts
+  - apps/web/src/pages/styles.css
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/constants/theme.ts
+  - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/components/categorySettings/index.ts
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/entities/category.ts
+  - apps/web/src/mocks/index.ts
+tests:
+  - apps/web/specs/categoryStore.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/homeTransactions.spec.tsx
+-->

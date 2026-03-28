@@ -1,9 +1,11 @@
 import { AppProps } from 'next/app'
 import Head from 'next/head'
+import { ThemeProvider } from 'next-themes'
 import './styles.css'
 import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
 import { ReactElement, ReactNode, useEffect, useState } from 'react'
+import { THEME_STORAGE_KEY } from '@/constants/theme'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,
@@ -55,24 +57,33 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? ((page) => <Layout>{page}</Layout>)
 
   return (
-    <AccountBookStoreProvider store={accountBookStore}>
-      <TransactionStoreProvider store={transactionStore}>
-        <CategoryStoreProvider store={categoryStore}>
-          {getLayout(
-            <>
-              <Head>
-                <title>Welcome to Duoji!</title>
-                <meta
-                  name="viewport"
-                  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-                />
-              </Head>
-              <Component {...pageProps} />
-            </>
-          )}
-        </CategoryStoreProvider>
-      </TransactionStoreProvider>
-    </AccountBookStoreProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
+      disableTransitionOnChange
+      enableSystem={false}
+      storageKey={THEME_STORAGE_KEY}
+      themes={['light', 'dark']}
+    >
+      <AccountBookStoreProvider store={accountBookStore}>
+        <TransactionStoreProvider store={transactionStore}>
+          <CategoryStoreProvider store={categoryStore}>
+            {getLayout(
+              <>
+                <Head>
+                  <title>Welcome to Duoji!</title>
+                  <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+                  />
+                </Head>
+                <Component {...pageProps} />
+              </>
+            )}
+          </CategoryStoreProvider>
+        </TransactionStoreProvider>
+      </AccountBookStoreProvider>
+    </ThemeProvider>
   )
 }
 

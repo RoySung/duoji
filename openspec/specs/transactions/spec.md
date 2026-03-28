@@ -116,30 +116,57 @@ The system SHALL present transactions for the current account book on the home p
 
 <!-- @trace
 source: implement-transaction-store-and-home-list
-updated: 2026-03-23
+updated: 2026-03-28
 code:
-  - apps/web/src/stores/category/categoryStoreProvider.tsx
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
   - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
+  - apps/web/package.json
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
   - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/components/TransactionModal/CategorySelector.tsx
+  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
   - apps/web/src/pages/_app.tsx
-  - apps/web/src/utils/transactionUtils.ts
-  - apps/web/src/entities/category.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/mocks/index.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
+  - apps/web/src/components/categorySettings/index.ts
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
   - apps/web/src/stores/category/index.ts
-  - apps/web/src/stores/category/categoryStore.ts
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/mocks/category.ts
-  - apps/web/src/components/transaction/TransactionList.tsx
+  - .impeccable.md
+  - apps/web/src/utils/genUuid.ts
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/components/TransactionModal/CategorySelector.tsx
   - apps/web/src/entities/transaction.ts
   - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/entities/category.ts
+  - apps/web/src/pages/settings.tsx
+  - apps/web/tailwind.config.js
+  - apps/web/src/components/categorySettings/DeleteConfirmModal.tsx
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/stores/category/categoryStoreProvider.tsx
+  - apps/web/src/constants/defaultCategories.ts
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/pages/styles.css
+  - apps/web/src/mocks/category.ts
+  - apps/web/src/constants/theme.ts
+  - apps/web/src/pages/_document.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
   - apps/web/jest.config.ts
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/constants/categoryIcons.ts
+  - apps/web/test-setup.ts
   - apps/web/src/pages/index.tsx
 tests:
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/categoryStore.spec.ts
   - apps/web/specs/category.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/homeTransactions.spec.tsx
 -->
 
 ---
@@ -185,6 +212,133 @@ code:
   - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
   - apps/web/src/pages/index.tsx
 tests:
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/homeTransactions.spec.tsx
+-->
+
+<!-- @trace
+source: implement-transaction-store-and-home-list
+updated: 2026-03-28
+code:
+  - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
+  - apps/web/package.json
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/mocks/index.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
+  - apps/web/src/components/categorySettings/index.ts
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
+  - apps/web/src/stores/category/index.ts
+  - .impeccable.md
+  - apps/web/src/utils/genUuid.ts
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/components/TransactionModal/CategorySelector.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/entities/category.ts
+  - apps/web/src/pages/settings.tsx
+  - apps/web/tailwind.config.js
+  - apps/web/src/components/categorySettings/DeleteConfirmModal.tsx
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/stores/category/categoryStoreProvider.tsx
+  - apps/web/src/constants/defaultCategories.ts
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/pages/styles.css
+  - apps/web/src/mocks/category.ts
+  - apps/web/src/constants/theme.ts
+  - apps/web/src/pages/_document.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/constants/categoryIcons.ts
+  - apps/web/test-setup.ts
+  - apps/web/src/pages/index.tsx
+tests:
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/categoryStore.spec.ts
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+-->
+
+---
+### Requirement: Editing a transaction with a deleted category requires re-selection
+
+When a user opens an existing transaction for editing and the transaction's category no longer exists, the system SHALL preserve the uncategorized state and prevent saving until the user selects a valid replacement category.
+
+#### Scenario: Open edit modal for transaction with deleted category
+
+- **WHEN** a user opens the edit modal for a transaction whose `categoryId` does not exist in the current category store
+- **THEN** the system SHALL display the category selector with no category selected
+- **AND** the system SHALL disable the save button until the user explicitly selects a category
+
+#### Scenario: User selects a replacement category
+
+- **WHEN** the user selects a valid category in the edit modal where no category was previously resolved
+- **THEN** the system SHALL enable the save button
+- **AND** the system SHALL save the transaction with the newly selected category when the user confirms
+
+<!-- @trace
+source: handle-deleted-category-as-uncategorized
+updated: 2026-03-28
+code:
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/stores/category/categoryStoreProvider.tsx
+  - apps/web/src/components/TransactionModal/CategorySelector.tsx
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - .impeccable.md
+  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
+  - apps/web/src/pages/_document.tsx
+  - apps/web/package.json
+  - apps/web/src/stores/category/index.ts
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/pages/index.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/tailwind.config.js
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
+  - apps/web/src/mocks/category.ts
+  - apps/web/src/components/categorySettings/DeleteConfirmModal.tsx
+  - apps/web/src/constants/defaultCategories.ts
+  - apps/web/src/constants/categoryIcons.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/test-setup.ts
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/utils/genUuid.ts
+  - apps/web/src/pages/styles.css
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/constants/theme.ts
+  - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/components/categorySettings/index.ts
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/entities/category.ts
+  - apps/web/src/mocks/index.ts
+tests:
+  - apps/web/specs/categoryStore.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
   - apps/web/specs/category.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
   - apps/web/specs/homeTransactions.spec.tsx

@@ -1,4 +1,5 @@
 import { HeroUIProvider } from '@heroui/react'
+import { ThemeProvider } from 'next-themes'
 import {
   act,
   fireEvent,
@@ -28,6 +29,7 @@ import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
+import { THEME_STORAGE_KEY } from '../src/constants/theme'
 import {
   Category,
   CategoryBulkDeleteResult,
@@ -807,18 +809,26 @@ async function renderWithProviders(options: RenderOptions = {}) {
 
   await act(async () => {
     renderResult = render(
-      <HeroUIProvider>
-        <AccountBookStoreProvider store={accountBookStore}>
-          <TransactionStoreProvider store={transactionStore}>
-            <CategoryStoreProvider store={categoryStore}>
-              <div>
-                <Home />
-                <NavBar />
-              </div>
-            </CategoryStoreProvider>
-          </TransactionStoreProvider>
-        </AccountBookStoreProvider>
-      </HeroUIProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem={false}
+        storageKey={THEME_STORAGE_KEY}
+        themes={['light', 'dark']}
+      >
+        <HeroUIProvider>
+          <AccountBookStoreProvider store={accountBookStore}>
+            <TransactionStoreProvider store={transactionStore}>
+              <CategoryStoreProvider store={categoryStore}>
+                <div>
+                  <Home />
+                  <NavBar />
+                </div>
+              </CategoryStoreProvider>
+            </TransactionStoreProvider>
+          </AccountBookStoreProvider>
+        </HeroUIProvider>
+      </ThemeProvider>
     )
   })
 

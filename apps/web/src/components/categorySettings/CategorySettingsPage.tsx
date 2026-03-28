@@ -394,7 +394,7 @@ export default function CategorySettingsPage({
     <div className="h-full overflow-y-auto bg-background text-foreground">
       <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-6">
         <AccountBookNavHeader
-          backHref="/settings/account-books"
+          backHref={`/settings/account-books/${accountBookId}`}
           title="Category Settings"
         />
 

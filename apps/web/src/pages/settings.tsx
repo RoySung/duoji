@@ -1,9 +1,28 @@
-import { Button } from '@heroui/react'
+import { Button, Switch } from '@heroui/react'
+import { useTheme } from 'next-themes'
 import { useRouter } from 'next/router'
-import { PiBooksBold, PiCaretRightBold } from 'react-icons/pi'
+import { useEffect, useState } from 'react'
+import {
+  PiBooksBold,
+  PiCaretRightBold,
+  PiMoonBold,
+  PiSunBold,
+} from 'react-icons/pi'
 
 export default function Settings() {
   const router = useRouter()
+  const [hasHydrated, setHasHydrated] = useState(false)
+  const { setTheme, theme } = useTheme()
+
+  useEffect(() => {
+    setHasHydrated(true)
+  }, [])
+
+  const resolvedTheme = theme === 'dark' ? 'dark' : 'light'
+
+  function handleThemeChange(isSelected: boolean) {
+    setTheme(isSelected ? 'dark' : 'light')
+  }
 
   return (
     <div
@@ -23,6 +42,35 @@ export default function Settings() {
               Manage the local account books that power transaction entry and
               account-book-scoped views.
             </p>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-border bg-card p-4 shadow-lg shadow-black/5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-foreground">
+                Appearance
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Switch between light and dark theme for DuoJi.
+              </p>
+            </div>
+
+            <Switch
+              isDisabled={!hasHydrated}
+              isSelected={resolvedTheme === 'dark'}
+              size="lg"
+              thumbIcon={({ isSelected, className }) =>
+                isSelected ? (
+                  <PiMoonBold className={className} size={14} />
+                ) : (
+                  <PiSunBold className={className} size={14} />
+                )
+              }
+              onValueChange={handleThemeChange}
+            >
+              {resolvedTheme === 'dark' ? 'Dark mode' : 'Light mode'}
+            </Switch>
           </div>
         </section>
 
