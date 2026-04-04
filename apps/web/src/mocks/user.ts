@@ -1,6 +1,6 @@
-import { User } from '@/entities/user'
+import { RegisteredUser } from '@/entities/user'
 
-export const userList: User[] = [
+export const userList: RegisteredUser[] = [
   {
     id: '1',
     name: 'Roy',

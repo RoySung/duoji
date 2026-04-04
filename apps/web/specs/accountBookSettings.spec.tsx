@@ -31,6 +31,10 @@ import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
+import {
+  UserStoreProvider,
+  createUserStore,
+} from '../src/stores/user'
 import { THEME_STORAGE_KEY } from '../src/constants/theme'
 import {
   Category,
@@ -371,6 +375,7 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
     .initialize(store.getState().currentAccountBookId)
 
   const categoryStore = createCategoryStore(new InMemoryCategoryRepo())
+  const userStore = createUserStore()
 
   let renderResult: ReturnType<typeof render>
 
@@ -387,7 +392,9 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
           <AccountBookStoreProvider store={store}>
             <TransactionStoreProvider store={transactionStore}>
               <CategoryStoreProvider store={categoryStore}>
-                {ui}
+                <UserStoreProvider store={userStore}>
+                  {ui}
+                </UserStoreProvider>
               </CategoryStoreProvider>
             </TransactionStoreProvider>
           </AccountBookStoreProvider>

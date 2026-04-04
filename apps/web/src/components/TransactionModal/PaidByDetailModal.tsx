@@ -1,5 +1,5 @@
 import { Transaction } from '@/entities/transaction'
-import { User } from '@/entities/user'
+import { User, VirtualUser } from '@/entities/user'
 import {
   Modal,
   ModalContent,
@@ -9,14 +9,15 @@ import {
   Button,
   Checkbox,
   Input,
+  Avatar,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
-import { userList } from '@/mocks'
 
 type Props = {
   isOpen: boolean
   paidByDetail: Transaction['paidByDetail']
   amount: number
+  users: User[]
   onOpenChange: (open: boolean) => void
   onPaidByDetailChange: (paidByDetail: Transaction['paidByDetail']) => void
 }
@@ -25,6 +26,7 @@ export default function PaidByDetailModal({
   isOpen,
   paidByDetail,
   amount,
+  users,
   onOpenChange,
   onPaidByDetailChange,
 }: Props) {
@@ -34,45 +36,47 @@ export default function PaidByDetailModal({
     setCurrentPaidByDetail(paidByDetail)
   }, [paidByDetail])
 
-  // user selection
   function checkIsUserSelected(user: User) {
-    return currentPaidByDetail.some((item) => item.user.id === user.id)
+    return currentPaidByDetail.some((item) => item.userId === user.id)
   }
 
   function handleUserCheckboxChange(user: User, checked: boolean) {
     setCurrentPaidByDetail((list) => {
       if (checked) {
-        // 若已存在則不重複加入
-        if (list.some((item) => item.user.id === user.id)) return list
-        return [...list, { user, amount: 0 }]
+        if (list.some((item) => item.userId === user.id)) return list
+        return [
+          ...list,
+          { userId: user.id, userType: user.type, amount: 0 },
+        ]
       } else {
-        // 移除該 user
-        return list.filter((item) => item.user.id !== user.id)
+        return list.filter((item) => item.userId !== user.id)
       }
     })
   }
 
-  // amount input
   function getAmountByUser(user: User) {
     const detail = currentPaidByDetail.find(
-      (item) => item.user.id === user.id
+      (item) => item.userId === user.id
     ) || { amount: 0 }
     return detail.amount.toString()
   }
+
   function updateAmountByUser(user: User, amount: number) {
     setCurrentPaidByDetail((prev) => {
-      const existingDetail = prev.find((item) => item.user.id === user.id)
+      const existingDetail = prev.find((item) => item.userId === user.id)
       if (existingDetail) {
         return prev.map((item) =>
-          item.user.id === user.id ? { ...item, amount } : item
+          item.userId === user.id ? { ...item, amount } : item
         )
       } else {
-        return [...prev, { user, amount }]
+        return [
+          ...prev,
+          { userId: user.id, userType: user.type, amount },
+        ]
       }
     })
   }
 
-  // save
   const currentTotalAmount = currentPaidByDetail.reduce(
     (sum, item) => sum + item.amount,
     0
@@ -95,18 +99,13 @@ export default function PaidByDetailModal({
   }
 
   const NoticeInFooter = () => {
+    const diff = currentTotalAmount - amount
+    if (diff === 0) return <div className="h-8" />
     return (
       <div className="text-right h-8">
-        {(() => {
-          const diff = currentTotalAmount - amount
-          if (diff === 0) return null
-
-          return (
-            <span className={diff > 0 ? 'text-green-500' : 'text-red-500'}>
-              {diff > 0 ? `+${diff}` : diff}
-            </span>
-          )
-        })()}
+        <span className={diff > 0 ? 'text-green-500' : 'text-red-500'}>
+          {diff > 0 ? `+${diff}` : diff}
+        </span>
       </div>
     )
   }
@@ -126,29 +125,34 @@ export default function PaidByDetailModal({
         </ModalHeader>
         <ModalBody>
           <div className="user-option-list flex gap-2 flex-col">
-            {userList.map((user) => {
-              let itemClass = 'user-option-list__item flex items-center gap-2'
-              if (!checkIsUserSelected(user)) {
-                itemClass += ' opacity-50'
-              }
-
+            {users.map((user) => {
+              const selected = checkIsUserSelected(user)
+              const isDeleted = user.type === 'virtual' && !!(user as VirtualUser).deletedAt
+              const isCheckboxDisabled = isDeleted && !selected
               return (
-                <div key={user.id} className={itemClass}>
+                <div
+                  key={user.id}
+                  className={`user-option-list__item flex items-center gap-2 ${
+                    !selected ? 'opacity-50' : ''
+                  }`}
+                >
                   <Checkbox
                     id={`user-${user.id}`}
                     className="flex-1"
-                    isSelected={checkIsUserSelected(user)}
+                    isSelected={selected}
+                    isDisabled={isCheckboxDisabled}
                     onChange={(e) =>
                       handleUserCheckboxChange(user, e.target.checked)
                     }
                   >
                     <div className="flex gap-2 items-center">
-                      <img
+                      <Avatar
                         src={user.avatarUrl}
-                        alt={user.name}
-                        className="w-8 h-8 rounded-full"
+                        name={user.name}
+                        size="sm"
+                        className="w-5 h-5 text-tiny"
                       />
-                      <div className="w-24 truncate">{user.name}</div>
+                      <div className={`w-24 truncate${isDeleted ? ' line-through' : ''}`}>{user.name}</div>
                     </div>
                   </Checkbox>
                   <Input
@@ -166,14 +170,10 @@ export default function PaidByDetailModal({
                     }
                     value={getAmountByUser(user)}
                     onChange={(e) => {
-                      const value = parseFloat(e.target.value)
-                      if (!isNaN(value)) {
-                        updateAmountByUser(user, value)
-                      } else {
-                        updateAmountByUser(user, 0) // 如果輸入無效，重置為 0
-                      }
+                      const v = parseFloat(e.target.value)
+                      updateAmountByUser(user, isNaN(v) ? 0 : v)
                     }}
-                    isDisabled={!checkIsUserSelected(user)}
+                    isDisabled={!selected}
                   />
                 </div>
               )

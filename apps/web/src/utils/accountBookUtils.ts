@@ -48,6 +48,7 @@ export function buildAccountBookPayload(
     updatedAt: timestamp,
     ownerId,
     userIds: [ownerId],
+    virtualUsers: [],
   }
 }
 

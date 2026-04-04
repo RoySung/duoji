@@ -1,8 +1,10 @@
+import React from 'react'
 import { Avatar, Chip } from '@heroui/react'
 import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
 import { Transaction } from '@/entities/transaction'
-import { userList } from '@/mocks'
+import { User, isDeletedUser } from '@/entities/user'
 import { useCategoryStore } from '@/stores/category'
+import { useUserStore } from '@/stores/user'
 
 type Props = {
   currency: string | null
@@ -12,19 +14,11 @@ type Props = {
   onEditTransaction: (transactionId: string) => void
 }
 
-const userMap = new Map(userList.map((user) => [user.id, user]))
-
 const equalSplitTolerance = 0.01
 
-function formatUserNameSummary(userNames: string[]): string | null {
-  const normalizedNames = userNames
-    .map((userName) => userName.trim())
-    .filter(Boolean)
-
-  if (normalizedNames.length === 0) {
-    return null
-  }
-
+function formatUserNameSummary(names: string[]): string | null {
+  const normalizedNames = names.map((n) => n.trim()).filter(Boolean)
+  if (normalizedNames.length === 0) return null
   return normalizedNames.join('、')
 }
 
@@ -46,12 +40,12 @@ function hasEqualSplit(transaction: Transaction): boolean {
   )
 }
 
-function formatParticipantSummary(transaction: Transaction): string | null {
+function formatParticipantSummary(
+  transaction: Transaction,
+  userMap: Map<string, User>
+): string | null {
   if (transaction.type === 'income') {
-    if (!transaction.receivedByUserId) {
-      return null
-    }
-
+    if (!transaction.receivedByUserId) return null
     return (
       userMap.get(transaction.receivedByUserId)?.name ??
       transaction.receivedByUserId
@@ -59,8 +53,41 @@ function formatParticipantSummary(transaction: Transaction): string | null {
   }
 
   return formatUserNameSummary(
-    transaction.paidByDetail.map((item) => item.user.name)
+    transaction.paidByDetail.map(
+      (item) => userMap.get(item.userId)?.name ?? item.userId
+    )
   )
+}
+
+function renderParticipantSummary(
+  transaction: Transaction,
+  userMap: Map<string, User>
+): React.ReactNode {
+  if (transaction.type === 'income') {
+    if (!transaction.receivedByUserId) return null
+    const person = userMap.get(transaction.receivedByUserId)
+    const name = person?.name ?? transaction.receivedByUserId
+    return person && isDeletedUser(person) ? <span className="line-through">{name}</span> : name
+  }
+
+  const parts = transaction.paidByDetail
+    .map((item) => {
+      const person = userMap.get(item.userId)
+      const name = (person?.name ?? item.userId).trim()
+      if (!name) return null
+      return person && isDeletedUser(person) ? (
+        <span key={item.userId} className="line-through">{name}</span>
+      ) : (
+        <span key={item.userId}>{name}</span>
+      )
+    })
+    .filter(Boolean)
+
+  return parts.reduce<React.ReactNode[]>((acc, part, i) => {
+    if (i > 0) acc.push('、')
+    acc.push(part)
+    return acc
+  }, [])
 }
 
 export default function TransactionList({
@@ -74,6 +101,8 @@ export default function TransactionList({
   const categoryMap = new Map(
     categories.map((category) => [category.id, category])
   )
+  const users = useUserStore((state) => state.allUsers)
+  const userMap = new Map(users.map((u) => [u.id, u]))
 
   return (
     <>
@@ -111,7 +140,7 @@ export default function TransactionList({
         <div className="mt-6 space-y-3" data-testid="transaction-list">
           {transactions.map((transaction) => {
             const category = categoryMap.get(transaction.categoryId) ?? null
-            const participantSummary = formatParticipantSummary(transaction)
+            const participantSummary = formatParticipantSummary(transaction, userMap)
             const signedAmount = formatSignedAmount(
               transaction.amount,
               transaction.type
@@ -195,7 +224,7 @@ export default function TransactionList({
                             size="sm"
                             variant="flat"
                           >
-                            {participantSummary}
+                            {renderParticipantSummary(transaction, userMap)}
                           </Chip>
                         </div>
                       ) : null}

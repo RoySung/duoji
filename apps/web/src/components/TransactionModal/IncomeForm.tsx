@@ -1,20 +1,22 @@
 import { useEffect } from 'react'
-import { DatePicker, Form, Input, Select, SelectItem } from '@heroui/react'
+import { Avatar, DatePicker, Form, Input, Select, SelectItem } from '@heroui/react'
 import { AccountBook } from '@/entities/accountBook'
 import {
   DefaultPaymentMethod,
   PaymentMethodValues,
   Transaction,
 } from '@/entities/transaction'
+import { User, VirtualUser } from '@/entities/user'
 import CategorySelector from './CategorySelector'
 import TagsInput from '../ui/TagInput'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
+import { useUserStore } from '@/stores/user'
+import { useTransactionStore } from '@/stores/transaction'
 import {
   applyIncomeRecipient,
   distributeTransactionAmount,
   formatTransactionDateValue,
-  getAccountBookParticipantUsers,
   parseTransactionDateValue,
   resolveIncomeRecipientId,
 } from '@/utils/transactionUtils'
@@ -31,11 +33,30 @@ export default function IncomeForm({ value, onChange }: Props) {
     (state) => state.currentAccountBookId
   )
   const incomeCategories = useCategoryStore((state) => state.incomeCategories)
+  const modalMode = useTransactionStore((state) => state.modalMode)
+  const allUsers = useUserStore((state) => state.allUsers)
+  const activeUsers = useUserStore((state) => state.activeUsers)
+  const isEditMode = modalMode === 'edit'
 
-  const participantUsers = getAccountBookParticipantUsers(
-    accountBooks,
-    value.accountBookId || currentAccountBookId
-  )
+  // Use allUsers for lookup in edit mode so deleted recipients are preserved
+  const usersForLookup = isEditMode ? allUsers : activeUsers
+
+  // Build the selector list: active users + current deleted recipient if in edit mode
+  const currentRecipient = isEditMode
+    ? allUsers.find(
+        (u) =>
+          u.id === value.receivedByUserId &&
+          u.type === 'virtual' &&
+          (u as VirtualUser).deletedAt
+      )
+    : undefined
+
+  const usersForSelector: User[] = currentRecipient
+    ? [...activeUsers, currentRecipient]
+    : activeUsers
+
+  const deletedRecipientId =
+    isEditMode && currentRecipient ? currentRecipient.id : undefined
 
   useEffect(() => {
     if (!currentAccountBookId) {
@@ -49,7 +70,7 @@ export default function IncomeForm({ value, onChange }: Props) {
         : currentAccountBookId
 
     const nextRecipientId = resolveIncomeRecipientId({
-      accountBooks,
+      users: usersForLookup,
       accountBookId: nextAccountBookId,
       receivedByUserId: value.receivedByUserId,
     })
@@ -67,10 +88,11 @@ export default function IncomeForm({ value, onChange }: Props) {
           ...value,
           accountBookId: nextAccountBookId,
         },
-        nextRecipientId
+        nextRecipientId,
+        usersForLookup
       )
     )
-  }, [accountBooks, currentAccountBookId, onChange, value])
+  }, [accountBooks, currentAccountBookId, usersForLookup, onChange, value])
 
   const date = parseTransactionDateValue(value.date)
 
@@ -189,28 +211,46 @@ export default function IncomeForm({ value, onChange }: Props) {
         <Select
           size="sm"
           label="Received By"
-          items={participantUsers}
-          selectedKeys={value.receivedByUserId ? [value.receivedByUserId] : []}
+          items={usersForSelector}
+          selectedKeys={
+            value.receivedByUserId ? [value.receivedByUserId] : []
+          }
           placeholder="Select an income recipient"
           isRequired
-          isDisabled={participantUsers.length === 0}
+          isDisabled={usersForSelector.length === 0}
+          disabledKeys={deletedRecipientId ? [deletedRecipientId] : []}
           onSelectionChange={(keys) => {
-            const selectedRecipientId = Array.from(keys)[0]
+            const selectedId = Array.from(keys)[0]
             const nextRecipientId =
-              typeof selectedRecipientId === 'string'
-                ? selectedRecipientId
+              typeof selectedId === 'string'
+                ? selectedId
                 : resolveIncomeRecipientId({
-                    accountBooks,
+                    users: usersForLookup,
                     accountBookId: value.accountBookId,
                     receivedByUserId: value.receivedByUserId,
                   })
 
-            onChange(applyIncomeRecipient(value, nextRecipientId))
+            onChange(applyIncomeRecipient(value, nextRecipientId, usersForLookup))
           }}
         >
-          {(item) => (
-            <SelectItem key={item.id} textValue={item.name}>
-              {item.name}
+          {(user) => (
+            <SelectItem
+              key={user.id}
+              textValue={user.name}
+              startContent={
+                <Avatar
+                  src={user.avatarUrl}
+                  name={user.name}
+                  size="sm"
+                  className="w-5 h-5 text-tiny"
+                />
+              }
+            >
+              {user.type === 'virtual' && (user as VirtualUser).deletedAt ? (
+                <span className="line-through">{user.name}</span>
+              ) : (
+                user.name
+              )}
             </SelectItem>
           )}
         </Select>

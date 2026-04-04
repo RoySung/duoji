@@ -3,10 +3,17 @@ import {
   createTransactionDraft,
   formatTransactionDateValue,
   parseTransactionDateValue,
+  resolveIncomeRecipientId,
 } from '../src/utils/transactionUtils'
 import { accountBookList } from '../src/mocks/accountBook'
 import { userList } from '../src/mocks/user'
 import { expenseCategoryList, incomeCategoryList } from '../src/mocks'
+import { User, VirtualUser } from '../src/entities/user'
+
+const mockUsers: User[] = userList.map((user) => ({
+  ...user,
+  type: 'registered' as const,
+}))
 
 describe('transactionUtils date helpers', () => {
   it('parses stored transaction dates without using the native Date parser', () => {
@@ -32,23 +39,26 @@ describe('transactionUtils date helpers', () => {
     ).toBe('2026/03/19')
   })
 
-  it('prefills new income drafts with the active account-book owner as the recipient', () => {
+  it('prefills new income drafts with the first person as the recipient', () => {
     const incomeDraft = createTransactionDraft({
       type: 'income',
       accountBookId: '1',
       accountBooks: accountBookList,
+      users: mockUsers,
     })
 
-    expect(incomeDraft.receivedByUserId).toBe('1')
+    expect(incomeDraft.receivedByUserId).toBe(userList[0]!.id)
     expect(incomeDraft.paidByDetail).toEqual([
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered',
         amount: 0,
       },
     ])
     expect(incomeDraft.splitDetail).toEqual([
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered',
         amount: 0,
       },
     ])
@@ -59,15 +69,117 @@ describe('transactionUtils date helpers', () => {
       type: 'expense',
       accountBookId: '2',
       accountBooks: accountBookList,
+      users: mockUsers,
     })
 
     const incomeDraft = changeTransactionDraftType(
       expenseDraft,
       'income',
-      accountBookList
+      accountBookList,
+      mockUsers
     )
 
-    expect(incomeDraft.receivedByUserId).toBe('1')
+    expect(incomeDraft.receivedByUserId).toBe(userList[0]!.id)
+  })
+})
+
+describe('create vs. edit selector behavior for deleted virtual users', () => {
+  const deletedVirtualUser: VirtualUser = {
+    id: 'vu-deleted',
+    name: 'DeletedMember',
+    accountBookId: '1',
+    createdAt: 0,
+    updatedAt: 1000,
+    deletedAt: 1000,
+  }
+  const deletedUser: User = { ...deletedVirtualUser, type: 'virtual' }
+  const activeUser: User = { ...userList[0]!, type: 'registered' }
+  const allUsers: User[] = [activeUser, deletedUser]
+  const activeUsers: User[] = [activeUser]
+
+  const baseExpenseWithDeletedPayer = {
+    id: 'tx-edit',
+    type: 'expense' as const,
+    amount: 200,
+    accountBookId: '1',
+    categoryId: '1-1',
+    date: '2026/03/24',
+    description: '',
+    paymentMethod: 'Cash' as const,
+    receivedByUserId: null,
+    tags: [],
+    paidByDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 200 }],
+    splitDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 200 }],
+    createdAt: 0,
+    updatedAt: 0,
+    deletedAt: null,
+  }
+
+  it('create mode draft uses activeUsers — deleted VU paidByDetail is empty for new transaction', () => {
+    const draft = createTransactionDraft({
+      type: 'expense',
+      accountBookId: '1',
+      users: activeUsers, // only active users, as used in create mode
+    })
+
+    // No deleted person in the draft details
+    const hasDeletedUser = draft.paidByDetail.some(
+      (d) => d.userId === 'vu-deleted'
+    )
+    expect(hasDeletedUser).toBe(false)
+  })
+
+  it('edit mode draft preserves deleted VU already present on the transaction', () => {
+    const draft = createTransactionDraft({
+      baseTransaction: baseExpenseWithDeletedPayer,
+      users: allUsers, // all users including deleted, as used in edit mode
+    })
+
+    // Deleted person should still be in paidByDetail (preserved from original)
+    const hasDeletedUser = draft.paidByDetail.some(
+      (d) => d.userId === 'vu-deleted'
+    )
+    expect(hasDeletedUser).toBe(true)
+  })
+
+  it('resolveIncomeRecipientId retains deleted recipient when already set', () => {
+    const baseIncomeWithDeletedRecipient = {
+      id: 'tx-income-deleted',
+      type: 'income' as const,
+      amount: 500,
+      accountBookId: '1',
+      categoryId: '101-1',
+      date: '2026/03/24',
+      description: '',
+      paymentMethod: 'Cash' as const,
+      receivedByUserId: 'vu-deleted',
+      tags: [],
+      paidByDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 500 }],
+      splitDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 500 }],
+      createdAt: 0,
+      updatedAt: 0,
+      deletedAt: null,
+    }
+
+    // In edit mode, allUsers is passed — resolveIncomeRecipientId should keep the deleted recipient
+    const resolvedId = resolveIncomeRecipientId({
+      users: allUsers,
+      accountBookId: '1',
+      receivedByUserId: baseIncomeWithDeletedRecipient.receivedByUserId,
+    })
+
+    expect(resolvedId).toBe('vu-deleted')
+  })
+
+  it('resolveIncomeRecipientId falls back to first active user when deleted recipient not in allUsers', () => {
+    // If deleted VU is not even in allUsers (edge case), falls back to first user
+    const resolvedId = resolveIncomeRecipientId({
+      users: activeUsers,
+      accountBookId: '1',
+      receivedByUserId: 'vu-deleted',
+    })
+
+    expect(resolvedId).toBe(activeUser.id)
   })
 })
 
@@ -83,8 +195,8 @@ describe('resolveTransactionCategoryId via createTransactionDraft', () => {
     paymentMethod: 'Cash' as const,
     receivedByUserId: null,
     tags: [],
-    paidByDetail: [{ user: userList[0]!, amount: 100 }],
-    splitDetail: [{ user: userList[0]!, amount: 100 }],
+    paidByDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 100 }],
+    splitDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 100 }],
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,

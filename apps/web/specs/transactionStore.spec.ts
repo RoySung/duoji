@@ -22,21 +22,24 @@ function createTransactionFixture(
     date: '2026/03/18',
     description: 'Breakfast with friends',
     paymentMethod: DefaultPaymentMethod,
-    receivedByUserId: type === 'income' ? userList[0]?.id ?? null : null,
+    receivedByUserId: type === 'income' ? (userList[0]?.id ?? null) : null,
     tags: ['meal'],
     paidByDetail: [
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered',
         amount: 120,
       },
     ],
     splitDetail: [
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered',
         amount: 60,
       },
       {
-        user: userList[1],
+        userId: userList[1]!.id,
+        userType: 'registered',
         amount: 60,
       },
     ],
@@ -239,9 +242,9 @@ describe('Transaction Store', () => {
           amount: 500,
           categoryId: '101-1',
           description: 'Monthly salary',
-          receivedByUserId: userList[0].id,
-          paidByDetail: [{ user: userList[0], amount: 500 }],
-          splitDetail: [{ user: userList[0], amount: 500 }],
+          receivedByUserId: userList[0]!.id,
+          paidByDetail: [{ userId: userList[0]!.id, userType: 'registered', amount: 500 }],
+          splitDetail: [{ userId: userList[0]!.id, userType: 'registered', amount: 500 }],
         }),
       ])
     )
@@ -249,9 +252,9 @@ describe('Transaction Store', () => {
     await store.getState().initialize('book-1')
 
     await store.getState().updateTransaction('tx-income', {
-      receivedByUserId: userList[1].id,
-      paidByDetail: [{ user: userList[1], amount: 500 }],
-      splitDetail: [{ user: userList[1], amount: 500 }],
+      receivedByUserId: userList[1]!.id,
+      paidByDetail: [{ userId: userList[1]!.id, userType: 'registered', amount: 500 }],
+      splitDetail: [{ userId: userList[1]!.id, userType: 'registered', amount: 500 }],
       updatedAt: baseTimestamp + 1000,
     })
 
@@ -260,7 +263,7 @@ describe('Transaction Store', () => {
         .getState()
         .transactions.find((transaction) => transaction.id === 'tx-income')
     ).toMatchObject({
-      receivedByUserId: userList[1].id,
+      receivedByUserId: userList[1]!.id,
     })
   })
 

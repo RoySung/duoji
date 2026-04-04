@@ -8,7 +8,7 @@ TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Upd
 
 ### Requirement: Users can record income and expense transactions
 
-The system SHALL allow users to create transactions with a type, amount, date, category, note, and payment method within the active account book.
+The system SHALL allow users to create transactions with a type, amount, date, category, note, and payment method within the active account book. Each participant reference in `paidByDetail` and `splitDetail` SHALL use `userType: 'registered'` for registered users and `userType: 'virtual'` for virtual users.
 
 #### Scenario: Create an expense transaction
 
@@ -20,33 +20,43 @@ The system SHALL allow users to create transactions with a type, amount, date, c
 - **WHEN** a user submits a valid income transaction form in the active account book
 - **THEN** the system SHALL store the transaction and include it in the active account book transaction list
 
+#### Scenario: Participant type stored as `registered`
+
+- **WHEN** a registered user is referenced in a transaction's `paidByDetail` or `splitDetail`
+- **THEN** the system SHALL store `userType: 'registered'` (not `'user'`) for that participant entry
+
 
 <!-- @trace
-source: migrate-project-instructions-to-spectra
-updated: 2026-03-18
+source: merge-person-user-entities
+updated: 2026-04-01
 code:
-  - .github/prompts/spectra-debug.prompt.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - CLAUDE.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/skills/spectra-apply/SKILL.md
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/copilot-instructions.md
-  - .github/instructions/phase-1-todo.instructions.md
-  - .github/skills/spectra-debug/SKILL.md
-  - .github/instructions/prd.instructions.md
-  - .github/prompts/spectra-audit.prompt.md
-  - .github/skills/spectra-archive/SKILL.md
-  - .github/skills/spectra-audit/SKILL.md
-  - .github/skills/spectra-ingest/SKILL.md
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/TransactionModal/PaidByDetailModal.tsx
+  - apps/web/src/mocks/user.ts
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/utils/accountBookUtils.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
   - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - .github/prompts/spectra-archive.prompt.md
-  - AGENTS.md
+  - apps/web/src/stores/people/peopleStore.ts
+  - apps/web/src/components/TransactionModal/SplitDetailModal.tsx
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/stores/people/index.ts
+  - apps/web/src/components/accountBookSettings/PeopleSection.tsx
+  - apps/web/src/entities/accountBook.ts
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/stores/people/peopleStoreProvider.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/entities/user.ts
+  - apps/web/src/mocks/accountBook.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+tests:
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/peopleStore.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
 -->
 
 ---

@@ -9,6 +9,7 @@ import { THEME_STORAGE_KEY } from '@/constants/theme'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,
+  useAccountBookStore,
 } from '@/stores/accountBook/index'
 import { initializeDB } from '@/lib/dexie'
 import {
@@ -16,6 +17,11 @@ import {
   createTransactionStore,
 } from '@/stores/transaction'
 import { CategoryStoreProvider, createCategoryStore } from '@/stores/category'
+import {
+  UserStoreProvider,
+  createUserStore,
+  useUserStore,
+} from '@/stores/user'
 
 // 擴展 AppProps 類型以包含 getLayout
 type AppPropsWithLayout = AppProps & {
@@ -27,10 +33,29 @@ type NextPageWithLayout = NextPage & {
   getLayout?: (page: ReactElement) => ReactNode
 }
 
+// Wires userStore to reload whenever the active account book changes
+function UserStoreWatcher() {
+  const accountBooks = useAccountBookStore((state) => state.accountBooks)
+  const currentAccountBookId = useAccountBookStore(
+    (state) => state.currentAccountBookId
+  )
+  const initializeUsers = useUserStore((state) => state.initialize)
+
+  const currentAccountBook =
+    accountBooks.find((ab) => ab.id === currentAccountBookId) ?? null
+
+  useEffect(() => {
+    void initializeUsers(currentAccountBook)
+  }, [currentAccountBook, initializeUsers])
+
+  return null
+}
+
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const [accountBookStore] = useState(createAccountBookStore)
   const [transactionStore] = useState(createTransactionStore)
   const [categoryStore] = useState(createCategoryStore)
+  const [userStore] = useState(createUserStore)
 
   // 初始化資料庫
   useEffect(() => {
@@ -68,18 +93,21 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
       <AccountBookStoreProvider store={accountBookStore}>
         <TransactionStoreProvider store={transactionStore}>
           <CategoryStoreProvider store={categoryStore}>
-            {getLayout(
-              <>
-                <Head>
-                  <title>Welcome to Duoji!</title>
-                  <meta
-                    name="viewport"
-                    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-                  />
-                </Head>
-                <Component {...pageProps} />
-              </>
-            )}
+            <UserStoreProvider store={userStore}>
+              <UserStoreWatcher />
+              {getLayout(
+                <>
+                  <Head>
+                    <title>Welcome to Duoji!</title>
+                    <meta
+                      name="viewport"
+                      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+                    />
+                  </Head>
+                  <Component {...pageProps} />
+                </>
+              )}
+            </UserStoreProvider>
           </CategoryStoreProvider>
         </TransactionStoreProvider>
       </AccountBookStoreProvider>

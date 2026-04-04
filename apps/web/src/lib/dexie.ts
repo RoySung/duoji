@@ -1,10 +1,11 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { Category } from '@/entities/category'
 import { Transaction } from '@/entities/transaction'
-import { User } from '@/entities/user'
+import { RegisteredUser } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
 import { accountBookList, userList } from '@/mocks'
 
+// TODO: remove mocks data
 /**
  * Duoji App 本地資料庫
  * 使用 Dexie 管理 IndexedDB
@@ -12,7 +13,7 @@ import { accountBookList, userList } from '@/mocks'
 class DuojiDB extends Dexie {
   categories!: EntityTable<Category, 'id'>
   transactions!: EntityTable<Transaction, 'id'>
-  users!: EntityTable<User, 'id'>
+  users!: EntityTable<RegisteredUser, 'id'>
   accountBooks!: EntityTable<AccountBook, 'id'>
 
   constructor() {

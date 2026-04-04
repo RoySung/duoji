@@ -12,6 +12,7 @@ export const accountBookList: AccountBook[] = [
     updatedAt: baseTimestamp,
     ownerId: '1',
     userIds: ['1', '2'],
+    virtualUsers: [],
   },
   {
     id: '2',
@@ -22,6 +23,15 @@ export const accountBookList: AccountBook[] = [
     updatedAt: baseTimestamp + 1,
     ownerId: '1',
     userIds: ['1', '2'],
+    virtualUsers: [
+      {
+        id: 'v1',
+        name: 'Dad',
+        accountBookId: '2',
+        createdAt: baseTimestamp + 1,
+        updatedAt: baseTimestamp + 1,
+      },
+    ],
   },
 ]
 

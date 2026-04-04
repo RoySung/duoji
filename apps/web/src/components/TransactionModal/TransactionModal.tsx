@@ -17,6 +17,7 @@ import IncomeForm from './IncomeForm'
 import { useTransactionStore } from '@/stores/transaction'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
+import { useUserStore } from '@/stores/user'
 import {
   changeTransactionDraftType,
   createTransactionDraft,
@@ -54,11 +55,14 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
   )
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const categories = useCategoryStore((state) => state.categories)
+  const allUsers = useUserStore((state) => state.allUsers)
+  const activeUsers = useUserStore((state) => state.activeUsers)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [draft, setDraft] = useState(() =>
     createTransactionDraft({
       accountBookId: currentAccountBookId ?? '',
       accountBooks,
+      users: activeUsers,
       categories,
     })
   )
@@ -73,6 +77,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
         createTransactionDraft({
           baseTransaction: selectedTransaction,
           accountBooks,
+          users: allUsers,
           categories,
         })
       )
@@ -83,11 +88,14 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
       createTransactionDraft({
         accountBookId: currentAccountBookId ?? '',
         accountBooks,
+        users: activeUsers,
         categories,
       })
     )
   }, [
     accountBooks,
+    activeUsers,
+    allUsers,
     categories,
     currentAccountBookId,
     isOpen,
@@ -218,6 +226,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
                       currentDraft,
                       key as TransactionType,
                       accountBooks,
+                      modalMode === 'edit' ? allUsers : activeUsers,
                       categories
                     )
                   )

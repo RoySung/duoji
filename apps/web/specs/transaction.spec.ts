@@ -23,21 +23,24 @@ function createTransactionFixture(
     date: '2026/03/18',
     description: 'Breakfast with friends',
     paymentMethod: DefaultPaymentMethod,
-    receivedByUserId: type === 'income' ? userList[0]?.id ?? null : null,
+    receivedByUserId: type === 'income' ? (userList[0]?.id ?? null) : null,
     tags: ['meal'],
     paidByDetail: [
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered' as const,
         amount: 120,
       },
     ],
     splitDetail: [
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered' as const,
         amount: 60,
       },
       {
-        user: userList[1],
+        userId: userList[1]!.id,
+        userType: 'registered' as const,
         amount: 60,
       },
     ],
@@ -166,10 +169,10 @@ describe('TransactionLocalRepo', () => {
         accountBookId: '1',
         description: 'Lunch',
         amount: 240,
-        paidByDetail: [{ user: userList[0], amount: 240 }],
+        paidByDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 240 }],
         splitDetail: [
-          { user: userList[0], amount: 120 },
-          { user: userList[1], amount: 120 },
+          { userId: userList[0]!.id, userType: 'registered' as const, amount: 120 },
+          { userId: userList[1]!.id, userType: 'registered' as const, amount: 120 },
         ],
       }),
     ]
@@ -179,9 +182,9 @@ describe('TransactionLocalRepo', () => {
       description: 'Salary',
       type: 'income',
       categoryId: '101',
-      receivedByUserId: userList[0].id,
-      paidByDetail: [{ user: userList[0], amount: 5000 }],
-      splitDetail: [{ user: userList[0], amount: 5000 }],
+      receivedByUserId: userList[0]!.id,
+      paidByDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 5000 }],
+      splitDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 5000 }],
       amount: 5000,
     })
 

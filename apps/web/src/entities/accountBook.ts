@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VirtualUserSchema } from './user'
 
 export const CurrencySchema = z.enum(['USD', 'JPY', 'TWD'])
 export type Currency = z.infer<typeof CurrencySchema>
@@ -12,6 +13,7 @@ export const AccountBookSchema = z.object({
   updatedAt: z.number(),
   ownerId: z.string(),
   userIds: z.array(z.string()),
+  virtualUsers: z.array(VirtualUserSchema).default([]),
 })
 export type AccountBook = z.infer<typeof AccountBookSchema>
 

@@ -29,6 +29,10 @@ import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
+import {
+  UserStoreProvider,
+  createUserStore,
+} from '../src/stores/user'
 import { THEME_STORAGE_KEY } from '../src/constants/theme'
 import {
   Category,
@@ -38,6 +42,7 @@ import {
   CategoryRepo,
 } from '../src/entities/category'
 import { userList } from '../src/mocks'
+import { User, VirtualUser } from '../src/entities/user'
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
@@ -327,11 +332,12 @@ function createAccountBookFixture(
     id: 'book-1',
     name: 'Daily Life',
     currency: 'TWD',
-    description: 'Personal daily expenses',
+    description: 'Useral daily expenses',
     createdAt: baseTimestamp,
     updatedAt: baseTimestamp,
     ownerId: '1',
     userIds: ['1', '2'],
+    virtualUsers: [],
     ...overrides,
   }
 }
@@ -350,21 +356,24 @@ function createTransactionFixture(
     date: '2026/03/18',
     description: 'Breakfast with friends',
     paymentMethod: DefaultPaymentMethod,
-    receivedByUserId: type === 'income' ? userList[0]?.id ?? null : null,
+    receivedByUserId: type === 'income' ? (userList[0]?.id ?? null) : null,
     tags: ['meal'],
     paidByDetail: [
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered' as const,
         amount: 120,
       },
     ],
     splitDetail: [
       {
-        user: userList[0],
+        userId: userList[0]!.id,
+        userType: 'registered' as const,
         amount: 60,
       },
       {
-        user: userList[1],
+        userId: userList[1]!.id,
+        userType: 'registered' as const,
         amount: 60,
       },
     ],
@@ -611,6 +620,7 @@ type RenderOptions = {
   accountBooks?: AccountBook[]
   currentAccountBookId?: string | null
   transactions?: Transaction[]
+  users?: User[]
 }
 
 async function renderWithProviders(options: RenderOptions = {}) {
@@ -661,17 +671,20 @@ async function renderWithProviders(options: RenderOptions = {}) {
           paymentMethod: 'Line Pay',
           paidByDetail: [
             {
-              user: userList[1],
+              userId: userList[1]!.id,
+              userType: 'registered' as const,
               amount: 80,
             },
           ],
           splitDetail: [
             {
-              user: userList[0],
+              userId: userList[0]!.id,
+              userType: 'registered' as const,
               amount: 50,
             },
             {
-              user: userList[1],
+              userId: userList[1]!.id,
+              userType: 'registered' as const,
               amount: 30,
             },
           ],
@@ -683,17 +696,19 @@ async function renderWithProviders(options: RenderOptions = {}) {
           categoryId: '101-1',
           description: 'Bonus',
           paymentMethod: 'Credit Card',
-          receivedByUserId: userList[0].id,
+          receivedByUserId: userList[0]!.id,
           amount: 500,
           paidByDetail: [
             {
-              user: userList[0],
+              userId: userList[0]!.id,
+              userType: 'registered' as const,
               amount: 500,
             },
           ],
           splitDetail: [
             {
-              user: userList[0],
+              userId: userList[0]!.id,
+              userType: 'registered' as const,
               amount: 500,
             },
           ],
@@ -805,6 +820,13 @@ async function renderWithProviders(options: RenderOptions = {}) {
     .getState()
     .initialize(accountBookStore.getState().currentAccountBookId)
 
+  const defaultUsers = userList.map((user) => ({ ...user, type: 'registered' as const }))
+  const allUsers = options.users ?? defaultUsers
+  const activeUsers = allUsers.filter(
+    (u) => !(u.type === 'virtual' && (u as VirtualUser).deletedAt)
+  )
+  const userStore = createUserStore(undefined, undefined, { allUsers, activeUsers })
+
   let renderResult: ReturnType<typeof render>
 
   await act(async () => {
@@ -820,10 +842,12 @@ async function renderWithProviders(options: RenderOptions = {}) {
           <AccountBookStoreProvider store={accountBookStore}>
             <TransactionStoreProvider store={transactionStore}>
               <CategoryStoreProvider store={categoryStore}>
-                <div>
-                  <Home />
-                  <NavBar />
-                </div>
+                <UserStoreProvider store={userStore}>
+                  <div>
+                    <Home />
+                    <NavBar />
+                  </div>
+                </UserStoreProvider>
               </CategoryStoreProvider>
             </TransactionStoreProvider>
           </AccountBookStoreProvider>
@@ -835,6 +859,7 @@ async function renderWithProviders(options: RenderOptions = {}) {
   return {
     accountBookStore,
     transactionStore,
+    userStore,
     ...renderResult!,
   }
 }
@@ -1105,6 +1130,54 @@ describe('Home transaction history', () => {
     expect(
       within(screen.getByTestId('transaction-row-tx-3')).getByText('Patty')
     ).toBeTruthy()
+  })
+
+  it('renders a deleted virtual user name with line-through style in transaction list', async () => {
+    const deletedVirtualUser: VirtualUser = {
+      id: 'vu-deleted',
+      name: 'DeletedMember',
+      accountBookId: 'book-1',
+      createdAt: 1710000000000,
+      updatedAt: 1710000001000,
+      deletedAt: 1710000001000,
+    }
+    const deletedUser: User = { ...deletedVirtualUser, type: 'virtual' }
+    const activeUser: User = { ...userList[0]!, type: 'registered' }
+
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      users: [activeUser, deletedUser],
+      transactions: [
+        createTransactionFixture({
+          id: 'tx-deleted-person',
+          accountBookId: 'book-1',
+          description: 'Shared lunch',
+          paidByDetail: [
+            {
+              userId: 'vu-deleted',
+              userType: 'virtual' as const,
+              amount: 120,
+            },
+          ],
+          splitDetail: [
+            {
+              userId: 'vu-deleted',
+              userType: 'virtual' as const,
+              amount: 120,
+            },
+          ],
+        }),
+      ],
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-row-tx-deleted-person')).toBeTruthy()
+    })
+
+    const row = screen.getByTestId('transaction-row-tx-deleted-person')
+    const nameElement = within(row).getByText('DeletedMember')
+    expect(nameElement.tagName).toBe('SPAN')
+    expect(nameElement.className).toContain('line-through')
   })
 
   it('disables account-book switching while transactions are loading', async () => {

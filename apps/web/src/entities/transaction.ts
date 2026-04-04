@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { UserSchema } from './user'
+import { UserTypeSchema } from '@/entities/user'
 
 export const TransactionTypeSchema = z.enum(['expense', 'income'])
 export type TransactionType = z.infer<typeof TransactionTypeSchema>
@@ -14,14 +14,16 @@ export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
 export const DefaultPaymentMethod: PaymentMethod = PaymentMethodValues[0]
 
 export const PaidByDetailItemSchema = z.object({
-  user: UserSchema,
+  userId: z.string(),
+  userType: UserTypeSchema,
   amount: z.number().positive(),
 })
 
 export const PaidByDetailSchema = z.array(PaidByDetailItemSchema)
 
 export const SplitDetailItemSchema = z.object({
-  user: UserSchema,
+  userId: z.string(),
+  userType: UserTypeSchema,
   amount: z.number().positive(),
 })
 
@@ -57,7 +59,10 @@ export const TransactionSchema = TransactionFieldsSchema.extend({
     })
   }
 
-  if (transaction.type === 'expense' && transaction.receivedByUserId !== null) {
+  if (
+    transaction.type === 'expense' &&
+    transaction.receivedByUserId !== null
+  ) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Expense transactions must not include an income recipient.',

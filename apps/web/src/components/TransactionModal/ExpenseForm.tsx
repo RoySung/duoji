@@ -5,15 +5,15 @@ import {
   Form,
   DatePicker,
   Input,
-  Avatar,
   Button,
   addToast,
+  Avatar,
 } from '@heroui/react'
 import TagsInput from '../ui/TagInput'
 import { PiGitBranchBold } from 'react-icons/pi'
 import PaidByDetailModal from './PaidByDetailModal'
 import { AccountBook } from '@/entities/accountBook'
-import { User } from '@/entities/user'
+import { User, VirtualUser } from '@/entities/user'
 import {
   DefaultPaymentMethod,
   PaymentMethodValues,
@@ -21,7 +21,8 @@ import {
 } from '@/entities/transaction'
 import { useAccountBookStore } from '@/stores/accountBook/index'
 import { useCategoryStore } from '@/stores/category'
-import { userList } from '@/mocks'
+import { useUserStore } from '@/stores/user'
+import { useTransactionStore } from '@/stores/transaction'
 import SplitDetailModal from './SplitDetailModal'
 import CategorySelector from './CategorySelector'
 import {
@@ -31,18 +32,6 @@ import {
   distributeTransactionAmount,
 } from '@/utils/transactionUtils'
 
-// TODO
-/**
- * fields
- * - amount
- * - category
- * - date
- * - description
- * - accountBook
- * - tags
- * - paidByDetail
- * - splitDetail
- */
 type Props = {
   value: Transaction
   onChange: (nextValue: Transaction) => void
@@ -55,6 +44,38 @@ export default function ExpenseForm({ value, onChange }: Props) {
     (state) => state.currentAccountBookId
   )
   const expenseCategories = useCategoryStore((state) => state.expenseCategories)
+  const modalMode = useTransactionStore((state) => state.modalMode)
+  const allUsers = useUserStore((state) => state.allUsers)
+  const activeUsers = useUserStore((state) => state.activeUsers)
+  const isEditMode = modalMode === 'edit'
+
+  const selectedPaidByIds = value.paidByDetail.map((item) => item.userId)
+  const selectedSplitIds = value.splitDetail.map((item) => item.userId)
+
+  // In edit mode: show active users + deleted users already on this transaction
+  const usersForPaidBy = isEditMode
+    ? [
+        ...activeUsers,
+        ...allUsers.filter(
+          (u) =>
+            u.type === 'virtual' &&
+            (u as VirtualUser).deletedAt &&
+            selectedPaidByIds.includes(u.id)
+        ),
+      ]
+    : activeUsers
+
+  const usersForSplit = isEditMode
+    ? [
+        ...activeUsers,
+        ...allUsers.filter(
+          (u) =>
+            u.type === 'virtual' &&
+            (u as VirtualUser).deletedAt &&
+            selectedSplitIds.includes(u.id)
+        ),
+      ]
+    : activeUsers
 
   useEffect(() => {
     if (!currentAccountBookId) {
@@ -74,20 +95,18 @@ export default function ExpenseForm({ value, onChange }: Props) {
     })
   }, [accountBooks, currentAccountBookId, onChange, value])
 
-  const paidByUserList = value.paidByDetail.map((item) => item.user)
-  function selectPaidByUser(userIds: Array<User['id']>) {
+  function selectPaidByUsers(userIds: Array<User['id']>) {
     const selectedUsers = userIds
-      .map((id) => userList.find((user) => user.id === id))
-      .filter((user): user is User => {
-        if (!user) {
+      .map((id) => allUsers.find((u) => u.id === id))
+      .filter((u): u is User => {
+        if (!u) {
           addToast({
             title: 'Error',
             color: 'danger',
-            description: 'Selected user was not found.',
+            description: 'Selected person was not found.',
           })
         }
-
-        return Boolean(user)
+        return Boolean(u)
       })
 
     onChange({
@@ -99,15 +118,11 @@ export default function ExpenseForm({ value, onChange }: Props) {
   const date = parseTransactionDateValue(value.date)
 
   const [isOpenPaidByOptions, setIsOpenPaidByOptions] = useState(false)
-  function openPaidByOptionsModal() {
-    setIsOpenPaidByOptions(true)
-  }
 
-  const splitUserList = value.splitDetail.map((item) => item.user)
-  function selectSplitUser(userIds: Array<User['id']>) {
+  function selectSplitUsers(userIds: Array<User['id']>) {
     const selectedUsers = userIds
-      .map((id) => userList.find((user) => user.id === id))
-      .filter((user): user is User => Boolean(user))
+      .map((id) => allUsers.find((u) => u.id === id))
+      .filter((u): u is User => Boolean(u))
 
     onChange({
       ...value,
@@ -115,9 +130,6 @@ export default function ExpenseForm({ value, onChange }: Props) {
     })
   }
   const [isOpenSplitDetail, setIsOpenSplitDetail] = useState(false)
-  function openSplitDetailModal() {
-    setIsOpenSplitDetail(true)
-  }
 
   return (
     <div className="expense-form">
@@ -246,22 +258,29 @@ export default function ExpenseForm({ value, onChange }: Props) {
             className="flex-1"
             size="sm"
             label="Paid By"
-            items={userList}
+            items={usersForPaidBy}
             selectionMode="multiple"
-            placeholder="Select a user"
+            placeholder="Select who paid"
             isRequired
-            selectedKeys={paidByUserList.map((user) => user.id)}
+            selectedKeys={selectedPaidByIds}
             onSelectionChange={(ids) =>
-              selectPaidByUser(Array.from(ids) as User['id'][])
+              selectPaidByUsers(Array.from(ids) as User['id'][])
             }
           >
-            {(item) => (
+            {(user) => (
               <SelectItem
-                key={item.id}
-                textValue={item.name}
-                startContent={<Avatar src={item.avatarUrl} alt={item.name} />}
+                key={user.id}
+                textValue={user.name}
+                startContent={
+                  <Avatar
+                    src={user.avatarUrl}
+                    name={user.name}
+                    size="sm"
+                    className="w-5 h-5 text-tiny"
+                  />
+                }
               >
-                {item.name}
+                {user.name}
               </SelectItem>
             )}
           </Select>
@@ -270,7 +289,7 @@ export default function ExpenseForm({ value, onChange }: Props) {
             color="primary"
             className="ml-2"
             variant="ghost"
-            onPress={openPaidByOptionsModal}
+            onPress={() => setIsOpenPaidByOptions(true)}
           >
             <PiGitBranchBold size={18} className="transform rotate-90" />
           </Button>
@@ -279,6 +298,7 @@ export default function ExpenseForm({ value, onChange }: Props) {
             onOpenChange={setIsOpenPaidByOptions}
             amount={value.amount}
             paidByDetail={value.paidByDetail}
+            users={usersForPaidBy}
             onPaidByDetailChange={(paidByDetail) => {
               onChange({ ...value, paidByDetail })
             }}
@@ -290,23 +310,30 @@ export default function ExpenseForm({ value, onChange }: Props) {
               className="flex-1"
               size="sm"
               label="Split With"
-              items={userList}
+              items={usersForSplit}
               selectionMode="multiple"
-              placeholder="Select users to split with"
+              placeholder="Select people to split with"
               isRequired
-              selectedKeys={splitUserList.map((user) => user.id)}
+              selectedKeys={selectedSplitIds}
               onSelectionChange={(ids) =>
-                selectSplitUser(Array.from(ids) as User['id'][])
+                selectSplitUsers(Array.from(ids) as User['id'][])
               }
               description="💡 Split equally by default. You can customize amounts if needed."
             >
-              {(item) => (
+              {(user) => (
                 <SelectItem
-                  key={item.id}
-                  textValue={item.name}
-                  startContent={<Avatar src={item.avatarUrl} alt={item.name} />}
+                  key={user.id}
+                  textValue={user.name}
+                  startContent={
+                    <Avatar
+                      src={user.avatarUrl}
+                      name={user.name}
+                      size="sm"
+                      className="w-5 h-5 text-tiny"
+                    />
+                  }
                 >
-                  {item.name}
+                  {user.name}
                 </SelectItem>
               )}
             </Select>
@@ -317,7 +344,7 @@ export default function ExpenseForm({ value, onChange }: Props) {
             color="primary"
             className="ml-2 mt-1"
             variant="ghost"
-            onPress={openSplitDetailModal}
+            onPress={() => setIsOpenSplitDetail(true)}
           >
             <PiGitBranchBold size={18} className="transform rotate-90" />
           </Button>
@@ -325,6 +352,7 @@ export default function ExpenseForm({ value, onChange }: Props) {
             isOpen={isOpenSplitDetail}
             onOpenChange={setIsOpenSplitDetail}
             splitDetail={value.splitDetail}
+            users={usersForSplit}
             onSplitDetailChange={(splitDetail) => {
               onChange({ ...value, splitDetail })
             }}

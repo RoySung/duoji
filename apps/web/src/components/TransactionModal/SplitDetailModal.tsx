@@ -12,13 +12,13 @@ import {
 } from '@heroui/react'
 import { clsx } from 'clsx'
 import { Transaction } from '@/entities/transaction'
-import { User } from '@/entities/user'
-import { userList } from '@/mocks'
+import { User, VirtualUser } from '@/entities/user'
 
 type Props = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   splitDetail: Transaction['splitDetail']
+  users: User[]
   onSplitDetailChange: (splitDetail: Transaction['splitDetail']) => void
   amount: number
 }
@@ -27,6 +27,7 @@ export default function SplitDetailModal({
   isOpen,
   onOpenChange,
   splitDetail,
+  users,
   onSplitDetailChange,
   amount,
 }: Props) {
@@ -37,23 +38,22 @@ export default function SplitDetailModal({
     setCurrentSplitDetail(splitDetail)
   }, [splitDetail])
 
-  // 勾選狀態
   function checkIsUserSelected(user: User) {
-    return currentSplitDetail.some((item) => item.user.id === user.id)
+    return currentSplitDetail.some((item) => item.userId === user.id)
   }
 
-  // 勾選時均分
   function handleUserCheckboxChange(user: User, checked: boolean) {
     let newDetail: Transaction['splitDetail']
     if (checked) {
-      // 新增
-      const selected = [...currentSplitDetail, { user, amount: 0 }]
+      const selected = [
+        ...currentSplitDetail,
+        { userId: user.id, userType: user.type, amount: 0 },
+      ]
       const avgAmount = amount / selected.length
       newDetail = selected.map((item) => ({ ...item, amount: avgAmount }))
     } else {
-      // 移除
       const selected = currentSplitDetail.filter(
-        (item) => item.user.id !== user.id
+        (item) => item.userId !== user.id
       )
       const avgAmount = selected.length > 0 ? amount / selected.length : 0
       newDetail = selected.map((item) => ({ ...item, amount: avgAmount }))
@@ -61,44 +61,38 @@ export default function SplitDetailModal({
     setCurrentSplitDetail(newDetail)
   }
 
-  // 金額調整
   function handleAmountChange(user: User, value: number) {
     setCurrentSplitDetail((detail) =>
       detail.map((item) =>
-        item.user.id === user.id ? { ...item, amount: value } : item
+        item.userId === user.id ? { ...item, amount: value } : item
       )
     )
   }
 
-  // check amount
   const currentTotalAmount = currentSplitDetail.reduce(
     (sum, item) => sum + item.amount,
     0
   )
+
   const NoticeInFooter = () => {
+    const diff = currentTotalAmount - amount
+    if (diff === 0) return <div className="h-8" />
     return (
       <div className="text-right h-8">
-        {(() => {
-          const diff = currentTotalAmount - amount
-          if (diff === 0) return null
-
-          return (
-            <span
-              className={clsx({
-                'text-green-500': diff > 0,
-                'text-red-500': diff < 0,
-              })}
-            >
-              {diff > 0 ? `+${diff}` : diff}
-            </span>
-          )
-        })()}
+        <span
+          className={clsx({
+            'text-green-500': diff > 0,
+            'text-red-500': diff < 0,
+          })}
+        >
+          {diff > 0 ? `+${diff}` : diff}
+        </span>
       </div>
     )
   }
+
   const isSaveDisabled = currentTotalAmount !== amount
 
-  // save
   function setIsOpen(open: boolean) {
     if (!open) {
       setCurrentSplitDetail(splitDetail)
@@ -128,8 +122,10 @@ export default function SplitDetailModal({
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-2">
-            {userList.map((user) => {
+            {users.map((user) => {
               const selected = checkIsUserSelected(user)
+              const isDeleted = user.type === 'virtual' && !!(user as VirtualUser).deletedAt
+              const isCheckboxDisabled = isDeleted && !selected
               return (
                 <div
                   key={user.id}
@@ -139,12 +135,18 @@ export default function SplitDetailModal({
                 >
                   <Checkbox
                     isSelected={selected}
+                    isDisabled={isCheckboxDisabled}
                     onChange={(e) =>
                       handleUserCheckboxChange(user, e.target.checked)
                     }
                   />
-                  <Avatar src={user.avatarUrl} alt={user.name} size="sm" />
-                  <div className="w-24 truncate">{user.name}</div>
+                  <Avatar
+                    src={user.avatarUrl}
+                    name={user.name}
+                    size="sm"
+                    className="w-5 h-5 text-tiny shrink-0"
+                  />
+                  <div className={clsx('w-24 truncate', { 'line-through': isDeleted })}>{user.name}</div>
                   <Input
                     size="sm"
                     label="Amount"
@@ -155,13 +157,12 @@ export default function SplitDetailModal({
                     className="flex-1"
                     value={(
                       currentSplitDetail.find(
-                        (item) => item.user.id === user.id
+                        (item) => item.userId === user.id
                       )?.amount ?? 0
                     ).toString()}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value)
-                      if (!isNaN(v)) handleAmountChange(user, v)
-                      else handleAmountChange(user, 0)
+                      handleAmountChange(user, isNaN(v) ? 0 : v)
                     }}
                     isDisabled={!selected}
                   />

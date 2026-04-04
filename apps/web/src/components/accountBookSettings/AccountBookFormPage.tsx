@@ -15,6 +15,7 @@ import {
 import AccountBookForm from './AccountBookForm'
 import AccountBookNavHeader from './AccountBookNavHeader'
 import DeleteAccountBookModal from './DeleteAccountBookModal'
+import UserSection from './UserSection'
 
 type AccountBookFormPageProps = {
   accountBookId?: string
@@ -216,6 +217,8 @@ export default function AccountBookFormPage({
 
         {mode === 'edit' && accountBookId ? (
           <>
+            <UserSection accountBookId={accountBookId} />
+
             <section className="rounded-3xl border border-border bg-card p-5 shadow-lg shadow-black/5">
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold text-foreground">

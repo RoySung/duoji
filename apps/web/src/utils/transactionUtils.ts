@@ -4,11 +4,10 @@ import { AccountBook } from '@/entities/accountBook'
 import {
   DefaultPaymentMethod,
   PaymentMethod,
-  SplitDetail,
+  PaidByDetail,
   Transaction,
   TransactionType,
 } from '@/entities/transaction'
-import { userList } from '@/mocks'
 import { Category } from '@/entities/category'
 import { User } from '@/entities/user'
 
@@ -42,116 +41,41 @@ function resolvePaymentMethod(paymentMethod?: PaymentMethod): PaymentMethod {
   return paymentMethod ?? DefaultPaymentMethod
 }
 
-function getUserById(userId: string | null | undefined): User | null {
-  if (!userId) {
-    return null
-  }
-
-  return userList.find((user) => user.id === userId) ?? null
-}
-
-function getAccountBookById(
-  accountBooks: AccountBook[],
-  accountBookId: string | null | undefined
-): AccountBook | null {
-  if (!accountBookId) {
-    return null
-  }
-
-  return (
-    accountBooks.find((accountBook) => accountBook.id === accountBookId) ?? null
-  )
-}
-
-function getAccountBookParticipantIds(
-  accountBook: AccountBook | null
-): string[] {
-  if (!accountBook) {
-    return []
-  }
-
-  return Array.from(new Set([accountBook.ownerId, ...accountBook.userIds]))
-}
-
-export function getAccountBookParticipantUsers(
-  accountBooks: AccountBook[],
-  accountBookId: string | null | undefined
-): User[] {
-  const accountBook = getAccountBookById(accountBooks, accountBookId)
-
-  return getAccountBookParticipantIds(accountBook)
-    .map((participantId) => getUserById(participantId))
-    .filter((participant): participant is User => participant !== null)
-}
-
-function resolveDefaultIncomeRecipientId(
-  accountBooks: AccountBook[],
-  accountBookId: string | null | undefined
-): string | null {
-  const accountBook = getAccountBookById(accountBooks, accountBookId)
-
-  if (!accountBook) {
-    return null
-  }
-
-  const participants = getAccountBookParticipantUsers(
-    accountBooks,
-    accountBookId
-  )
-
-  if (
-    participants.some((participant) => participant.id === accountBook.ownerId)
-  ) {
-    return accountBook.ownerId
-  }
-
-  return participants[0]?.id ?? null
-}
-
 export function resolveIncomeRecipientId(options: {
-  accountBooks?: AccountBook[]
+  users?: User[]
   accountBookId?: string | null
   receivedByUserId?: string | null
 }): string | null {
-  const accountBooks = options.accountBooks ?? []
-  const participants = getAccountBookParticipantUsers(
-    accountBooks,
-    options.accountBookId
-  )
+  const users = options.users ?? []
 
   if (options.receivedByUserId) {
-    if (participants.length === 0) {
+    if (users.length === 0) {
       return options.receivedByUserId
     }
 
-    if (
-      participants.some(
-        (participant) => participant.id === options.receivedByUserId
-      )
-    ) {
+    if (users.some((user) => user.id === options.receivedByUserId)) {
       return options.receivedByUserId
     }
   }
 
-  return resolveDefaultIncomeRecipientId(accountBooks, options.accountBookId)
+  return users[0]?.id ?? null
 }
 
 function buildIncomeRecipientDetails(
   receivedByUserId: string | null,
+  users: User[],
   amount: number
-) {
-  const recipient = getUserById(receivedByUserId)
-
-  if (!recipient) {
-    return []
-  }
+): PaidByDetail {
+  const recipient = users.find((p) => p.id === receivedByUserId)
+  if (!recipient) return []
 
   return buildUserAmountDetails([recipient], amount)
 }
 
 export function applyIncomeRecipient(
   transaction: Transaction,
-  receivedByUserId: string | null
+  receivedByUserId: string | null,
+  users: User[] = []
 ): Transaction {
   if (transaction.type !== 'income') {
     return {
@@ -162,6 +86,7 @@ export function applyIncomeRecipient(
 
   const recipientDetails = buildIncomeRecipientDetails(
     receivedByUserId,
+    users,
     transaction.amount
   )
 
@@ -173,19 +98,15 @@ export function applyIncomeRecipient(
   }
 }
 
-function getDefaultSplitUsers(type: TransactionType): User[] {
-  if (type === 'expense') {
-    return userList
-  }
-
-  return userList[0] ? [userList[0]] : []
-}
-
-export function buildUserAmountDetails(users: User[], amount: number) {
+export function buildUserAmountDetails(
+  users: User[],
+  amount: number
+): PaidByDetail {
   const nextAmount = users.length > 0 ? amount / users.length : 0
 
-  return users.map((user) => ({
-    user,
+  return users.map((person) => ({
+    userId: person.id,
+    userType: person.type,
     amount: nextAmount,
   }))
 }
@@ -254,23 +175,17 @@ function resolveTransactionCategoryId(
   return getDefaultTransactionCategoryId(type, categories)
 }
 
-function buildDefaultSplitDetail(
-  type: TransactionType,
-  amount: number
-): SplitDetail {
-  return buildUserAmountDetails(getDefaultSplitUsers(type), amount)
-}
-
 export function createTransactionDraft(options?: {
   type?: TransactionType
   accountBookId?: string
   accountBooks?: AccountBook[]
+  users?: User[]
   baseTransaction?: Transaction | null
   categories?: Category[]
 }): Transaction {
   const baseTransaction = options?.baseTransaction
   const type = options?.type ?? baseTransaction?.type ?? 'expense'
-  const accountBooks = options?.accountBooks ?? []
+  const users = options?.users ?? []
   const categories = options?.categories ?? []
 
   if (baseTransaction) {
@@ -280,7 +195,7 @@ export function createTransactionDraft(options?: {
     const receivedByUserId =
       type === 'income'
         ? resolveIncomeRecipientId({
-            accountBooks,
+            users,
             accountBookId: nextAccountBookId,
             receivedByUserId: clonedTransaction.receivedByUserId,
           })
@@ -299,39 +214,27 @@ export function createTransactionDraft(options?: {
       receivedByUserId,
       paidByDetail:
         type === 'income'
-          ? buildIncomeRecipientDetails(
-              receivedByUserId,
-              clonedTransaction.amount
-            )
+          ? buildIncomeRecipientDetails(receivedByUserId, users, clonedTransaction.amount)
           : clonedTransaction.paidByDetail.length > 0
           ? clonedTransaction.paidByDetail
-          : buildUserAmountDetails(
-              userList[0] ? [userList[0]] : [],
-              clonedTransaction.amount
-            ),
+          : buildUserAmountDetails(users.slice(0, 1), clonedTransaction.amount),
       splitDetail:
         type === 'income'
-          ? buildIncomeRecipientDetails(
-              receivedByUserId,
-              clonedTransaction.amount
-            )
+          ? buildIncomeRecipientDetails(receivedByUserId, users, clonedTransaction.amount)
           : clonedTransaction.splitDetail.length > 0
           ? clonedTransaction.splitDetail
-          : buildDefaultSplitDetail(type, clonedTransaction.amount),
+          : buildUserAmountDetails(users, clonedTransaction.amount),
     }
 
     return type === 'income'
-      ? applyIncomeRecipient(nextDraft, receivedByUserId)
+      ? applyIncomeRecipient(nextDraft, receivedByUserId, users)
       : nextDraft
   }
 
   const timestamp = Date.now()
   const receivedByUserId =
     type === 'income'
-      ? resolveIncomeRecipientId({
-          accountBooks,
-          accountBookId: options?.accountBookId,
-        })
+      ? resolveIncomeRecipientId({ users, accountBookId: options?.accountBookId })
       : null
 
   const nextDraft = {
@@ -345,15 +248,18 @@ export function createTransactionDraft(options?: {
     paymentMethod: DefaultPaymentMethod,
     receivedByUserId,
     tags: [],
-    paidByDetail: buildUserAmountDetails(userList[0] ? [userList[0]] : [], 0),
-    splitDetail: buildDefaultSplitDetail(type, 0),
+    paidByDetail: buildUserAmountDetails(users.slice(0, 1), 0),
+    splitDetail: buildUserAmountDetails(
+      type === 'expense' ? users : users.slice(0, 1),
+      0
+    ),
     createdAt: timestamp,
     updatedAt: timestamp,
     deletedAt: null,
   }
 
   return type === 'income'
-    ? applyIncomeRecipient(nextDraft, receivedByUserId)
+    ? applyIncomeRecipient(nextDraft, receivedByUserId, users)
     : nextDraft
 }
 
@@ -361,12 +267,14 @@ export function changeTransactionDraftType(
   transaction: Transaction,
   type: TransactionType,
   accountBooks: AccountBook[] = [],
+  users: User[] = [],
   categories: Category[] = []
 ): Transaction {
   return createTransactionDraft({
     type,
     accountBookId: transaction.accountBookId,
     accountBooks,
+    users,
     baseTransaction: transaction,
     categories,
   })
