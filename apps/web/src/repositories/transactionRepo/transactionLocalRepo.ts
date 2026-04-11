@@ -2,6 +2,7 @@ import {
   Transaction,
   TransactionRepo,
   TransactionSchema,
+  UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '@/entities/transaction'
 import { db } from '@/lib/dexie'
 
@@ -63,9 +64,55 @@ class TransactionLocalRepo implements TransactionRepo {
         .equals(accountBookId)
         .toArray()
       // Filter out soft-deleted transactions
-      return transactions.filter((transaction) => transaction.deletedAt === null)
+      return transactions.filter(
+        (transaction) => transaction.deletedAt === null
+      )
     } catch (error) {
       console.error('Failed to find transactions by accountBookId:', error)
+      return []
+    }
+  }
+
+  async findUnsettledExpenseByAccountBookId(
+    accountBookId: string
+  ): Promise<Transaction[]> {
+    try {
+      return await db.transactions
+        .where('settlementRecordId')
+        .equals(UNSETTLED_SETTLEMENT_RECORD_ID)
+        .filter(
+          (transaction) =>
+            transaction.accountBookId === accountBookId &&
+            transaction.deletedAt === null &&
+            transaction.type === 'expense'
+        )
+        .toArray()
+    } catch (error) {
+      console.error(
+        'Failed to find unsettled expense transactions by accountBookId:',
+        error
+      )
+      return []
+    }
+  }
+
+  // Future entry points for additional retrieval scenarios:
+  // - findByAccountBookIdAndDateRange(accountBookId, startDate, endDate)
+  // - findByAccountBookIdAndCategoryId(accountBookId, categoryId)
+  // Each scenario should be composed into a dedicated hook rather than shared global state.
+
+  async findBySettlementRecordId(recordId: string): Promise<Transaction[]> {
+    try {
+      const transactions = await db.transactions
+        .where('settlementRecordId')
+        .equals(recordId)
+        .toArray()
+
+      return transactions.filter(
+        (transaction) => transaction.deletedAt === null
+      )
+    } catch (error) {
+      console.error('Failed to find transactions by settlementRecordId:', error)
       return []
     }
   }

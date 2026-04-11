@@ -1,5 +1,6 @@
 import { HeroUIProvider } from '@heroui/react'
 import { ToastProvider } from '@heroui/toast'
+import Header from './header'
 import NavBar from './navbar'
 
 function Providers({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Providers>
-        <main className="h-[calc(100dvh-72px)]">{children}</main>
+        <Header />
+        <main className="h-[calc(100dvh-128px)]">{children}</main>
         <NavBar />
       </Providers>
     </>

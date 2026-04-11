@@ -5,6 +5,7 @@ import {
   parseTransactionDateValue,
   resolveIncomeRecipientId,
 } from '../src/utils/transactionUtils'
+import { UNSETTLED_SETTLEMENT_RECORD_ID } from '../src/entities/transaction'
 import { accountBookList } from '../src/mocks/accountBook'
 import { userList } from '../src/mocks/user'
 import { expenseCategoryList, incomeCategoryList } from '../src/mocks'
@@ -81,6 +82,17 @@ describe('transactionUtils date helpers', () => {
 
     expect(incomeDraft.receivedByUserId).toBe(userList[0]!.id)
   })
+
+  it('uses the unsettled sentinel for newly created drafts', () => {
+    const expenseDraft = createTransactionDraft({
+      type: 'expense',
+      accountBookId: '1',
+      accountBooks: accountBookList,
+      users: mockUsers,
+    })
+
+    expect(expenseDraft.settlementRecordId).toBe(UNSETTLED_SETTLEMENT_RECORD_ID)
+  })
 })
 
 describe('create vs. edit selector behavior for deleted virtual users', () => {
@@ -107,9 +119,14 @@ describe('create vs. edit selector behavior for deleted virtual users', () => {
     description: '',
     paymentMethod: 'Cash' as const,
     receivedByUserId: null,
+    settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
     tags: [],
-    paidByDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 200 }],
-    splitDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 200 }],
+    paidByDetail: [
+      { userId: 'vu-deleted', userType: 'virtual' as const, amount: 200 },
+    ],
+    splitDetail: [
+      { userId: 'vu-deleted', userType: 'virtual' as const, amount: 200 },
+    ],
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,
@@ -153,9 +170,14 @@ describe('create vs. edit selector behavior for deleted virtual users', () => {
       description: '',
       paymentMethod: 'Cash' as const,
       receivedByUserId: 'vu-deleted',
+      settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
       tags: [],
-      paidByDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 500 }],
-      splitDetail: [{ userId: 'vu-deleted', userType: 'virtual' as const, amount: 500 }],
+      paidByDetail: [
+        { userId: 'vu-deleted', userType: 'virtual' as const, amount: 500 },
+      ],
+      splitDetail: [
+        { userId: 'vu-deleted', userType: 'virtual' as const, amount: 500 },
+      ],
       createdAt: 0,
       updatedAt: 0,
       deletedAt: null,
@@ -194,9 +216,14 @@ describe('resolveTransactionCategoryId via createTransactionDraft', () => {
     description: '',
     paymentMethod: 'Cash' as const,
     receivedByUserId: null,
+    settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
     tags: [],
-    paidByDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 100 }],
-    splitDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 100 }],
+    paidByDetail: [
+      { userId: userList[0]!.id, userType: 'registered' as const, amount: 100 },
+    ],
+    splitDetail: [
+      { userId: userList[0]!.id, userType: 'registered' as const, amount: 100 },
+    ],
     createdAt: 0,
     updatedAt: 0,
     deletedAt: null,

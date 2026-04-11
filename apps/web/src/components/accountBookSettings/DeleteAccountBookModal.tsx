@@ -32,12 +32,12 @@ export default function DeleteAccountBookModal({
         <ModalHeader>Delete account book</ModalHeader>
         <ModalBody>
           <p className="text-sm text-zinc-500">
-            Delete{' '}
+            Permanently delete{' '}
             <span className="font-semibold text-zinc-900">
               {accountBookName}
             </span>
-            ? The current account book will fall back to another available
-            account book when possible.
+            ? All its categories and settings will be removed. This can&apos;t
+            be undone.
           </p>
         </ModalBody>
         <ModalFooter>
@@ -50,7 +50,7 @@ export default function DeleteAccountBookModal({
             isLoading={isSubmitting}
             onPress={() => void onConfirm()}
           >
-            Delete
+            Delete account book
           </Button>
         </ModalFooter>
       </ModalContent>

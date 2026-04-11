@@ -1,11 +1,13 @@
 import { AppProps } from 'next/app'
 import Head from 'next/head'
 import { ThemeProvider } from 'next-themes'
+import { Inspector } from 'react-dev-inspector'
 import './styles.css'
 import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
 import { ReactElement, ReactNode, useEffect, useState } from 'react'
 import { THEME_STORAGE_KEY } from '@/constants/theme'
+import { useRouter } from 'next/router'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,
@@ -13,10 +15,10 @@ import {
 } from '@/stores/accountBook/index'
 import { initializeDB } from '@/lib/dexie'
 import {
-  TransactionStoreProvider,
-  createTransactionStore,
-} from '@/stores/transaction'
-import { CategoryStoreProvider, createCategoryStore } from '@/stores/category'
+  CategoryStoreProvider,
+  createCategoryStore,
+  useCategoryStore,
+} from '@/stores/category'
 import {
   UserStoreProvider,
   createUserStore,
@@ -33,12 +35,46 @@ type NextPageWithLayout = NextPage & {
   getLayout?: (page: ReactElement) => ReactNode
 }
 
-// Wires userStore to reload whenever the active account book changes
-function UserStoreWatcher() {
-  const accountBooks = useAccountBookStore((state) => state.accountBooks)
+// Tracks the last visited account book so navbar can navigate even on pages without [id] in URL
+function CurrentAccountBookWatcher() {
+  const router = useRouter()
+  const accountBookId =
+    typeof router.query.id === 'string' ? router.query.id : null
+  const setCurrentAccountBookId = useAccountBookStore(
+    (state) => state.setCurrentAccountBookId
+  )
+
+  useEffect(() => {
+    if (accountBookId) {
+      setCurrentAccountBookId(accountBookId)
+    }
+  }, [accountBookId, setCurrentAccountBookId])
+
+  return null
+}
+
+// Wires categoryStore to reload whenever the active account book changes
+function CategoryStoreWatcher() {
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
   )
+  const initializeCategories = useCategoryStore(
+    (state) => state.initialize
+  )
+
+  useEffect(() => {
+    void initializeCategories(currentAccountBookId)
+  }, [currentAccountBookId, initializeCategories])
+
+  return null
+}
+
+// Wires userStore to reload whenever the active account book changes
+function UserStoreWatcher() {
+  const currentAccountBookId = useAccountBookStore(
+    (state) => state.currentAccountBookId
+  )
+  const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const initializeUsers = useUserStore((state) => state.initialize)
 
   const currentAccountBook =
@@ -53,10 +89,8 @@ function UserStoreWatcher() {
 
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const [accountBookStore] = useState(createAccountBookStore)
-  const [transactionStore] = useState(createTransactionStore)
   const [categoryStore] = useState(createCategoryStore)
   const [userStore] = useState(createUserStore)
-
   // 初始化資料庫
   useEffect(() => {
     let isMounted = true
@@ -81,7 +115,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   // 使用頁面的 getLayout 或使用默認布局
   const getLayout = Component.getLayout ?? ((page) => <Layout>{page}</Layout>)
 
-  return (
+  const app = (
     <ThemeProvider
       attribute="class"
       defaultTheme="light"
@@ -91,9 +125,10 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
       themes={['light', 'dark']}
     >
       <AccountBookStoreProvider store={accountBookStore}>
-        <TransactionStoreProvider store={transactionStore}>
-          <CategoryStoreProvider store={categoryStore}>
-            <UserStoreProvider store={userStore}>
+        <CategoryStoreProvider store={categoryStore}>
+          <UserStoreProvider store={userStore}>
+              <CurrentAccountBookWatcher />
+              <CategoryStoreWatcher />
               <UserStoreWatcher />
               {getLayout(
                 <>
@@ -107,12 +142,30 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                   <Component {...pageProps} />
                 </>
               )}
-            </UserStoreProvider>
-          </CategoryStoreProvider>
-        </TransactionStoreProvider>
+          </UserStoreProvider>
+        </CategoryStoreProvider>
       </AccountBookStoreProvider>
     </ThemeProvider>
   )
+
+  if (process.env.NODE_ENV !== 'production') {
+    return (
+      <Inspector
+        onInspectElement={({ codeInfo }) => {
+          const { relativePath, lineNumber, columnNumber } = codeInfo
+          if (!relativePath) return
+          const root = process.env.NEXT_PUBLIC_PROJECT_ROOT
+          window.open(
+            `vscode://file/${root}/${relativePath}:${lineNumber}:${columnNumber}`
+          )
+        }}
+      >
+        {app}
+      </Inspector>
+    )
+  }
+
+  return app
 }
 
 export default CustomApp

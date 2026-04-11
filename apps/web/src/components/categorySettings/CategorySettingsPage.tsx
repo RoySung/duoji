@@ -18,6 +18,7 @@ import DeleteConfirmModal from './DeleteConfirmModal'
 
 type CategorySettingsPageProps = {
   accountBookId: string
+  onClose?: () => void
 }
 
 // Wrapper so each root group item can own its own useDragControls hook
@@ -65,12 +66,13 @@ function DraggableGroupItem({
 
 export default function CategorySettingsPage({
   accountBookId,
+  onClose,
 }: CategorySettingsPageProps) {
+  const isModalMode = onClose !== undefined
   const accountBooks = useAccountBookStore((s) => s.accountBooks)
   const accountBook = accountBooks.find((b) => b.id === accountBookId) ?? null
 
   const categories = useCategoryStore((s) => s.categories)
-  const initialize = useCategoryStore((s) => s.initialize)
   const addCategory = useCategoryStore((s) => s.addCategory)
   const updateCategory = useCategoryStore((s) => s.updateCategory)
   const deleteCategory = useCategoryStore((s) => s.deleteCategory)
@@ -88,10 +90,6 @@ export default function CategorySettingsPage({
   useEffect(() => {
     if (!isDirty) setDraftCategories([...categories])
   }, [categories, isDirty])
-
-  useEffect(() => {
-    void initialize(accountBookId)
-  }, [accountBookId, initialize])
 
   // --- UI state ---
   const [activeTab, setActiveTab] = useState<TransactionType>('expense')
@@ -267,7 +265,6 @@ export default function CategorySettingsPage({
       editedIds.current.clear()
       deletedIds.current.clear()
       setIsDirty(false)
-      await initialize(accountBookId)
       addToast({ title: 'Categories saved', color: 'success' })
     } catch {
       addToast({ title: 'Failed to save categories', color: 'danger' })
@@ -390,50 +387,56 @@ export default function CategorySettingsPage({
       }
     : undefined
 
-  return (
-    <div className="h-full overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-6">
+  const content = (
+    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-6">
+      {!isModalMode && (
         <AccountBookNavHeader
-          backHref={`/settings/account-books/${accountBookId}`}
+          backHref="/settings/account-books"
           title="Category Settings"
         />
+      )}
 
-        {accountBook ? (
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-foreground">
-              {accountBook.name}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Organize categories in this account book
-            </p>
-          </div>
-        ) : null}
+      {accountBook ? (
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold text-foreground">
+            {accountBook.name}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Organize categories in this account book
+          </p>
+        </div>
+      ) : null}
 
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center py-12">
-            <p className="text-sm text-muted-foreground">Loading categories…</p>
-          </div>
-        ) : (
-          <Tabs
-            aria-label="Category type"
-            color="primary"
-            selectedKey={activeTab}
-            variant="underlined"
-            onSelectionChange={(key) => setActiveTab(key as TransactionType)}
-          >
-            <Tab key="expense" title="Expense">
-              {renderRoots(expenseRoots, 'expense', 'ADD EXPENSE GROUP')}
-            </Tab>
-            <Tab key="income" title="Income">
-              {renderRoots(incomeRoots, 'income', 'ADD INCOME GROUP')}
-            </Tab>
-          </Tabs>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center py-12">
+          <p className="text-sm text-muted-foreground">Loading categories…</p>
+        </div>
+      ) : (
+        <Tabs
+          aria-label="Category type"
+          color="primary"
+          selectedKey={activeTab}
+          variant="underlined"
+          onSelectionChange={(key) => setActiveTab(key as TransactionType)}
+        >
+          <Tab key="expense" title="Expense">
+            {renderRoots(expenseRoots, 'expense', 'ADD EXPENSE GROUP')}
+          </Tab>
+          <Tab key="income" title="Income">
+            {renderRoots(incomeRoots, 'income', 'ADD INCOME GROUP')}
+          </Tab>
+        </Tabs>
+      )}
 
-      {/* Sticky Save/Discard bar */}
+      {/* Save/Discard bar — sticky inside modal, fixed for page */}
       {isDirty && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-3 shadow-md">
+        <div
+          className={
+            isModalMode
+              ? 'sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-3 shadow-md'
+              : 'fixed bottom-0 left-0 right-0 z-50 flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-3 shadow-md'
+          }
+        >
           <Button disableRipple variant="flat" onPress={handleDiscard}>
             <PiXBold size={14} />
             Discard
@@ -449,8 +452,11 @@ export default function CategorySettingsPage({
           </Button>
         </div>
       )}
+    </div>
+  )
 
-      {/* Add category modal */}
+  const subModals = (
+    <>
       <AddCategoryModal
         isOpen={addModalOpen}
         parentType={parentForModal?.type}
@@ -458,8 +464,6 @@ export default function CategorySettingsPage({
         onClose={() => setAddModalOpen(false)}
         onSubmit={handleAddSubmit}
       />
-
-      {/* Edit category modal */}
       <AddCategoryModal
         initialValues={editInitialValues}
         isOpen={editModalOpen}
@@ -470,8 +474,6 @@ export default function CategorySettingsPage({
         }}
         onSubmit={handleEditSubmit}
       />
-
-      {/* Delete confirm modal */}
       <DeleteConfirmModal
         categoryName={deleteTarget?.name ?? ''}
         isOpen={deleteModalOpen}
@@ -482,6 +484,22 @@ export default function CategorySettingsPage({
         }}
         onConfirm={handleDeleteConfirm}
       />
+    </>
+  )
+
+  if (isModalMode) {
+    return (
+      <>
+        {content}
+        {subModals}
+      </>
+    )
+  }
+
+  return (
+    <div className="h-full overflow-y-auto bg-background text-foreground">
+      {content}
+      {subModals}
     </div>
   )
 }

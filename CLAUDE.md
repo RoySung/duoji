@@ -26,6 +26,22 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 
 <!-- SPECTRA:END -->
 
+# Architecture Layers
+
+This project follows a clean architecture with three layers. See [`openspec/specs/architecture-layers/spec.md`](openspec/specs/architecture-layers/spec.md) for the full spec.
+
+**Dependency rule:** UI/Page → Usecase (hooks, store) → Repo → Entity
+
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| Entity | `src/entities/` | Data structures and domain logic. No external dependencies. |
+| Usecase | `src/hooks/`, `src/stores/` | Coordinates repo calls, manages state. Hooks = local state; stores = global/shared state. |
+| Repo | `src/repositories/` | Data access (IndexedDB, API). Called only by usecase layer. |
+
+**Violations to avoid:**
+- Pages/components importing from `src/repositories/` directly
+- Entities importing from hooks, stores, or React
+
 # Others Notes
 
 - `roadmap.md` and `phase-1.todo.md` are planning and record-keeping documents for ideation, prioritization, and historical notes.

@@ -42,5 +42,10 @@
     "tailwindcss": "3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@react-dev-inspector/babel-plugin": "^2.0.1",
+    "@react-dev-inspector/middleware": "^2.0.1",
+    "react-dev-inspector": "^2.0.1"
   }
 }

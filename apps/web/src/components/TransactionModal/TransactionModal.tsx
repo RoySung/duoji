@@ -11,10 +11,13 @@ import {
   addToast,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
-import { TransactionType } from '@/entities/transaction'
+import {
+  Transaction,
+  TransactionModalMode,
+  TransactionType,
+} from '@/entities/transaction'
 import ExpenseForm from './ExpenseForm'
 import IncomeForm from './IncomeForm'
-import { useTransactionStore } from '@/stores/transaction'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
@@ -26,6 +29,15 @@ import {
 type Props = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  modalMode: TransactionModalMode
+  selectedTransaction: Transaction | undefined
+  isSubmitting: boolean
+  onCreateTransaction: (transaction: Transaction) => Promise<Transaction>
+  onUpdateTransaction: (
+    id: string,
+    updates: Partial<Transaction>
+  ) => Promise<Transaction | null>
+  onDeleteTransaction: (id: string) => Promise<boolean>
 }
 
 const formMap = {
@@ -33,31 +45,24 @@ const formMap = {
   income: IncomeForm,
 }
 
-export default function TransactionModal({ isOpen, onOpenChange }: Props) {
-  const modalMode = useTransactionStore((state) => state.modalMode)
-  const selectedTransaction = useTransactionStore((state) =>
-    state.transactions.find(
-      (transaction) => transaction.id === state.selectedTransactionId
-    )
-  )
-  const createTransaction = useTransactionStore(
-    (state) => state.createTransaction
-  )
-  const updateTransaction = useTransactionStore(
-    (state) => state.updateTransaction
-  )
-  const deleteTransaction = useTransactionStore(
-    (state) => state.deleteTransaction
-  )
-  const isSubmitting = useTransactionStore((state) => state.isLoading)
-  const currentAccountBookId = useAccountBookStore(
-    (state) => state.currentAccountBookId
-  )
+export default function TransactionModal({
+  isOpen,
+  onOpenChange,
+  modalMode,
+  selectedTransaction,
+  isSubmitting,
+  onCreateTransaction,
+  onUpdateTransaction,
+  onDeleteTransaction,
+}: Props) {
+  const currentAccountBookId =
+    useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const categories = useCategoryStore((state) => state.categories)
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const isEditMode = modalMode === 'edit'
   const [draft, setDraft] = useState(() =>
     createTransactionDraft({
       accountBookId: currentAccountBookId ?? '',
@@ -130,7 +135,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
 
     try {
       if (modalMode === 'edit') {
-        const updatedTransaction = await updateTransaction(nextDraft.id, {
+        const updatedTransaction = await onUpdateTransaction(nextDraft.id, {
           ...nextDraft,
           updatedAt: timestamp,
         })
@@ -145,7 +150,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
           description: 'The transaction changes have been saved.',
         })
       } else {
-        await createTransaction({
+        await onCreateTransaction({
           ...nextDraft,
           updatedAt: timestamp,
         })
@@ -178,7 +183,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
     }
 
     try {
-      const deleted = await deleteTransaction(selectedTransaction.id)
+      const deleted = await onDeleteTransaction(selectedTransaction.id)
 
       if (!deleted) {
         throw new Error('Unable to delete the selected transaction.')
@@ -213,7 +218,11 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
           <ModalHeader>
             <div className="flex flex-col gap-2 items-center w-full">
               <h2>
-                {modalMode === 'edit' ? 'Edit Transaction' : 'New Transaction'}
+                {modalMode === 'edit'
+                  ? 'Edit Transaction'
+                  : modalMode === 'view'
+                    ? 'Transaction Detail'
+                    : 'New Transaction'}
               </h2>
               <Tabs
                 fullWidth
@@ -226,7 +235,7 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
                       currentDraft,
                       key as TransactionType,
                       accountBooks,
-                      modalMode === 'edit' ? allUsers : activeUsers,
+                      isEditMode ? allUsers : activeUsers,
                       categories
                     )
                   )
@@ -240,7 +249,11 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
           <ModalBody>
             <div className="flex flex-col gap-4">
               <ScrollShadow size={50}>
-                <Form value={draft} onChange={setDraft} />
+                <Form
+                  value={draft}
+                  onChange={modalMode === 'view' ? () => {} : setDraft}
+                  isEditMode={isEditMode}
+                />
               </ScrollShadow>
               {modalMode === 'edit' ? (
                 <div className="rounded-large border border-danger-200 bg-danger-50 px-4 py-3">
@@ -269,14 +282,20 @@ export default function TransactionModal({ isOpen, onOpenChange }: Props) {
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button onPress={handleClose}>Cancel</Button>
-            <Button
-              color="primary"
-              isDisabled={isSaveDisabled}
-              onPress={handleSave}
-            >
-              {modalMode === 'edit' ? 'Save' : 'Create'}
-            </Button>
+            {modalMode === 'view' ? (
+              <Button onPress={handleClose}>Close</Button>
+            ) : (
+              <>
+                <Button onPress={handleClose}>Cancel</Button>
+                <Button
+                  color="primary"
+                  isDisabled={isSaveDisabled}
+                  onPress={handleSave}
+                >
+                  {modalMode === 'edit' ? 'Save' : 'Create'}
+                </Button>
+              </>
+            )}
           </ModalFooter>
         </ModalContent>
       </Modal>

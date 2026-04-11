@@ -1,7 +1,10 @@
 import React from 'react'
 import { Avatar, Chip } from '@heroui/react'
 import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
-import { Transaction } from '@/entities/transaction'
+import {
+  hasLinkedSettlementRecordId,
+  Transaction,
+} from '@/entities/transaction'
 import { User, isDeletedUser } from '@/entities/user'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
@@ -67,7 +70,11 @@ function renderParticipantSummary(
     if (!transaction.receivedByUserId) return null
     const person = userMap.get(transaction.receivedByUserId)
     const name = person?.name ?? transaction.receivedByUserId
-    return person && isDeletedUser(person) ? <span className="line-through">{name}</span> : name
+    return person && isDeletedUser(person) ? (
+      <span className="line-through">{name}</span>
+    ) : (
+      name
+    )
   }
 
   const parts = transaction.paidByDetail
@@ -76,7 +83,9 @@ function renderParticipantSummary(
       const name = (person?.name ?? item.userId).trim()
       if (!name) return null
       return person && isDeletedUser(person) ? (
-        <span key={item.userId} className="line-through">{name}</span>
+        <span key={item.userId} className="line-through">
+          {name}
+        </span>
       ) : (
         <span key={item.userId}>{name}</span>
       )
@@ -140,7 +149,10 @@ export default function TransactionList({
         <div className="mt-6 space-y-3" data-testid="transaction-list">
           {transactions.map((transaction) => {
             const category = categoryMap.get(transaction.categoryId) ?? null
-            const participantSummary = formatParticipantSummary(transaction, userMap)
+            const participantSummary = formatParticipantSummary(
+              transaction,
+              userMap
+            )
             const signedAmount = formatSignedAmount(
               transaction.amount,
               transaction.type
@@ -199,6 +211,17 @@ export default function TransactionList({
                                 variant="flat"
                               >
                                 均分
+                              </Chip>
+                            ) : null}
+                            {hasLinkedSettlementRecordId(
+                              transaction.settlementRecordId
+                            ) ? (
+                              <Chip
+                                className="bg-blue-100 text-blue-700"
+                                size="sm"
+                                variant="flat"
+                              >
+                                Settled
                               </Chip>
                             ) : null}
                           </div>

@@ -9,30 +9,25 @@ import {
   within,
 } from '@testing-library/react'
 import { useRouter } from 'next/router'
-import Home from '../src/pages/index'
+import AccountBookPage from '../src/pages/account-books/[id]/index'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import {
   DefaultPaymentMethod,
+  isUnsettledSettlementRecordId,
   Transaction,
   TransactionRepo,
+  UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '../src/entities/transaction'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,
 } from '../src/stores/accountBook'
 import {
-  TransactionStoreProvider,
-  createTransactionStore,
-} from '../src/stores/transaction'
-import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
-import {
-  UserStoreProvider,
-  createUserStore,
-} from '../src/stores/user'
+import { UserStoreProvider, createUserStore } from '../src/stores/user'
 import { THEME_STORAGE_KEY } from '../src/constants/theme'
 import {
   Category,
@@ -46,6 +41,26 @@ import { User, VirtualUser } from '../src/entities/user'
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
+}))
+
+// Active repo instance — must be prefixed with "mock" so jest.mock() factory can reference it
+let mockRepo: TransactionRepo
+
+jest.mock('../src/repositories/transactionRepo', () => ({
+  TransactionLocalRepo: jest.fn().mockImplementation(() => ({
+    create: (t: Transaction) => mockRepo.create(t),
+    findById: (id: string) => mockRepo.findById(id),
+    findAll: () => mockRepo.findAll(),
+    findByAccountBookId: (id: string) => mockRepo.findByAccountBookId(id),
+    findUnsettledExpenseByAccountBookId: (id: string) =>
+      mockRepo.findUnsettledExpenseByAccountBookId(id),
+    findBySettlementRecordId: (id: string) =>
+      mockRepo.findBySettlementRecordId(id),
+    update: (id: string, updates: Partial<Transaction>) =>
+      mockRepo.update(id, updates),
+    delete: (id: string) => mockRepo.delete(id),
+    clear: () => mockRepo.clear(),
+  })),
 }))
 
 jest.mock('@heroui/react', () => {
@@ -356,7 +371,8 @@ function createTransactionFixture(
     date: '2026/03/18',
     description: 'Breakfast with friends',
     paymentMethod: DefaultPaymentMethod,
-    receivedByUserId: type === 'income' ? (userList[0]?.id ?? null) : null,
+    receivedByUserId: type === 'income' ? userList[0]?.id ?? null : null,
+    settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
     tags: ['meal'],
     paidByDetail: [
       {
@@ -467,6 +483,26 @@ class InMemoryTransactionRepo implements TransactionRepo {
     return this.transactions.filter(
       (transaction) =>
         transaction.accountBookId === accountBookId &&
+        transaction.deletedAt === null
+    )
+  }
+
+  async findUnsettledExpenseByAccountBookId(
+    accountBookId: string
+  ): Promise<Transaction[]> {
+    return this.transactions.filter(
+      (transaction) =>
+        transaction.accountBookId === accountBookId &&
+        transaction.type === 'expense' &&
+        transaction.deletedAt === null &&
+        isUnsettledSettlementRecordId(transaction.settlementRecordId)
+    )
+  }
+
+  async findBySettlementRecordId(recordId: string): Promise<Transaction[]> {
+    return this.transactions.filter(
+      (transaction) =>
+        transaction.settlementRecordId === recordId &&
         transaction.deletedAt === null
     )
   }
@@ -619,14 +655,21 @@ class InMemoryCategoryRepo implements CategoryRepo {
 type RenderOptions = {
   accountBooks?: AccountBook[]
   currentAccountBookId?: string | null
+  routeAccountBookId?: string | null
   transactions?: Transaction[]
   users?: User[]
+  repo?: TransactionRepo
 }
 
 async function renderWithProviders(options: RenderOptions = {}) {
+  const routeAccountBookId =
+    options.routeAccountBookId ?? options.currentAccountBookId ?? 'book-1'
+
   mockedUseRouter.mockReturnValue({
-    pathname: '/',
+    pathname: '/account-books/[id]',
+    query: routeAccountBookId ? { id: routeAccountBookId } : {},
     push: jest.fn(),
+    replace: jest.fn(),
     back: jest.fn(),
   })
 
@@ -648,78 +691,73 @@ async function renderWithProviders(options: RenderOptions = {}) {
   if (options.currentAccountBookId !== undefined) {
     accountBookStore
       .getState()
-      .setCurrentAccountBook(options.currentAccountBookId)
+      .setCurrentAccountBookId(options.currentAccountBookId)
   }
 
-  const transactionStore = createTransactionStore(
-    new InMemoryTransactionRepo(
-      options.transactions ?? [
-        createTransactionFixture({
-          id: 'tx-1',
-          accountBookId: 'book-1',
-          date: '2026/03/19',
-          description: 'Breakfast with friends',
-          paymentMethod: DefaultPaymentMethod,
-        }),
-        createTransactionFixture({
-          id: 'tx-2',
-          accountBookId: 'book-1',
-          date: '2026/03/18',
-          description: 'Train ticket',
-          categoryId: '3-1',
-          amount: 80,
-          paymentMethod: 'Line Pay',
-          paidByDetail: [
-            {
-              userId: userList[1]!.id,
-              userType: 'registered' as const,
-              amount: 80,
-            },
-          ],
-          splitDetail: [
-            {
-              userId: userList[0]!.id,
-              userType: 'registered' as const,
-              amount: 50,
-            },
-            {
-              userId: userList[1]!.id,
-              userType: 'registered' as const,
-              amount: 30,
-            },
-          ],
-        }),
-        createTransactionFixture({
-          id: 'tx-3',
-          accountBookId: 'book-2',
-          type: 'income',
-          categoryId: '101-1',
-          description: 'Bonus',
-          paymentMethod: 'Credit Card',
-          receivedByUserId: userList[0]!.id,
-          amount: 500,
-          paidByDetail: [
-            {
-              userId: userList[0]!.id,
-              userType: 'registered' as const,
-              amount: 500,
-            },
-          ],
-          splitDetail: [
-            {
-              userId: userList[0]!.id,
-              userType: 'registered' as const,
-              amount: 500,
-            },
-          ],
-        }),
-      ]
-    )
+  // Seed the active repo used by the mocked TransactionLocalRepo
+  mockRepo = options.repo ?? new InMemoryTransactionRepo(
+    options.transactions ?? [
+      createTransactionFixture({
+        id: 'tx-1',
+        accountBookId: 'book-1',
+        date: '2026/03/19',
+        description: 'Breakfast with friends',
+        paymentMethod: DefaultPaymentMethod,
+      }),
+      createTransactionFixture({
+        id: 'tx-2',
+        accountBookId: 'book-1',
+        date: '2026/03/18',
+        description: 'Train ticket',
+        categoryId: '3-1',
+        amount: 80,
+        paymentMethod: 'Line Pay',
+        paidByDetail: [
+          {
+            userId: userList[1]!.id,
+            userType: 'registered' as const,
+            amount: 80,
+          },
+        ],
+        splitDetail: [
+          {
+            userId: userList[0]!.id,
+            userType: 'registered' as const,
+            amount: 50,
+          },
+          {
+            userId: userList[1]!.id,
+            userType: 'registered' as const,
+            amount: 30,
+          },
+        ],
+      }),
+      createTransactionFixture({
+        id: 'tx-3',
+        accountBookId: 'book-2',
+        type: 'income',
+        categoryId: '101-1',
+        description: 'Bonus',
+        paymentMethod: 'Credit Card',
+        receivedByUserId: userList[0]!.id,
+        amount: 500,
+        paidByDetail: [
+          {
+            userId: userList[0]!.id,
+            userType: 'registered' as const,
+            amount: 500,
+          },
+        ],
+        splitDetail: [
+          {
+            userId: userList[0]!.id,
+            userType: 'registered' as const,
+            amount: 500,
+          },
+        ],
+      }),
+    ]
   )
-
-  await transactionStore
-    .getState()
-    .initialize(accountBookStore.getState().currentAccountBookId)
 
   const categoryRepo = new InMemoryCategoryRepo()
 
@@ -820,12 +858,18 @@ async function renderWithProviders(options: RenderOptions = {}) {
     .getState()
     .initialize(accountBookStore.getState().currentAccountBookId)
 
-  const defaultUsers = userList.map((user) => ({ ...user, type: 'registered' as const }))
+  const defaultUsers = userList.map((user) => ({
+    ...user,
+    type: 'registered' as const,
+  }))
   const allUsers = options.users ?? defaultUsers
   const activeUsers = allUsers.filter(
     (u) => !(u.type === 'virtual' && (u as VirtualUser).deletedAt)
   )
-  const userStore = createUserStore(undefined, undefined, { allUsers, activeUsers })
+  const userStore = createUserStore(undefined, undefined, {
+    allUsers,
+    activeUsers,
+  })
 
   let renderResult: ReturnType<typeof render>
 
@@ -840,16 +884,14 @@ async function renderWithProviders(options: RenderOptions = {}) {
       >
         <HeroUIProvider>
           <AccountBookStoreProvider store={accountBookStore}>
-            <TransactionStoreProvider store={transactionStore}>
-              <CategoryStoreProvider store={categoryStore}>
-                <UserStoreProvider store={userStore}>
-                  <div>
-                    <Home />
-                    <NavBar />
-                  </div>
-                </UserStoreProvider>
-              </CategoryStoreProvider>
-            </TransactionStoreProvider>
+            <CategoryStoreProvider store={categoryStore}>
+              <UserStoreProvider store={userStore}>
+                <div>
+                  <AccountBookPage />
+                  <NavBar />
+                </div>
+              </UserStoreProvider>
+            </CategoryStoreProvider>
           </AccountBookStoreProvider>
         </HeroUIProvider>
       </ThemeProvider>
@@ -858,7 +900,6 @@ async function renderWithProviders(options: RenderOptions = {}) {
 
   return {
     accountBookStore,
-    transactionStore,
     userStore,
     ...renderResult!,
   }
@@ -869,16 +910,17 @@ describe('Home transaction history', () => {
     mockedUseRouter.mockReset()
   })
 
-  it('renders current-account-book transactions in a flat list with summary metadata and updates when the current account book changes', async () => {
+  it('renders routed account-book transactions in a flat list with summary metadata', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
     })
 
     await waitFor(() => {
       expect(screen.getByTestId('transaction-row-tx-1')).toBeTruthy()
     })
 
-    expect(screen.getByText('Current account book history')).toBeTruthy()
+    expect(screen.getByText('Daily Life')).toBeTruthy()
     expect(screen.getByText('2 records')).toBeTruthy()
     expect(screen.getByTestId('transaction-list')).toBeTruthy()
     expect(
@@ -900,15 +942,19 @@ describe('Home transaction history', () => {
       within(screen.getByTestId('transaction-row-tx-2')).queryByText('均分')
     ).toBeNull()
     expect(screen.queryByText('Bonus')).toBeNull()
+  })
 
-    fireEvent.change(screen.getByLabelText('Current account book'), {
-      target: { value: 'book-2' },
+  it('renders a different account-book route with its scoped transactions only', async () => {
+    await renderWithProviders({
+      currentAccountBookId: 'book-2',
+      routeAccountBookId: 'book-2',
     })
 
     await waitFor(() => {
       expect(screen.getByTestId('transaction-row-tx-3')).toBeTruthy()
     })
 
+    expect(screen.getByText('Travel Fund')).toBeTruthy()
     expect(screen.getByText('1 records')).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-3')).getAllByText('Bonus')
@@ -921,8 +967,9 @@ describe('Home transaction history', () => {
   })
 
   it('opens the shared edit modal from the home-page list and saves changes back to the row', async () => {
-    const { transactionStore } = await renderWithProviders({
+    await renderWithProviders({
       currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
     })
 
     await waitFor(() => {
@@ -936,9 +983,6 @@ describe('Home transaction history', () => {
     await waitFor(() => {
       expect(screen.getByText('Edit Transaction')).toBeTruthy()
     })
-
-    expect(transactionStore.getState().modalMode).toBe('edit')
-    expect(transactionStore.getState().selectedTransactionId).toBe('tx-1')
 
     const paymentMethodSelect = screen.getByLabelText(
       'Payment Method'
@@ -974,8 +1018,9 @@ describe('Home transaction history', () => {
   })
 
   it('asks for confirmation before deleting a transaction from the shared edit modal', async () => {
-    const { transactionStore } = await renderWithProviders({
+    await renderWithProviders({
       currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
     })
 
     await waitFor(() => {
@@ -1001,22 +1046,24 @@ describe('Home transaction history', () => {
       expect(screen.queryByText('Edit Transaction')).toBeNull()
     })
 
-    expect(transactionStore.getState().selectedTransactionId).toBeNull()
     expect(screen.queryByTestId('transaction-row-tx-1')).toBeNull()
     expect(screen.getByText('1 records')).toBeTruthy()
   })
 
   it('prefills new transaction drafts with Cash as the default payment method', async () => {
-    const { transactionStore } = await renderWithProviders({
+    await renderWithProviders({
       currentAccountBookId: 'book-1',
-    })
-
-    act(() => {
-      transactionStore.getState().openCreateModal()
+      routeAccountBookId: 'book-1',
     })
 
     await waitFor(() => {
-      expect(screen.getByText('New Transaction')).toBeTruthy()
+      expect(screen.getByTestId('transaction-row-tx-1')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeTruthy()
     })
 
     expect(
@@ -1025,16 +1072,19 @@ describe('Home transaction history', () => {
   })
 
   it('prefills new income transaction drafts with the current account-book owner as the recipient', async () => {
-    const { transactionStore } = await renderWithProviders({
+    await renderWithProviders({
       currentAccountBookId: 'book-2',
-    })
-
-    act(() => {
-      transactionStore.getState().openCreateModal()
+      routeAccountBookId: 'book-2',
     })
 
     await waitFor(() => {
-      expect(screen.getByText('New Transaction')).toBeTruthy()
+      expect(screen.getByTestId('transaction-row-tx-3')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeTruthy()
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
@@ -1047,17 +1097,19 @@ describe('Home transaction history', () => {
   })
 
   it('renders the default income recipient summary after creating a new income transaction', async () => {
-    const renderResult = await renderWithProviders({
+    await renderWithProviders({
       currentAccountBookId: 'book-2',
-    })
-    const { transactionStore } = renderResult
-
-    act(() => {
-      transactionStore.getState().openCreateModal()
+      routeAccountBookId: 'book-2',
     })
 
     await waitFor(() => {
-      expect(screen.getByText('New Transaction')).toBeTruthy()
+      expect(screen.getByTestId('transaction-row-tx-3')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeTruthy()
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Income' }))
@@ -1066,7 +1118,6 @@ describe('Home transaction history', () => {
       const received = (
         screen.getByLabelText('Received By') as HTMLSelectElement
       ).value
-      console.log('Received By value after Income click:', received)
       expect(received).toBe('1')
     })
 
@@ -1081,7 +1132,7 @@ describe('Home transaction history', () => {
 
     await waitFor(
       () => {
-        expect(screen.queryByText('New Transaction')).toBeNull()
+        expect(screen.queryByRole('dialog')).toBeNull()
       },
       { timeout: 2000 }
     )
@@ -1097,6 +1148,7 @@ describe('Home transaction history', () => {
   it('updates income recipient summaries after editing an income transaction', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-2',
+      routeAccountBookId: 'book-2',
     })
 
     await waitFor(() => {
@@ -1171,7 +1223,9 @@ describe('Home transaction history', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId('transaction-row-tx-deleted-person')).toBeTruthy()
+      expect(
+        screen.getByTestId('transaction-row-tx-deleted-person')
+      ).toBeTruthy()
     })
 
     const row = screen.getByTestId('transaction-row-tx-deleted-person')
@@ -1180,27 +1234,33 @@ describe('Home transaction history', () => {
     expect(nameElement.className).toContain('line-through')
   })
 
-  it('disables account-book switching while transactions are loading', async () => {
-    const { transactionStore } = await renderWithProviders({
+  it('keeps the transaction list scoped to the active route while loading', async () => {
+    let resolveLoad!: (transactions: Transaction[]) => void
+    const deferredRepo = new InMemoryTransactionRepo([])
+
+    deferredRepo.findByAccountBookId = () =>
+      new Promise<Transaction[]>((resolve) => {
+        resolveLoad = resolve
+      })
+
+    await renderWithProviders({
       currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+      repo: deferredRepo,
     })
 
-    const selector = screen.getByLabelText(
-      'Current account book'
-    ) as HTMLSelectElement
+    expect(screen.getByText('Loading transactions...')).toBeTruthy()
+    expect(screen.queryByTestId('transaction-row-tx-3')).toBeNull()
 
-    expect(selector.disabled).toBe(false)
-
-    act(() => {
-      transactionStore.setState({ isLoading: true })
+    await act(async () => {
+      resolveLoad([])
     })
-
-    expect(selector.disabled).toBe(true)
   })
 
   it('displays Uncategorized for transactions with a deleted category', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
       transactions: [
         createTransactionFixture({
           id: 'tx-deleted-cat',
@@ -1224,8 +1284,9 @@ describe('Home transaction history', () => {
   })
 
   it('disables save button when editing a transaction with a deleted category requires re-selection', async () => {
-    const { transactionStore } = await renderWithProviders({
+    await renderWithProviders({
       currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
       transactions: [
         createTransactionFixture({
           id: 'tx-deleted-cat-edit',
@@ -1248,8 +1309,6 @@ describe('Home transaction history', () => {
     await waitFor(() => {
       expect(screen.getByText('Edit Transaction')).toBeTruthy()
     })
-
-    expect(transactionStore.getState().modalMode).toBe('edit')
 
     const saveButton = screen.getByRole('button', {
       name: 'Save',

@@ -8,79 +8,200 @@ TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Upd
 
 ### Requirement: The application provides a shared app shell
 
-The web application SHALL provide a shared app shell that wraps primary pages in a consistent layout.
+The web application SHALL provide a shared app shell that wraps primary pages in a consistent layout. The shell SHALL include a top header bar (containing the app title and contextual controls) and a bottom navigation bar.
 
 #### Scenario: Open a primary application page
 
 - **WHEN** a user navigates to a primary page within the web application
-- **THEN** the system SHALL render that page within the shared application shell
+- **THEN** the system SHALL render that page within the shared application shell, with a top header bar visible at the top and the bottom navigation bar visible at the bottom
 
 
 <!-- @trace
-source: migrate-project-instructions-to-spectra
-updated: 2026-03-18
+source: add-header-with-account-book-dropdown
+updated: 2026-04-11
 code:
-  - .github/prompts/spectra-debug.prompt.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - CLAUDE.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/package.json
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/stores/transaction/index.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - .spectra.yaml
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - apps/web/next.config.js
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - apps/web/src/components/layout/navbar.tsx
   - .github/skills/spectra-apply/SKILL.md
-  - .github/prompts/spectra-ask.prompt.md
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/pages/index.tsx
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/pages/account-books/new.tsx
   - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - .github/skills/spectra-debug/SKILL.md
   - .github/prompts/spectra-ingest.prompt.md
   - .github/prompts/spectra-propose.prompt.md
-  - .github/copilot-instructions.md
-  - .github/instructions/phase-1-todo.instructions.md
-  - .github/skills/spectra-debug/SKILL.md
-  - .github/instructions/prd.instructions.md
-  - .github/prompts/spectra-audit.prompt.md
-  - .github/skills/spectra-archive/SKILL.md
-  - .github/skills/spectra-audit/SKILL.md
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - .github/prompts/spectra-archive.prompt.md
+  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/hooks/useSettlement.ts
+  - .github/skills/spectra-propose/SKILL.md
+  - apps/web/src/entities/settlement.ts
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - .github/prompts/spectra-debug.prompt.md
+  - CLAUDE.md
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - .github/prompts/spectra-ask.prompt.md
   - AGENTS.md
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - GEMINI.md
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/.babelrc
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - apps/web/src/utils/settlementUtils.ts
+  - .github/skills/spectra-ingest/SKILL.md
+  - .github/prompts/spectra-apply.prompt.md
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+tests:
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/settlement.spec.ts
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/transactionUtils.spec.ts
 -->
 
 ---
 ### Requirement: The application provides primary navigation for Phase 1
 
-The web application SHALL provide primary navigation for the account book area, transaction entry flow, and statistics area.
+The web application SHALL provide primary navigation for the account book area, transaction entry flow, and statistics area. On account book routes, the header SHALL display an account book menu button that opens a drawer for switching and managing account books.
 
 #### Scenario: Use primary navigation
 
 - **WHEN** a user interacts with the main navigation controls
 - **THEN** the system SHALL allow movement between the primary Phase 1 areas of the application
 
+#### Scenario: Open account book menu on an account book route
+
+- **WHEN** a user is on an account book route and activates the account book menu button in the header
+- **THEN** the system SHALL open a drawer panel rather than a dropdown
+
 
 <!-- @trace
-source: migrate-project-instructions-to-spectra
-updated: 2026-03-18
+source: account-book-menu-drawer
+updated: 2026-04-11
 code:
-  - .github/prompts/spectra-debug.prompt.md
-  - .github/skills/spectra-discuss/SKILL.md
   - CLAUDE.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/skills/spectra-apply/SKILL.md
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/copilot-instructions.md
-  - .github/instructions/phase-1-todo.instructions.md
-  - .github/skills/spectra-debug/SKILL.md
-  - .github/instructions/prd.instructions.md
-  - .github/prompts/spectra-audit.prompt.md
-  - .github/skills/spectra-archive/SKILL.md
-  - .github/skills/spectra-audit/SKILL.md
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - apps/web/jest.config.ts
   - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - .github/prompts/spectra-archive.prompt.md
   - AGENTS.md
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - .spectra.yaml
+  - .github/prompts/spectra-debug.prompt.md
+  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - .github/skills/spectra-propose/SKILL.md
+  - GEMINI.md
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - apps/web/next.config.js
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - .github/prompts/spectra-ingest.prompt.md
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/src/hooks/useSettlement.ts
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - apps/web/src/utils/settlementUtils.ts
+  - apps/web/package.json
+  - apps/web/src/pages/_app.tsx
+  - .github/prompts/spectra-propose.prompt.md
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - .github/prompts/spectra-ask.prompt.md
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/pages/account-books/new.tsx
+  - apps/web/src/entities/settlement.ts
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/pages/index.tsx
+  - apps/web/.babelrc
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - .github/prompts/spectra-apply.prompt.md
+  - .github/skills/spectra-debug/SKILL.md
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - apps/web/src/stores/transaction/index.ts
+tests:
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/settlement.spec.ts
+  - apps/web/specs/transaction.spec.ts
 -->
 
 ---
@@ -171,4 +292,322 @@ code:
   - apps/web/src/components/TransactionModal/ExpenseForm.tsx
   - .github/prompts/spectra-archive.prompt.md
   - AGENTS.md
+-->
+
+---
+### Requirement: The account book menu drawer displays account books as navigable cards
+
+The account book menu drawer in the app header SHALL present each account book as a card showing its name, currency, and description (when present). The active account book SHALL be visually distinguished from inactive ones.
+
+#### Scenario: Open the account book menu drawer
+
+- **WHEN** a user opens the account book menu drawer on an account book page
+- **THEN** the system SHALL display each account book as a card with its name, currency, and description
+
+#### Scenario: Active account book card
+
+- **WHEN** the account book menu drawer is open
+- **THEN** the system SHALL visually highlight the currently active account book card and SHALL NOT show a "Switch" button for it
+
+#### Scenario: Inactive account book card
+
+- **WHEN** the account book menu drawer is open and there are multiple account books
+- **THEN** each non-active account book card SHALL display a "Switch" button and a "View settings" button
+
+
+<!-- @trace
+source: refactor-account-book-menu-drawer
+updated: 2026-04-11
+code:
+  - apps/web/src/stores/transaction/index.ts
+  - apps/web/package.json
+  - .github/skills/spectra-debug/SKILL.md
+  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - apps/web/src/pages/account-books/new.tsx
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/src/utils/settlementUtils.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - .github/prompts/spectra-ask.prompt.md
+  - apps/web/src/components/layout/header.tsx
+  - CLAUDE.md
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/hooks/useSettlement.ts
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+  - .github/prompts/spectra-propose.prompt.md
+  - .spectra.yaml
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - .github/prompts/spectra-debug.prompt.md
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/entities/settlement.ts
+  - apps/web/.babelrc
+  - GEMINI.md
+  - .github/skills/spectra-propose/SKILL.md
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/next.config.js
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - .github/skills/spectra-ingest/SKILL.md
+  - .github/prompts/spectra-ingest.prompt.md
+  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/pages/index.tsx
+  - .github/prompts/spectra-apply.prompt.md
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - AGENTS.md
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+tests:
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/settlement.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+-->
+
+---
+### Requirement: The account book menu drawer delegates CRUD to settings pages
+
+The account book menu drawer SHALL NOT provide inline rename, delete, or create forms. All account book management SHALL be delegated to the settings pages via navigation.
+
+#### Scenario: Switch to a different account book
+
+- **WHEN** a user presses "Switch" on a non-active account book card in the drawer
+- **THEN** the system SHALL navigate to that account book's page and close the drawer
+
+#### Scenario: Navigate to account book settings from the drawer
+
+- **WHEN** a user presses "View settings" on any account book card in the drawer
+- **THEN** the system SHALL navigate to `/settings/account-books/[id]` for that account book and close the drawer
+
+#### Scenario: Navigate to create a new account book from the drawer
+
+- **WHEN** a user presses "New account book" in the drawer footer
+- **THEN** the system SHALL navigate to `/settings/account-books/new` and close the drawer
+
+<!-- @trace
+source: refactor-account-book-menu-drawer
+updated: 2026-04-11
+code:
+  - apps/web/src/stores/transaction/index.ts
+  - apps/web/package.json
+  - .github/skills/spectra-debug/SKILL.md
+  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - apps/web/src/pages/account-books/new.tsx
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/src/utils/settlementUtils.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - .github/prompts/spectra-ask.prompt.md
+  - apps/web/src/components/layout/header.tsx
+  - CLAUDE.md
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/hooks/useSettlement.ts
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+  - .github/prompts/spectra-propose.prompt.md
+  - .spectra.yaml
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - .github/prompts/spectra-debug.prompt.md
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/entities/settlement.ts
+  - apps/web/.babelrc
+  - GEMINI.md
+  - .github/skills/spectra-propose/SKILL.md
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/next.config.js
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - .github/skills/spectra-ingest/SKILL.md
+  - .github/prompts/spectra-ingest.prompt.md
+  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/pages/index.tsx
+  - .github/prompts/spectra-apply.prompt.md
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - AGENTS.md
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+tests:
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/settlement.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+-->
+
+---
+### Requirement: Navbar includes a settlement tab
+
+The bottom navigation bar SHALL include a settlement tab (結帳) that navigates to `/account-books/[id]/settlement`, where `[id]` is the account book ID from the current URL context.
+
+The settlement tab SHALL be the third tab, positioned between the add-transaction button and the settings tab.
+
+The settlement tab SHALL display as active (highlighted) when the current route is `/account-books/[id]/settlement` or `/account-books/[id]/settlement/[recordId]`.
+
+#### Scenario: User taps the settlement tab while viewing an account book
+
+- **WHEN** the user is on `/account-books/abc123` and taps the settlement tab
+- **THEN** the system SHALL navigate to `/account-books/abc123/settlement`
+
+#### Scenario: Settlement tab is active on settlement pages
+
+- **WHEN** the current route is `/account-books/[id]/settlement` or `/account-books/[id]/settlement/[recordId]`
+- **THEN** the settlement tab icon SHALL be in the active/highlighted state
+
+<!-- @trace
+source: split-settlement-feature
+updated: 2026-04-11
+code:
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - CLAUDE.md
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/hooks/useSettlement.ts
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/pages/account-books/new.tsx
+  - apps/web/src/utils/settlementUtils.ts
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - .github/skills/spectra-propose/SKILL.md
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+  - apps/web/src/pages/index.tsx
+  - GEMINI.md
+  - apps/web/package.json
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/next.config.js
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - .spectra.yaml
+  - AGENTS.md
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/.babelrc
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - .github/skills/spectra-ingest/SKILL.md
+  - apps/web/src/components/layout/navbar.tsx
+  - .github/prompts/spectra-propose.prompt.md
+  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/entities/settlement.ts
+  - .github/skills/spectra-debug/SKILL.md
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - .github/prompts/spectra-ask.prompt.md
+  - .github/prompts/spectra-ingest.prompt.md
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/stores/transaction/index.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - .github/skills/spectra-ask/SKILL.md
+  - .github/prompts/spectra-apply.prompt.md
+  - .github/prompts/spectra-debug.prompt.md
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+tests:
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/settlement.spec.ts
 -->

@@ -1,7 +1,9 @@
 import {
   DefaultPaymentMethod,
+  isUnsettledSettlementRecordId,
   Transaction,
   TransactionSchema,
+  UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '../src/entities/transaction'
 import { db } from '../src/lib/dexie'
 import { userList } from '../src/mocks/user'
@@ -23,7 +25,8 @@ function createTransactionFixture(
     date: '2026/03/18',
     description: 'Breakfast with friends',
     paymentMethod: DefaultPaymentMethod,
-    receivedByUserId: type === 'income' ? (userList[0]?.id ?? null) : null,
+    receivedByUserId: type === 'income' ? userList[0]?.id ?? null : null,
+    settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
     tags: ['meal'],
     paidByDetail: [
       {
@@ -69,6 +72,17 @@ describe('TransactionLocalRepo', () => {
     expect(() =>
       TransactionSchema.parse(createTransactionFixture())
     ).not.toThrow()
+  })
+
+  it('should default new transaction fixtures to the unsettled sentinel', () => {
+    expect(
+      isUnsettledSettlementRecordId(
+        createTransactionFixture().settlementRecordId
+      )
+    ).toBe(true)
+    expect(createTransactionFixture().settlementRecordId).toBe(
+      UNSETTLED_SETTLEMENT_RECORD_ID
+    )
   })
 
   it('should create and read a transaction by id', async () => {
@@ -169,10 +183,24 @@ describe('TransactionLocalRepo', () => {
         accountBookId: '1',
         description: 'Lunch',
         amount: 240,
-        paidByDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 240 }],
+        paidByDetail: [
+          {
+            userId: userList[0]!.id,
+            userType: 'registered' as const,
+            amount: 240,
+          },
+        ],
         splitDetail: [
-          { userId: userList[0]!.id, userType: 'registered' as const, amount: 120 },
-          { userId: userList[1]!.id, userType: 'registered' as const, amount: 120 },
+          {
+            userId: userList[0]!.id,
+            userType: 'registered' as const,
+            amount: 120,
+          },
+          {
+            userId: userList[1]!.id,
+            userType: 'registered' as const,
+            amount: 120,
+          },
         ],
       }),
     ]
@@ -183,8 +211,20 @@ describe('TransactionLocalRepo', () => {
       type: 'income',
       categoryId: '101',
       receivedByUserId: userList[0]!.id,
-      paidByDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 5000 }],
-      splitDetail: [{ userId: userList[0]!.id, userType: 'registered' as const, amount: 5000 }],
+      paidByDetail: [
+        {
+          userId: userList[0]!.id,
+          userType: 'registered' as const,
+          amount: 5000,
+        },
+      ],
+      splitDetail: [
+        {
+          userId: userList[0]!.id,
+          userType: 'registered' as const,
+          amount: 5000,
+        },
+      ],
       amount: 5000,
     })
 
@@ -198,6 +238,83 @@ describe('TransactionLocalRepo', () => {
     scopedTransactions.forEach((transaction) => {
       expect(transaction.accountBookId).toBe('1')
     })
+  })
+
+  it('should find transactions by settlement record id via reverse lookup', async () => {
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-1',
+        settlementRecordId: 'record-1',
+      })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-2',
+        settlementRecordId: 'record-1',
+        description: 'Dinner',
+      })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-3',
+        settlementRecordId: 'record-2',
+        description: 'Taxi',
+      })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-4',
+        settlementRecordId: 'record-1',
+        description: 'Deleted dinner',
+        deletedAt: baseTimestamp + 1000,
+      })
+    )
+
+    await expect(repo.findBySettlementRecordId('record-1')).resolves.toEqual([
+      expect.objectContaining({ id: 'tx-1' }),
+      expect.objectContaining({ id: 'tx-2' }),
+    ])
+  })
+
+  it('should find unsettled expense transactions by account book id via sentinel index', async () => {
+    await repo.create(
+      createTransactionFixture({ id: 'tx-sentinel', accountBookId: 'book-1' })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-settled',
+        accountBookId: 'book-1',
+        settlementRecordId: 'record-1',
+      })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-income',
+        accountBookId: 'book-1',
+        type: 'income',
+        categoryId: '101-1',
+        receivedByUserId: userList[0]!.id,
+      })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-deleted',
+        accountBookId: 'book-1',
+        deletedAt: baseTimestamp + 1000,
+      })
+    )
+    await repo.create(
+      createTransactionFixture({
+        id: 'tx-other-book',
+        accountBookId: 'book-2',
+      })
+    )
+
+    await expect(
+      repo.findUnsettledExpenseByAccountBookId('book-1')
+    ).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'tx-sentinel' })])
+    )
   })
 
   it('should delete a transaction and report false for missing records', async () => {

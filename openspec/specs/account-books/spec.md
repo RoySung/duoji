@@ -8,7 +8,7 @@ TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Upd
 
 ### Requirement: Users can manage personal account books
 
-The system SHALL allow users to create, rename, edit, and delete private account books for personal expense tracking during Phase 1. The management interface SHALL split account book overview from account-book-specific editing, using a list page for navigation and dedicated settings pages for creating a new account book or editing an existing one.
+The system SHALL allow users to create, rename, edit, and delete private account books for personal expense tracking during Phase 1. The management interface SHALL split account book overview from account-book-specific editing, using a list page for navigation and dedicated settings pages for creating a new account book or editing an existing one. The `AccountBook` entity SHALL include a `virtualUsers` field storing embedded `VirtualUser` records scoped to that account book.
 
 #### Scenario: Open the account book management interface
 
@@ -28,7 +28,7 @@ The system SHALL allow users to create, rename, edit, and delete private account
 #### Scenario: Open an existing account book settings page
 
 - **WHEN** a user opens the settings page for an existing account book
-- **THEN** the system SHALL display that account book's current name, currency, and description in an editable form
+- **THEN** the system SHALL display that account book's current name, currency, description, and people list in an editable form
 
 #### Scenario: Rename a personal account book
 
@@ -47,29 +47,104 @@ The system SHALL allow users to create, rename, edit, and delete private account
 
 
 <!-- @trace
-source: pageify-account-book-settings-flow
-updated: 2026-03-28
+source: add-people-and-transaction-integration
+updated: 2026-04-11
 code:
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookFormModal.tsx
-  - apps/web/package.json
+  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/stores/user/index.ts
+  - apps/web/src/components/layout/navbar.tsx
+  - .github/prompts/spectra-apply.prompt.md
+  - .github/prompts/spectra-ingest.prompt.md
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/mocks/user.ts
+  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - apps/web/src/pages/index.tsx
+  - apps/web/src/components/transaction/TransactionList.tsx
   - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
-  - apps/web/src/constants/theme.ts
-  - apps/web/tailwind.config.js
-  - .impeccable.md
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
-  - apps/web/test-setup.ts
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/pages/styles.css
+  - .github/skills/spectra-ingest/SKILL.md
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
   - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
   - apps/web/src/pages/_app.tsx
+  - apps/web/src/stores/user/userStore.ts
+  - GEMINI.md
+  - apps/web/package.json
+  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/pages/account-books/new.tsx
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - .github/prompts/spectra-propose.prompt.md
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/TransactionModal/SplitDetailModal.tsx
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/entities/user.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/src/components/accountBookSettings/UserSection.tsx
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - .github/prompts/spectra-ask.prompt.md
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - apps/web/src/entities/settlement.ts
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/stores/user/userStoreProvider.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/utils/settlementUtils.ts
+  - AGENTS.md
+  - .github/prompts/spectra-debug.prompt.md
+  - .github/skills/spectra-debug/SKILL.md
   - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/_document.tsx
+  - apps/web/src/components/TransactionModal/PaidByDetailModal.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - CLAUDE.md
+  - apps/web/src/entities/accountBook.ts
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/repositories/userRepo/index.ts
+  - .github/skills/spectra-propose/SKILL.md
+  - phase-1.todo.md
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/src/stores/transaction/index.ts
+  - apps/web/.babelrc
+  - apps/web/src/mocks/accountBook.ts
+  - apps/web/src/repositories/userRepo/userLocalRepo.ts
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - .spectra.yaml
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/utils/accountBookUtils.ts
+  - apps/web/next.config.js
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - apps/web/src/hooks/useSettlement.ts
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
 tests:
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/settlementPage.spec.tsx
   - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/transactionUtils.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/userStore.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/settlement.spec.ts
 -->
 
 ---
@@ -156,4 +231,125 @@ code:
 tests:
   - apps/web/specs/accountBookStore.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
+-->
+
+---
+### Requirement: Account book settings include a People management section
+
+The system SHALL display a People section in the account book settings page that lists all current members (registered users and virtual users) and provides controls to add or remove virtual users.
+
+#### Scenario: View people in account book settings
+
+- **WHEN** a user opens an existing account book's settings page
+- **THEN** the system SHALL display the list of registered members and virtual users associated with that account book
+
+#### Scenario: Add a virtual user from settings
+
+- **WHEN** a user submits a name in the Add Virtual User form within account book settings
+- **THEN** the system SHALL create the virtual user and include them in the displayed people list
+
+#### Scenario: Remove a virtual user from settings
+
+- **WHEN** a user confirms removal of a virtual user in account book settings
+- **THEN** the system SHALL remove that virtual user from the people list
+
+<!-- @trace
+source: add-people-and-transaction-integration
+updated: 2026-04-11
+code:
+  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/stores/user/index.ts
+  - apps/web/src/components/layout/navbar.tsx
+  - .github/prompts/spectra-apply.prompt.md
+  - .github/prompts/spectra-ingest.prompt.md
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/mocks/user.ts
+  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/hooks/useSettlementRecordTransactions.ts
+  - apps/web/src/pages/index.tsx
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
+  - .github/skills/spectra-ingest/SKILL.md
+  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/stores/user/userStore.ts
+  - GEMINI.md
+  - apps/web/package.json
+  - .github/skills/spectra-ask/SKILL.md
+  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/jest.config.ts
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/pages/account-books/new.tsx
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - .github/prompts/spectra-propose.prompt.md
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/TransactionModal/SplitDetailModal.tsx
+  - .github/skills/spectra-discuss/SKILL.md
+  - apps/web/src/entities/user.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/pages/settings/account-books.tsx
+  - apps/web/src/components/accountBookSettings/UserSection.tsx
+  - apps/web/src/pages/account-books/[id]/settings.tsx
+  - .github/prompts/spectra-ask.prompt.md
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/stores/accountBook/accountBookStore.ts
+  - apps/web/src/entities/settlement.ts
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/stores/user/userStoreProvider.tsx
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/repositories/settlementRepo/index.ts
+  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/utils/settlementUtils.ts
+  - AGENTS.md
+  - .github/prompts/spectra-debug.prompt.md
+  - .github/skills/spectra-debug/SKILL.md
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/components/TransactionModal/PaidByDetailModal.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/stores/transaction/transactionStore.ts
+  - CLAUDE.md
+  - apps/web/src/entities/accountBook.ts
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/repositories/userRepo/index.ts
+  - .github/skills/spectra-propose/SKILL.md
+  - phase-1.todo.md
+  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
+  - apps/web/src/stores/transaction/index.ts
+  - apps/web/.babelrc
+  - apps/web/src/mocks/accountBook.ts
+  - apps/web/src/repositories/userRepo/userLocalRepo.ts
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/stores/accountBook/index.ts
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
+  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - .spectra.yaml
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/src/utils/accountBookUtils.ts
+  - apps/web/next.config.js
+  - apps/web/src/pages/settings/account-books/new.tsx
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - apps/web/src/hooks/useSettlement.ts
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+tests:
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/userStore.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/settlement.spec.ts
 -->

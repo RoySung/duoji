@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { UserTypeSchema } from '@/entities/user'
 
+export type TransactionModalMode = 'create' | 'edit' | 'view'
+
 export const TransactionTypeSchema = z.enum(['expense', 'income'])
 export type TransactionType = z.infer<typeof TransactionTypeSchema>
 export const PaymentMethodValues = [
@@ -29,6 +31,23 @@ export const SplitDetailItemSchema = z.object({
 
 export const SplitDetailSchema = z.array(SplitDetailItemSchema)
 
+export const UNSETTLED_SETTLEMENT_RECORD_ID = '__unsettled__'
+
+export function isUnsettledSettlementRecordId(
+  settlementRecordId: string | null | undefined
+): boolean {
+  return settlementRecordId === UNSETTLED_SETTLEMENT_RECORD_ID
+}
+
+export function hasLinkedSettlementRecordId(
+  settlementRecordId: string | null | undefined
+): settlementRecordId is string {
+  return (
+    settlementRecordId != null &&
+    settlementRecordId !== UNSETTLED_SETTLEMENT_RECORD_ID
+  )
+}
+
 const TransactionFieldsSchema = z.object({
   amount: z.number().positive(),
   categoryId: z.string(),
@@ -47,6 +66,7 @@ export const TransactionSchema = TransactionFieldsSchema.extend({
   id: z.string(),
   type: TransactionTypeSchema,
   accountBookId: z.string(),
+  settlementRecordId: z.string().default(UNSETTLED_SETTLEMENT_RECORD_ID),
   createdAt: z.number().int().nonnegative(),
   updatedAt: z.number().int().nonnegative(),
   deletedAt: z.number().int().nonnegative().nullable().default(null),
@@ -59,10 +79,7 @@ export const TransactionSchema = TransactionFieldsSchema.extend({
     })
   }
 
-  if (
-    transaction.type === 'expense' &&
-    transaction.receivedByUserId !== null
-  ) {
+  if (transaction.type === 'expense' && transaction.receivedByUserId !== null) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Expense transactions must not include an income recipient.',
@@ -80,6 +97,10 @@ export interface TransactionRepo {
   findById(id: string): Promise<Transaction | null>
   findAll(): Promise<Transaction[]>
   findByAccountBookId(accountBookId: string): Promise<Transaction[]>
+  findUnsettledExpenseByAccountBookId(
+    accountBookId: string
+  ): Promise<Transaction[]>
+  findBySettlementRecordId(recordId: string): Promise<Transaction[]>
   update(
     id: string,
     transaction: Partial<Transaction>

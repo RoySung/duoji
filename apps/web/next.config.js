@@ -10,6 +10,9 @@ const repo = process.env.GITHUB_REPOSITORY?.split('/')[1];
  **/
 const nextConfig = {
   output: 'export',
+  env: {
+    NEXT_PUBLIC_PROJECT_ROOT: __dirname,
+  },
   basePath: process.env.NODE_ENV === 'production' && repo ? `/${repo}` : '',
   assetPrefix: process.env.NODE_ENV === 'production' && repo ? `/${repo}/` : '',
   nx: {

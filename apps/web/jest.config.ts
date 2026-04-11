@@ -7,6 +7,8 @@ export default {
     '^.+\\.[tj]sx?$': [
       'babel-jest',
       {
+        babelrc: false,
+        configFile: false,
         presets: [
           ['@nx/next/babel', { 'preset-react': { runtime: 'automatic' } }],
         ],

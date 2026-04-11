@@ -22,7 +22,6 @@ import {
 import { useAccountBookStore } from '@/stores/accountBook/index'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
-import { useTransactionStore } from '@/stores/transaction'
 import SplitDetailModal from './SplitDetailModal'
 import CategorySelector from './CategorySelector'
 import {
@@ -35,19 +34,17 @@ import {
 type Props = {
   value: Transaction
   onChange: (nextValue: Transaction) => void
+  isEditMode: boolean
 }
 
-export default function ExpenseForm({ value, onChange }: Props) {
+export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   const now = new Date()
+  const currentAccountBookId =
+    useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
-  const currentAccountBookId = useAccountBookStore(
-    (state) => state.currentAccountBookId
-  )
   const expenseCategories = useCategoryStore((state) => state.expenseCategories)
-  const modalMode = useTransactionStore((state) => state.modalMode)
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
-  const isEditMode = modalMode === 'edit'
 
   const selectedPaidByIds = value.paidByDetail.map((item) => item.userId)
   const selectedSplitIds = value.splitDetail.map((item) => item.userId)

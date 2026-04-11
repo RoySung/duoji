@@ -1,16 +1,12 @@
-import { Button, Switch } from '@heroui/react'
+import { Switch } from '@heroui/react'
 import { useTheme } from 'next-themes'
-import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import {
-  PiBooksBold,
-  PiCaretRightBold,
   PiMoonBold,
   PiSunBold,
 } from 'react-icons/pi'
 
 export default function Settings() {
-  const router = useRouter()
   const [hasHydrated, setHasHydrated] = useState(false)
   const { setTheme, theme } = useTheme()
 
@@ -74,27 +70,6 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border bg-card p-4 shadow-lg shadow-black/5">
-          <Button
-            className="h-auto w-full justify-between rounded-2xl bg-accent px-4 py-4 text-left text-foreground hover:bg-accent/80"
-            disableRipple
-            endContent={<PiCaretRightBold className="text-muted-foreground" />}
-            startContent={
-              <div className="rounded-2xl bg-orange-400/15 p-3 text-orange-300">
-                <PiBooksBold size={20} />
-              </div>
-            }
-            variant="light"
-            onPress={() => router.push('/settings/account-books')}
-          >
-            <div className="flex flex-1 flex-col items-start gap-1">
-              <span className="text-base font-semibold">Account books</span>
-              <span className="text-sm text-muted-foreground">
-                Create, edit, and delete the local account books used in DuoJi.
-              </span>
-            </div>
-          </Button>
-        </section>
       </div>
     </div>
   )

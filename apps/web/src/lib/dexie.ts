@@ -3,6 +3,7 @@ import { Category } from '@/entities/category'
 import { Transaction } from '@/entities/transaction'
 import { RegisteredUser } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
+import { SettlementRecord } from '@/entities/settlement'
 import { accountBookList, userList } from '@/mocks'
 
 // TODO: remove mocks data
@@ -15,6 +16,7 @@ class DuojiDB extends Dexie {
   transactions!: EntityTable<Transaction, 'id'>
   users!: EntityTable<RegisteredUser, 'id'>
   accountBooks!: EntityTable<AccountBook, 'id'>
+  settlements!: EntityTable<SettlementRecord, 'id'>
 
   constructor() {
     super('DuojiDB')
@@ -22,9 +24,10 @@ class DuojiDB extends Dexie {
     this.version(1).stores({
       categories: '&id, name, type, parentId, accountBookId, sortOrder',
       transactions:
-        '&id, accountBookId, date, type, categoryId, [accountBookId+deletedAt]',
+        '&id, accountBookId, date, type, categoryId, settlementRecordId, [accountBookId+deletedAt]',
       users: '&id, name, email',
       accountBooks: '&id, name, ownerId, *userIds',
+      settlements: '&id, accountBookId, createdAt',
     })
   }
 }

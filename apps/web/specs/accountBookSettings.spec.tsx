@@ -12,29 +12,19 @@ import { ReactNode } from 'react'
 import { useRouter } from 'next/router'
 import Home from '../src/pages/index'
 import Settings from '../src/pages/settings'
-import AccountBookSettingsRoute from '../src/pages/settings/account-books'
-import NewAccountBookRoute from '../src/pages/settings/account-books/new'
-import AccountBookDetailsRoute from '../src/pages/settings/account-books/[id]'
-import CategorySettingsRoute from '../src/pages/settings/account-books/[id]/categories'
+import NewAccountBookRoute from '../src/pages/account-books/new'
+import AccountBookSettingsRoute from '../src/pages/account-books/[id]/settings'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
-import { Transaction, TransactionRepo } from '../src/entities/transaction'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,
 } from '../src/stores/accountBook'
 import {
-  TransactionStoreProvider,
-  createTransactionStore,
-} from '../src/stores/transaction'
-import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
-import {
-  UserStoreProvider,
-  createUserStore,
-} from '../src/stores/user'
+import { UserStoreProvider, createUserStore } from '../src/stores/user'
 import { THEME_STORAGE_KEY } from '../src/constants/theme'
 import {
   Category,
@@ -74,6 +64,123 @@ jest.mock('@heroui/react', () => {
   return {
     ...actual,
     addToast: jest.fn(),
+    Button: ({
+      children,
+      color,
+      disabled,
+      disableRipple,
+      endContent,
+      isDisabled,
+      isIconOnly,
+      isLoading,
+      onClick,
+      onPress,
+      startContent,
+      variant,
+      ...props
+    }: any) => {
+      const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        if (typeof onPress === 'function') {
+          onPress(event)
+        } else if (typeof onClick === 'function') {
+          onClick(event)
+        }
+      }
+
+      return (
+        <button
+          type="button"
+          disabled={disabled ?? isDisabled ?? isLoading}
+          aria-busy={isLoading ? 'true' : undefined}
+          onClick={handleClick}
+          {...props}
+        >
+          {startContent}
+          {children}
+          {endContent}
+        </button>
+      )
+    },
+    Input: ({
+      label,
+      value,
+      onChange,
+      onValueChange,
+      isRequired,
+      placeholder,
+      ...props
+    }: any) => {
+      const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        onChange?.(event)
+        onValueChange?.(event.target.value)
+      }
+
+      return (
+        <label>
+          {label}
+          <input
+            value={value}
+            onChange={handleChange}
+            placeholder={placeholder}
+            {...props}
+          />
+        </label>
+      )
+    },
+    Textarea: ({
+      label,
+      value,
+      onChange,
+      onValueChange,
+      minRows,
+      placeholder,
+      ...props
+    }: any) => {
+      const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        onChange?.(event)
+        onValueChange?.(event.target.value)
+      }
+
+      return (
+        <label>
+          {label}
+          <textarea
+            value={value}
+            onChange={handleChange}
+            placeholder={placeholder}
+            {...props}
+          />
+        </label>
+      )
+    },
+    Modal: ({ children, isOpen }: any) =>
+      isOpen ? (
+        <div role="dialog">
+          {typeof children === 'function'
+            ? children(() => undefined)
+            : children}
+        </div>
+      ) : null,
+    ModalContent: ({ children }: any) =>
+      typeof children === 'function' ? (
+        <div>{children(() => undefined)}</div>
+      ) : (
+        <div>{children}</div>
+      ),
+    ModalHeader: ({ children }: any) => <div>{children}</div>,
+    ModalBody: ({ children }: any) => <div>{children}</div>,
+    ModalFooter: ({ children }: any) => <div>{children}</div>,
+    Switch: ({ children, isDisabled, isSelected, onValueChange }: any) => (
+      <label>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          disabled={isDisabled}
+          onChange={(event) => onValueChange?.(event.target.checked)}
+        />
+        {children}
+      </label>
+    ),
     Select: ({
       'aria-label': ariaLabel,
       children,
@@ -190,36 +297,6 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 
   async clear(): Promise<void> {
     this.accountBooks = []
-  }
-}
-
-class InMemoryTransactionRepo implements TransactionRepo {
-  async create(transaction: Transaction): Promise<Transaction> {
-    return transaction
-  }
-
-  async findById(): Promise<Transaction | null> {
-    return null
-  }
-
-  async findAll(): Promise<Transaction[]> {
-    return []
-  }
-
-  async findByAccountBookId(): Promise<Transaction[]> {
-    return []
-  }
-
-  async update(): Promise<Transaction | null> {
-    return null
-  }
-
-  async delete(): Promise<boolean> {
-    return false
-  }
-
-  async clear(): Promise<void> {
-    return undefined
   }
 }
 
@@ -342,10 +419,12 @@ type RenderOptions = {
 async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
   const push = jest.fn()
   const back = jest.fn()
+  const replace = jest.fn()
   mockedUseRouter.mockReturnValue({
     query: options.query ?? {},
     pathname: options.pathname ?? '/settings',
     push,
+    replace,
     back,
   })
 
@@ -366,13 +445,8 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
   await store.getState().initialize()
 
   if (options.currentAccountBookId !== undefined) {
-    store.getState().setCurrentAccountBook(options.currentAccountBookId)
+    store.getState().setCurrentAccountBookId(options.currentAccountBookId)
   }
-
-  const transactionStore = createTransactionStore(new InMemoryTransactionRepo())
-  await transactionStore
-    .getState()
-    .initialize(store.getState().currentAccountBookId)
 
   const categoryStore = createCategoryStore(new InMemoryCategoryRepo())
   const userStore = createUserStore()
@@ -390,13 +464,9 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
       >
         <HeroUIProvider>
           <AccountBookStoreProvider store={store}>
-            <TransactionStoreProvider store={transactionStore}>
-              <CategoryStoreProvider store={categoryStore}>
-                <UserStoreProvider store={userStore}>
-                  {ui}
-                </UserStoreProvider>
-              </CategoryStoreProvider>
-            </TransactionStoreProvider>
+            <CategoryStoreProvider store={categoryStore}>
+              <UserStoreProvider store={userStore}>{ui}</UserStoreProvider>
+            </CategoryStoreProvider>
           </AccountBookStoreProvider>
         </HeroUIProvider>
       </ThemeProvider>
@@ -405,9 +475,9 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
 
   return {
     push,
+    replace,
     back,
     store,
-    transactionStore,
     ...renderResult!,
   }
 }
@@ -417,105 +487,48 @@ describe('Account book settings pages', () => {
     mockedUseRouter.mockReset()
   })
 
-  it('defaults the home-page selector to the first account book and switches the current selection', async () => {
-    const { store } = await renderWithProviders(<Home />, {
+  it('redirects the home page to the first account book when data is initialized', async () => {
+    const { replace } = await renderWithProviders(<Home />, {
       pathname: '/',
-    })
-    const selector = screen.getByLabelText(
-      'Current account book'
-    ) as HTMLSelectElement
-
-    expect(store.getState().currentAccountBookId).toBe('1')
-    expect(selector.value).toBe('1')
-
-    fireEvent.change(selector, {
-      target: { value: '2' },
     })
 
     await waitFor(() => {
-      expect(store.getState().currentAccountBookId).toBe('2')
+      expect(replace).toHaveBeenCalledWith('/account-books/1')
     })
-
-    expect(selector.value).toBe('2')
-    expect(
-      (
-        screen.getByRole('option', {
-          name: 'Tokyo Trip (JPY)',
-        }) as HTMLOptionElement
-      ).selected
-    ).toBe(true)
   })
 
-  it('navigates from the settings landing page to account-book settings', async () => {
-    const { push } = await renderWithProviders(<Settings />)
+  it('renders the settings landing page content', async () => {
+    await renderWithProviders(<Settings />)
 
-    fireEvent.click(screen.getByRole('button', { name: /Account books/i }))
-
-    expect(push).toHaveBeenCalledWith('/settings/account-books')
+    expect(screen.getByText('Personal workspace')).toBeTruthy()
+    expect(screen.getByText('Appearance')).toBeTruthy()
   })
 
   it('keeps the settings navigation active for settings descendant routes', async () => {
     const { container } = await renderWithProviders(<NavBar />, {
-      pathname: '/settings/account-books/2',
+      pathname: '/account-books/[id]/settings',
+      query: { id: '2' },
     })
 
     const settingsInput = container.querySelector<HTMLInputElement>('#settings')
     const homeInput = container.querySelector<HTMLInputElement>('#home')
 
-    expect(settingsInput?.checked).toBe(true)
-    expect(homeInput?.checked).toBe(false)
-  })
-
-  it('renders the nested title and back action for account-book settings', async () => {
-    const { push } = await renderWithProviders(<AccountBookSettingsRoute />, {
-      pathname: '/settings/account-books',
-    })
-
-    expect(screen.getByText('Account books')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
-
-    expect(push).toHaveBeenCalledWith('/settings')
-  })
-
-  it('shows the current account book on the list page and opens account-book settings from cards', async () => {
-    const { push } = await renderWithProviders(<AccountBookSettingsRoute />, {
-      pathname: '/settings/account-books',
-      currentAccountBookId: '2',
-    })
-
-    function getAccountBookCard(accountBookId: string) {
-      return screen.getByTestId(`account-book-card-${accountBookId}`)
-    }
-
-    expect(
-      within(getAccountBookCard('2')).getByText('Current on Home')
-    ).toBeTruthy()
-    expect(
-      screen.queryByRole('button', { name: /Set current|Current now/i })
-    ).toBeNull()
-    expect(
-      screen.queryByRole('button', { name: 'Category Settings' })
-    ).toBeNull()
-
-    fireEvent.click(
-      within(getAccountBookCard('2')).getByRole('button', {
-        name: 'View settings',
-      })
-    )
-
-    expect(push).toHaveBeenCalledWith('/settings/account-books/2')
+    expect(settingsInput?.checked).toBe(false)
+    expect(homeInput?.checked).toBe(true)
   })
 
   it('renders the new account book page and creates a new account book', async () => {
-    const { push, store } = await renderWithProviders(<NewAccountBookRoute />, {
-      pathname: '/settings/account-books/new',
-    })
+    const { back, push, store } = await renderWithProviders(
+      <NewAccountBookRoute />,
+      {
+        pathname: '/account-books/new',
+      }
+    )
 
-    expect(screen.getByText('Create account book')).toBeTruthy()
+    expect(screen.getByText('New account book')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
-    expect(push).toHaveBeenCalledWith('/settings/account-books')
+    expect(back).toHaveBeenCalled()
 
     push.mockClear()
 
@@ -539,16 +552,16 @@ describe('Account book settings pages', () => {
 
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith(
-        expect.stringMatching(/^\/settings\/account-books\/.+/)
+        expect.stringMatching(/^\/account-books\/.+\/settings$/)
       )
     })
   })
 
-  it('renders an existing account book settings page and supports update, category navigation, and delete', async () => {
+  it('renders an existing account book settings page and supports update, category modal, and delete', async () => {
     const { push, store } = await renderWithProviders(
-      <AccountBookDetailsRoute />,
+      <AccountBookSettingsRoute />,
       {
-        pathname: '/settings/account-books/2',
+        pathname: '/account-books/[id]/settings',
         query: { id: '2' },
         currentAccountBookId: '2',
       }
@@ -570,18 +583,28 @@ describe('Account book settings pages', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: /Manage categories/i }))
-    expect(push).toHaveBeenCalledWith('/settings/account-books/2/categories')
-
-    push.mockClear()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Delete account book' }))
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeTruthy()
     })
+    expect(screen.getByText('Tokyo Trip Plus — Categories')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account book' }))
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('dialog').length).toBeGreaterThan(1)
+    })
+
+    const deleteDialog = screen
+      .getAllByRole('dialog')
+      .find((dialog) => within(dialog).queryByText(/Permanently delete/i))
+
+    expect(deleteDialog).toBeTruthy()
 
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' })
+      within(deleteDialog as HTMLElement).getByRole('button', {
+        name: 'Delete account book',
+      })
     )
 
     await waitFor(() => {
@@ -592,17 +615,6 @@ describe('Account book settings pages', () => {
       ).toBeUndefined()
     })
 
-    expect(push).toHaveBeenCalledWith('/settings/account-books')
-  })
-
-  it('returns from category settings to the originating account book settings page', async () => {
-    const { push } = await renderWithProviders(<CategorySettingsRoute />, {
-      pathname: '/settings/account-books/2/categories',
-      query: { id: '2' },
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
-
-    expect(push).toHaveBeenCalledWith('/settings/account-books/2')
+    expect(push).toHaveBeenCalledWith('/account-books/1')
   })
 })

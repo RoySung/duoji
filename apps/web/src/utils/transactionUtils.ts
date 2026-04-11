@@ -7,6 +7,7 @@ import {
   PaidByDetail,
   Transaction,
   TransactionType,
+  UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '@/entities/transaction'
 import { Category } from '@/entities/category'
 import { User } from '@/entities/user'
@@ -214,13 +215,21 @@ export function createTransactionDraft(options?: {
       receivedByUserId,
       paidByDetail:
         type === 'income'
-          ? buildIncomeRecipientDetails(receivedByUserId, users, clonedTransaction.amount)
+          ? buildIncomeRecipientDetails(
+              receivedByUserId,
+              users,
+              clonedTransaction.amount
+            )
           : clonedTransaction.paidByDetail.length > 0
           ? clonedTransaction.paidByDetail
           : buildUserAmountDetails(users.slice(0, 1), clonedTransaction.amount),
       splitDetail:
         type === 'income'
-          ? buildIncomeRecipientDetails(receivedByUserId, users, clonedTransaction.amount)
+          ? buildIncomeRecipientDetails(
+              receivedByUserId,
+              users,
+              clonedTransaction.amount
+            )
           : clonedTransaction.splitDetail.length > 0
           ? clonedTransaction.splitDetail
           : buildUserAmountDetails(users, clonedTransaction.amount),
@@ -234,7 +243,10 @@ export function createTransactionDraft(options?: {
   const timestamp = Date.now()
   const receivedByUserId =
     type === 'income'
-      ? resolveIncomeRecipientId({ users, accountBookId: options?.accountBookId })
+      ? resolveIncomeRecipientId({
+          users,
+          accountBookId: options?.accountBookId,
+        })
       : null
 
   const nextDraft = {
@@ -247,6 +259,7 @@ export function createTransactionDraft(options?: {
     description: '',
     paymentMethod: DefaultPaymentMethod,
     receivedByUserId,
+    settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
     tags: [],
     paidByDetail: buildUserAmountDetails(users.slice(0, 1), 0),
     splitDetail: buildUserAmountDetails(

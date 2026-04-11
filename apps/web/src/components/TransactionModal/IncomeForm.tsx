@@ -12,7 +12,6 @@ import TagsInput from '../ui/TagInput'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
-import { useTransactionStore } from '@/stores/transaction'
 import {
   applyIncomeRecipient,
   distributeTransactionAmount,
@@ -24,19 +23,17 @@ import {
 type Props = {
   value: Transaction
   onChange: (nextValue: Transaction) => void
+  isEditMode: boolean
 }
 
-export default function IncomeForm({ value, onChange }: Props) {
+export default function IncomeForm({ value, onChange, isEditMode }: Props) {
   const now = new Date()
+  const currentAccountBookId =
+    useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
-  const currentAccountBookId = useAccountBookStore(
-    (state) => state.currentAccountBookId
-  )
   const incomeCategories = useCategoryStore((state) => state.incomeCategories)
-  const modalMode = useTransactionStore((state) => state.modalMode)
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
-  const isEditMode = modalMode === 'edit'
 
   // Use allUsers for lookup in edit mode so deleted recipients are preserved
   const usersForLookup = isEditMode ? allUsers : activeUsers

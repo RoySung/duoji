@@ -76,7 +76,7 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 }
 
 describe('AccountBook Store', () => {
-  it('should load account books and bootstrap a deterministic current account book', async () => {
+  it('should load account books without auto-selecting a current account book', async () => {
     const store = createAccountBookStore(
       new InMemoryAccountBookRepo([
         createAccountBookFixture({ id: '1', name: 'Daily Life' }),
@@ -87,7 +87,7 @@ describe('AccountBook Store', () => {
     await store.getState().initialize()
 
     expect(store.getState().accountBooks).toHaveLength(2)
-    expect(store.getState().currentAccountBookId).toBe('1')
+    expect(store.getState().currentAccountBookId).toBeNull()
   })
 
   it('should switch the current account book manually', async () => {
@@ -99,12 +99,12 @@ describe('AccountBook Store', () => {
     )
 
     await store.getState().initialize()
-    store.getState().setCurrentAccountBook('2')
+    store.getState().setCurrentAccountBookId('2')
 
     expect(store.getState().currentAccountBookId).toBe('2')
   })
 
-  it('should use the first created account book when there is no current account book', async () => {
+  it('should keep currentAccountBookId unset after creating the first account book', async () => {
     const store = createAccountBookStore(new InMemoryAccountBookRepo())
     const createdAccountBook = createAccountBookFixture({ id: 'first-book' })
 
@@ -113,11 +113,11 @@ describe('AccountBook Store', () => {
 
     await store.getState().createAccountBook(createdAccountBook)
 
-    expect(store.getState().currentAccountBookId).toBe('first-book')
+    expect(store.getState().currentAccountBookId).toBeNull()
     expect(store.getState().accountBooks).toHaveLength(1)
   })
 
-  it('should fall back to another account book when deleting the current account book', async () => {
+  it('should clear the current account book when deleting the selected account book', async () => {
     const store = createAccountBookStore(
       new InMemoryAccountBookRepo([
         createAccountBookFixture({ id: '1', name: 'Daily Life' }),
@@ -126,11 +126,11 @@ describe('AccountBook Store', () => {
     )
 
     await store.getState().initialize()
-    store.getState().setCurrentAccountBook('2')
+    store.getState().setCurrentAccountBookId('2')
 
     await store.getState().deleteAccountBook('2')
 
-    expect(store.getState().currentAccountBookId).toBe('1')
+    expect(store.getState().currentAccountBookId).toBeNull()
     expect(store.getState().accountBooks).toHaveLength(1)
   })
 
@@ -163,6 +163,6 @@ describe('AccountBook Store runtime composition', () => {
     await store.getState().initialize()
 
     expect(store.getState().accountBooks).toHaveLength(accountBookList.length)
-    expect(store.getState().currentAccountBookId).toBe(accountBookList[0].id)
+    expect(store.getState().currentAccountBookId).toBeNull()
   })
 })

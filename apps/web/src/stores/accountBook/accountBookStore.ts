@@ -14,13 +14,13 @@ type AccountBookStoreState = {
 type AccountBookStoreActions = {
   initialize: () => Promise<void>
   loadAccountBooks: () => Promise<AccountBook[]>
-  setCurrentAccountBook: (accountBookId: string | null) => void
   createAccountBook: (accountBook: AccountBook) => Promise<AccountBook>
   updateAccountBook: (
-    id: string,
+    id: AccountBook['id'],
     updates: Partial<AccountBook>
   ) => Promise<AccountBook | null>
-  deleteAccountBook: (id: string) => Promise<boolean>
+  deleteAccountBook: (id: AccountBook['id']) => Promise<boolean>
+  setCurrentAccountBookId: (id: AccountBook['id'] | null) => void
   resetInMemoryState: () => void
 }
 
@@ -33,28 +33,6 @@ const initialAccountBookStoreState: AccountBookStoreState = {
   initialized: false,
   isLoading: false,
   error: null,
-}
-
-function hasAccountBookId(
-  accountBooks: AccountBook[],
-  accountBookId: string | null | undefined
-): boolean {
-  if (!accountBookId) {
-    return false
-  }
-
-  return accountBooks.some((accountBook) => accountBook.id === accountBookId)
-}
-
-function resolveFallbackCurrentAccountBookId(
-  accountBooks: AccountBook[],
-  existingCurrentAccountBookId: string | null
-): string | null {
-  if (hasAccountBookId(accountBooks, existingCurrentAccountBookId)) {
-    return existingCurrentAccountBookId
-  }
-
-  return accountBooks[0]?.id ?? null
 }
 
 function toErrorMessage(error: unknown): string {
@@ -85,16 +63,12 @@ export function createAccountBookStore(
           try {
             const accountBooks = await accountBookRepo.findAll()
 
-            set((state) => ({
+            set({
               accountBooks,
-              currentAccountBookId: resolveFallbackCurrentAccountBookId(
-                accountBooks,
-                state.currentAccountBookId
-              ),
               initialized: true,
               isLoading: false,
               error: null,
-            }))
+            })
 
             return accountBooks
           } catch (error) {
@@ -108,42 +82,15 @@ export function createAccountBookStore(
           }
         },
 
-        setCurrentAccountBook: (accountBookId) => {
-          if (accountBookId === null) {
-            set({ currentAccountBookId: null })
-            return
-          }
-
-          const { accountBooks, currentAccountBookId } = get()
-          if (!hasAccountBookId(accountBooks, accountBookId)) {
-            set({
-              currentAccountBookId: resolveFallbackCurrentAccountBookId(
-                accountBooks,
-                currentAccountBookId
-              ),
-            })
-            return
-          }
-
-          set({ currentAccountBookId: accountBookId })
-        },
-
         createAccountBook: async (accountBook) => {
           set({ isLoading: true, error: null })
 
           try {
             const createdAccountBook = await accountBookRepo.create(accountBook)
             const accountBooks = await accountBookRepo.findAll()
-            const { currentAccountBookId } = get()
 
             set({
               accountBooks,
-              currentAccountBookId: hasAccountBookId(
-                accountBooks,
-                currentAccountBookId
-              )
-                ? currentAccountBookId
-                : createdAccountBook.id,
               initialized: true,
               isLoading: false,
               error: null,
@@ -165,14 +112,9 @@ export function createAccountBookStore(
           try {
             const updatedAccountBook = await accountBookRepo.update(id, updates)
             const accountBooks = await accountBookRepo.findAll()
-            const { currentAccountBookId } = get()
 
             set({
               accountBooks,
-              currentAccountBookId: resolveFallbackCurrentAccountBookId(
-                accountBooks,
-                currentAccountBookId
-              ),
               initialized: true,
               isLoading: false,
               error: null,
@@ -194,21 +136,17 @@ export function createAccountBookStore(
           try {
             const deleted = await accountBookRepo.delete(id)
             const accountBooks = await accountBookRepo.findAll()
-            const { currentAccountBookId } = get()
 
-            set({
+            const updates: Partial<AccountBookStoreState> = {
               accountBooks,
-              currentAccountBookId:
-                deleted && currentAccountBookId === id
-                  ? resolveFallbackCurrentAccountBookId(accountBooks, null)
-                  : resolveFallbackCurrentAccountBookId(
-                      accountBooks,
-                      currentAccountBookId
-                    ),
               initialized: true,
               isLoading: false,
               error: null,
-            })
+            }
+            if (id === get().currentAccountBookId) {
+              updates.currentAccountBookId = null
+            }
+            set(updates)
 
             return deleted
           } catch (error) {
@@ -219,6 +157,10 @@ export function createAccountBookStore(
 
             return false
           }
+        },
+
+        setCurrentAccountBookId: (id) => {
+          set({ currentAccountBookId: id })
         },
 
         resetInMemoryState: () => {

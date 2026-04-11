@@ -1,0 +1,10 @@
+{
+  "includeGitInstructions": false,
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"initializeCategories\\\\|initialize.*accountBookId\\\\|useCategoryStore.*initialize\" apps/web/src/pages/account-books/[id]/index.tsx apps/web/src/components/categorySettings/CategorySettingsPage.tsx)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['state'], d['progress']\\)\")",
+      "Bash(ls apps/web/jest* apps/web/tsconfig*)"
+    ]
+  }
+}

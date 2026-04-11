@@ -1,11 +1,15 @@
 import { Button } from '@heroui/react'
 import styled from '@emotion/styled'
-import { PiHouseFill, PiListPlusFill, PiGearFill } from 'react-icons/pi'
+import {
+  PiHouseFill,
+  PiListPlusFill,
+  PiGearFill,
+  PiArrowsLeftRight,
+} from 'react-icons/pi'
 import { useRouter } from 'next/router'
 // @ts-expect-error 暫時忽略，不影響功能
 import tailwindConfig from '../../../tailwind.config' // 根據你的路徑調整
-import { TransactionModal } from '../TransactionModal'
-import { useTransactionStore } from '@/stores/transaction'
+import { useAccountBookStore } from '@/stores/accountBook'
 
 const resolvedConfig = require('tailwindcss/resolveConfig')
 const themeConfig = resolvedConfig(tailwindConfig)
@@ -25,9 +29,10 @@ const StyledWrapper = styled.div`
     border-radius: 30px;
   }
   .label {
-    padding: 8px 18px;
+    padding: 8px 4px;
     transition: all 200ms;
     display: inline-block;
+    position: relative;
   }
 
   .label input[type='radio'] {
@@ -45,14 +50,16 @@ const StyledWrapper = styled.div`
   .label::before {
     content: '';
     display: block;
-    width: 0%;
+    width: 20px;
     height: 2px;
-    border-radius: 5px;
-    position: relative;
+    border-radius: 2px;
+    position: absolute;
     left: 50%;
-    top: 20px;
+    bottom: 4px;
+    transform: translateX(-50%) scaleX(0);
     background: var(--col-orange);
-    transition: all 200ms;
+    transition: transform 200ms ease;
+    transform-origin: center;
   }
   .label > svg {
     transition: 300ms;
@@ -62,35 +69,39 @@ const StyledWrapper = styled.div`
   .label:has(input:checked) > svg {
     fill: var(--col-orange);
     scale: 1.2;
-    margin-top: -5px;
+    margin-top: 0;
   }
 
   .label:has(input:checked)::before {
-    width: 100%;
-    left: 0;
-    top: 25px;
+    transform: translateX(-50%) scaleX(1);
   }
 `
 
 export default function NavBar() {
   const router = useRouter()
-  const isHome = router.pathname === '/'
+  const isSettlement = router.pathname.includes('/settlement')
+  const isHome =
+    router.pathname === '/' ||
+    (router.pathname.startsWith('/account-books') && !isSettlement)
   const isSettings = router.pathname.startsWith('/settings')
-  const isOpen = useTransactionStore((state) => state.isModalOpen)
-  const openCreateModal = useTransactionStore((state) => state.openCreateModal)
-  const closeModal = useTransactionStore((state) => state.closeModal)
 
-  function handleOpenChange(open: boolean) {
-    if (open) {
-      openCreateModal()
+  const currentAccountBookId = useAccountBookStore(
+    (state) => state.currentAccountBookId
+  )
+  const accountBookId =
+    (typeof router.query.id === 'string' ? router.query.id : null) ??
+    currentAccountBookId
+
+  function handleAddTransaction() {
+    if (!accountBookId) {
       return
     }
 
-    closeModal()
+    void router.push(`/account-books/${accountBookId}?modal=create`)
   }
 
   return (
-    <div className="navbar h-[72px] flex w-full gap-4  p-4 justify-center">
+    <div className="navbar h-[72px] flex w-full p-4 justify-center items-center">
       <StyledWrapper>
         <section>
           <label title="home" htmlFor="home" className="label">
@@ -103,11 +114,25 @@ export default function NavBar() {
             />
             <PiHouseFill></PiHouseFill>
           </label>
+          <label title="settlement" htmlFor="settlement" className="label">
+            <input
+              id="settlement"
+              name="page"
+              type="radio"
+              checked={isSettlement}
+              onChange={() => {
+                if (accountBookId) {
+                  void router.push(`/account-books/${accountBookId}/settlement`)
+                }
+              }}
+            />
+            <PiArrowsLeftRight></PiArrowsLeftRight>
+          </label>
           <Button
-            className="bg-gray-600/75 text-white"
+            className="bg-gray-600/75 text-white mx-2 "
             isIconOnly
             style={{ transform: 'scale(1.2)' }}
-            onPress={openCreateModal}
+            onPress={handleAddTransaction}
           >
             <PiListPlusFill size={28}></PiListPlusFill>
           </Button>
@@ -123,7 +148,6 @@ export default function NavBar() {
           </label>
         </section>
       </StyledWrapper>
-      <TransactionModal isOpen={isOpen} onOpenChange={handleOpenChange} />
     </div>
   )
 }
