@@ -29,6 +29,26 @@ export function useAccountBookTransactions(
   const queryClient = useQueryClient()
   const repoRef = useRef(repo)
 
+  const allTransactionsQuery = useQuery({
+    queryKey: ['transactions', 'list', accountBookId ?? '__none__'],
+    queryFn: async () => {
+      if (!accountBookId) {
+        return []
+      }
+
+      if (accountBookId === 'all') {
+        return sortTransactions(await repoRef.current.findAll())
+      }
+
+      return sortTransactions(
+        await repoRef.current.findByAccountBookId(accountBookId)
+      )
+    },
+    enabled: accountBookId !== null,
+    staleTime: 10_000,
+    gcTime: 60_000,
+  })
+
   const rangeQuery = useQuery({
     queryKey: transactionRangeQueryKey(
       accountBookId,
@@ -99,6 +119,9 @@ export function useAccountBookTransactions(
       void queryClient.invalidateQueries({
         queryKey: ['transactions', 'range'],
       })
+      void queryClient.invalidateQueries({
+        queryKey: ['transactions', 'list'],
+      })
     },
   })
 
@@ -131,6 +154,9 @@ export function useAccountBookTransactions(
       void queryClient.invalidateQueries({
         queryKey: ['transactions', 'range'],
       })
+      void queryClient.invalidateQueries({
+        queryKey: ['transactions', 'list'],
+      })
     },
   })
 
@@ -153,10 +179,14 @@ export function useAccountBookTransactions(
       void queryClient.invalidateQueries({
         queryKey: ['transactions', 'range'],
       })
+      void queryClient.invalidateQueries({
+        queryKey: ['transactions', 'list'],
+      })
     },
   })
 
   const error =
+    allTransactionsQuery.error ??
     rangeQuery.error ??
     createTransactionMutation.error ??
     updateTransactionMutation.error ??
@@ -165,14 +195,18 @@ export function useAccountBookTransactions(
   return {
     summariesByDate,
     transactionsByDate,
+    allTransactions: allTransactionsQuery.data ?? [],
+    totalCount: (allTransactionsQuery.data ?? []).length,
     rangeTransactions,
     isLoading:
+      allTransactionsQuery.isPending ||
       rangeQuery.isPending ||
       createTransactionMutation.isPending ||
       updateTransactionMutation.isPending ||
       deleteTransactionMutation.isPending,
     error: error ? toErrorMessage(error) : null,
     refetch: rangeQuery.refetch,
+    refreshTransactions: allTransactionsQuery.refetch,
     createTransaction: createTransactionMutation.mutateAsync,
     updateTransaction: async (id: string, updates: Partial<Transaction>) => {
       const result = await updateTransactionMutation.mutateAsync({

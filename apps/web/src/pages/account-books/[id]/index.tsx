@@ -110,15 +110,20 @@ export default function AccountBookPage() {
   const {
     summariesByDate,
     transactionsByDate,
+    allTransactions,
+    totalCount,
     isLoading,
     error,
     refetch,
+    refreshTransactions,
     createTransaction,
     updateTransaction,
     deleteTransaction,
   } = useAccountBookTransactions(accountBookId, queryRange)
 
-  const transactions = transactionsByDate[selectedDate ?? ''] ?? []
+  const transactions = selectedDate
+    ? (transactionsByDate[selectedDate] ?? [])
+    : allTransactions
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<TransactionModalMode>('create')
@@ -138,11 +143,11 @@ export default function AccountBookPage() {
     setIsRefreshing(true)
 
     try {
-      await refetch()
+      await Promise.all([refetch(), refreshTransactions()])
     } finally {
       setIsRefreshing(false)
     }
-  }, [refetch])
+  }, [refetch, refreshTransactions])
 
   const handleQueryRangeChange = useCallback(
     (range: TransactionCalendarVisibleRange) => {
@@ -298,7 +303,7 @@ export default function AccountBookPage() {
                 size="sm"
                 variant="flat"
               >
-                {`${transactions.length} records`}
+                {`${selectedDate ? transactions.length : totalCount} records`}
               </Chip>
             </div>
           </div>

@@ -176,3 +176,58 @@ code:
 tests:
   - apps/web/specs/transaction.spec.ts
 -->
+
+---
+### Requirement: Transactions can be queried by date range
+
+The system SHALL allow the application to query transactions within a date range, optionally scoped to an account book. The repository SHALL return the complete Transaction records (not aggregated summaries) for the requested range.
+
+#### Scenario: Query transactions for a date range within one account book
+
+- **WHEN** the application requests transactions for account book "AB-1" from "2026-04-01" to "2026-04-30"
+- **THEN** the system SHALL return all Transaction records whose accountBookId is "AB-1" and whose date falls within that range (inclusive)
+
+#### Scenario: Query a date range with no matching transactions
+
+- **WHEN** the application requests transactions for a date range that contains no records
+- **THEN** the system SHALL return an empty array
+
+#### Scenario: Query does not return transactions outside the date range
+
+- **WHEN** the application requests transactions from "2026-04-01" to "2026-04-30"
+- **THEN** the system SHALL NOT include transactions with dates before "2026-04-01" or after "2026-04-30"
+
+<!-- @trace
+source: reuse-monthly-transactions
+updated: 2026-04-17
+-->
+
+<!-- @trace
+source: reuse-monthly-transactions
+updated: 2026-04-17
+code:
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/calendar/MonthGrid.tsx
+  - apps/web/eslint.config.mjs
+  - apps/web/src/lib/dexie.ts
+  - apps/web/package.json
+  - apps/web/src/hooks/useAppQueryClient.ts
+  - apps/web/src/components/calendar/calendarUtils.ts
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/calendar/TransactionCalendar.tsx
+  - apps/web/src/hooks/transactionQueryUtils.ts
+  - apps/web/src/stores/user/userStore.ts
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/calendar/WeekStrip.tsx
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/pages/_app.tsx
+tests:
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/transaction.spec.ts
+-->

@@ -988,7 +988,9 @@ async function renderWithProviders(options: RenderOptions = {}) {
     activeUsers,
   })
 
-  let renderResult: ReturnType<typeof render>
+  const renderResultHolder: { current: ReturnType<typeof render> | null } = {
+    current: null,
+  }
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -1035,8 +1037,8 @@ async function renderWithProviders(options: RenderOptions = {}) {
     routerPathname = next.pathname
     routerQuery = next.query
 
-    if (renderResult) {
-      renderResult.rerender(renderApp())
+    if (renderResultHolder.current) {
+      renderResultHolder.current.rerender(renderApp())
     }
   }
 
@@ -1060,7 +1062,8 @@ async function renderWithProviders(options: RenderOptions = {}) {
 
   mockedUseRouter.mockImplementation(() => mockRouter)
 
-  renderResult = render(renderApp())
+  const renderResult = render(renderApp())
+  renderResultHolder.current = renderResult
 
   if (options.selectedDate === null) {
     deselectCalendarDay()
