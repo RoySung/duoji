@@ -1,19 +1,28 @@
 import React from 'react'
 import { Avatar, Chip } from '@heroui/react'
-import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
+import {
+  PiBookBold,
+  PiCreditCardBold,
+  PiGitBranchBold,
+  PiQuestionMark,
+  PiReceiptBold,
+} from 'react-icons/pi'
 import {
   hasLinkedSettlementRecordId,
   Transaction,
 } from '@/entities/transaction'
 import { User, isDeletedUser } from '@/entities/user'
+import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 
 type Props = {
   currency: string | null
+  emptyMessage?: string
   error: string | null
   isLoading: boolean
   transactions: Transaction[]
+  showAccountBook?: boolean
   onEditTransaction: (transactionId: string) => void
 }
 
@@ -26,7 +35,7 @@ function formatUserNameSummary(names: string[]): string | null {
 }
 
 function formatSignedAmount(amount: number, type: Transaction['type']): string {
-  const prefix = type === 'expense' ? '-' : '+'
+  const prefix = type === 'income' ? '+' : ''
   return `${prefix}${amount.toLocaleString()}`
 }
 
@@ -101,9 +110,11 @@ function renderParticipantSummary(
 
 export default function TransactionList({
   currency,
+  emptyMessage,
   error,
   isLoading,
   transactions,
+  showAccountBook = false,
   onEditTransaction,
 }: Props) {
   const categories = useCategoryStore((state) => state.categories)
@@ -112,6 +123,8 @@ export default function TransactionList({
   )
   const users = useUserStore((state) => state.allUsers)
   const userMap = new Map(users.map((u) => [u.id, u]))
+  const accountBooks = useAccountBookStore((state) => state.accountBooks)
+  const accountBookMap = new Map(accountBooks.map((ab) => [ab.id, ab]))
 
   return (
     <>
@@ -136,12 +149,14 @@ export default function TransactionList({
             <PiReceiptBold size={22} />
           </div>
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            No transactions yet
+            {emptyMessage ?? 'No transactions yet'}
           </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Add your first transaction from the navbar button to populate this
-            history.
-          </p>
+          {!emptyMessage ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Add your first transaction from the navbar button to populate this
+              history.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -159,6 +174,12 @@ export default function TransactionList({
             )
             const amountClassName =
               transaction.type === 'expense' ? 'text-danger' : 'text-success'
+            const accountBook = showAccountBook
+              ? (accountBookMap.get(transaction.accountBookId) ?? null)
+              : null
+            const effectiveCurrency = showAccountBook
+              ? (accountBook?.currency ?? null)
+              : currency
 
             return (
               <article key={transaction.id}>
@@ -195,11 +216,29 @@ export default function TransactionList({
                             >
                               {transaction.date}
                             </Chip>
+                            {accountBook ? (
+                              <Chip
+                                className="bg-blue-100 text-blue-700"
+                                size="sm"
+                                variant="flat"
+                                startContent={
+                                  <PiBookBold className="ml-1" size={12} />
+                                }
+                              >
+                                {accountBook.name}
+                              </Chip>
+                            ) : null}
                             {transaction.paymentMethod ? (
                               <Chip
                                 className="bg-muted text-muted-foreground"
                                 size="sm"
                                 variant="flat"
+                                startContent={
+                                  <PiCreditCardBold
+                                    className="ml-1"
+                                    size={12}
+                                  />
+                                }
                               >
                                 {transaction.paymentMethod}
                               </Chip>
@@ -209,8 +248,14 @@ export default function TransactionList({
                                 className="bg-success/10 text-success"
                                 size="sm"
                                 variant="flat"
+                                startContent={
+                                  <PiGitBranchBold
+                                    className="ml-1 rotate-90"
+                                    size={12}
+                                  />
+                                }
                               >
-                                均分
+                                Equal Split
                               </Chip>
                             ) : null}
                             {hasLinkedSettlementRecordId(
@@ -235,7 +280,7 @@ export default function TransactionList({
                             className={`text-lg font-semibold ${amountClassName}`}
                           >
                             {signedAmount}
-                            {currency ? ` ${currency}` : ''}
+                            {effectiveCurrency ? ` ${effectiveCurrency}` : ''}
                           </p>
                         </div>
                       </div>

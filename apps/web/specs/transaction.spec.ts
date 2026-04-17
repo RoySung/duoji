@@ -240,6 +240,81 @@ describe('TransactionLocalRepo', () => {
     })
   })
 
+  it('should return transactions scoped to the requested account book and date', async () => {
+    await repo.create(
+      createTransactionFixture({ id: 'tx-1', accountBookId: '1', date: '2026/03/18' })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-2', accountBookId: '1', date: '2026/03/19' })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-3', accountBookId: '2', date: '2026/03/18' })
+    )
+
+    await expect(
+      repo.findByDate({ accountBookId: '1', date: '2026/03/18' })
+    ).resolves.toEqual([expect.objectContaining({ id: 'tx-1' })])
+  })
+
+  it('should return transactions within a date range for an account book', async () => {
+    await repo.create(
+      createTransactionFixture({ id: 'tx-1', accountBookId: '1', date: '2026/03/18', amount: 120 })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-2', accountBookId: '1', date: '2026/03/18', amount: 80 })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-3', accountBookId: '1', date: '2026/03/19', amount: 40 })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-4', accountBookId: '1', date: '2026/03/20', amount: 50 })
+    )
+
+    const results = await repo.findByDateRange({
+      accountBookId: '1',
+      startDate: '2026/03/18',
+      endDate: '2026/03/19',
+    })
+
+    expect(results).toHaveLength(3)
+    expect(results.map((t) => t.id).sort()).toEqual(['tx-1', 'tx-2', 'tx-3'])
+  })
+
+  it('should return an empty array for a date range with no transactions', async () => {
+    await repo.create(
+      createTransactionFixture({ id: 'tx-1', accountBookId: '1', date: '2026/03/18' })
+    )
+
+    const results = await repo.findByDateRange({
+      accountBookId: '1',
+      startDate: '2026/04/01',
+      endDate: '2026/04/30',
+    })
+
+    expect(results).toEqual([])
+  })
+
+  it('should not return transactions outside the date range', async () => {
+    await repo.create(
+      createTransactionFixture({ id: 'tx-in', accountBookId: '1', date: '2026/03/15' })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-before', accountBookId: '1', date: '2026/02/28' })
+    )
+    await repo.create(
+      createTransactionFixture({ id: 'tx-after', accountBookId: '1', date: '2026/04/01' })
+    )
+
+    const results = await repo.findByDateRange({
+      accountBookId: '1',
+      startDate: '2026/03/01',
+      endDate: '2026/03/31',
+    })
+
+    expect(results).toHaveLength(1)
+    expect(results[0].id).toBe('tx-in')
+  })
+
   it('should find transactions by settlement record id via reverse lookup', async () => {
     await repo.create(
       createTransactionFixture({

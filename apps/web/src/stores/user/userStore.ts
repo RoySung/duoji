@@ -15,7 +15,7 @@ type UserStoreState = {
 }
 
 type UserStoreActions = {
-  initialize: (accountBook: AccountBook | null) => Promise<void>
+  initialize: (accountBook: AccountBook | AccountBook[] | null) => Promise<void>
   addVirtualUser: (
     accountBookId: string,
     name: string
@@ -52,6 +52,16 @@ function toErrorMessage(error: unknown): string {
 
 function computeActiveUsers(allUsers: User[]): User[] {
   return allUsers.filter((u) => !isDeletedUser(u))
+}
+
+function dedupeUsersById(users: User[]): User[] {
+  const seen = new Map<string, User>()
+  for (const user of users) {
+    if (!seen.has(user.id)) {
+      seen.set(user.id, user)
+    }
+  }
+  return Array.from(seen.values())
 }
 
 async function resolveUsers(
@@ -95,6 +105,21 @@ export function createUserStore(
           set({ isLoading: true, error: null })
 
           try {
+            if (Array.isArray(accountBook)) {
+              const resolved = await Promise.all(
+                accountBook.map((ab) => resolveUsers(ab, userRepo))
+              )
+              const allUsers = dedupeUsersById(resolved.flat())
+              set({
+                allUsers,
+                activeUsers: computeActiveUsers(allUsers),
+                scopedAccountBookId: 'all',
+                isLoading: false,
+                error: null,
+              })
+              return
+            }
+
             const allUsers = await resolveUsers(accountBook, userRepo)
             set({
               allUsers,

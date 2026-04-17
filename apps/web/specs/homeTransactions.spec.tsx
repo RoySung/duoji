@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HeroUIProvider } from '@heroui/react'
 import { ThemeProvider } from 'next-themes'
 import {
@@ -16,6 +17,8 @@ import {
   DefaultPaymentMethod,
   isUnsettledSettlementRecordId,
   Transaction,
+  TransactionDateQuery,
+  TransactionDateRangeQuery,
   TransactionRepo,
   UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '../src/entities/transaction'
@@ -39,6 +42,15 @@ import {
 import { userList } from '../src/mocks'
 import { User, VirtualUser } from '../src/entities/user'
 
+jest.mock('framer-motion', () => ({
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  motion: {
+    div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+      <div {...props}>{children}</div>
+    ),
+  },
+}))
+
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
 }))
@@ -51,7 +63,10 @@ jest.mock('../src/repositories/transactionRepo', () => ({
     create: (t: Transaction) => mockRepo.create(t),
     findById: (id: string) => mockRepo.findById(id),
     findAll: () => mockRepo.findAll(),
+    findByDate: (query: TransactionDateQuery) => mockRepo.findByDate(query),
     findByAccountBookId: (id: string) => mockRepo.findByAccountBookId(id),
+    findByDateRange: (query: TransactionDateRangeQuery) =>
+      mockRepo.findByDateRange(query),
     findUnsettledExpenseByAccountBookId: (id: string) =>
       mockRepo.findUnsettledExpenseByAccountBookId(id),
     findBySettlementRecordId: (id: string) =>
@@ -89,6 +104,13 @@ jest.mock('@heroui/react', () => {
   return {
     ...actual,
     addToast: jest.fn(),
+    Avatar: ({ className, name }: any) => (
+      <div className={className}>{name}</div>
+    ),
+    HeroUIProvider: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+    Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     Button: ({
       children,
       disableRipple,
@@ -479,10 +501,38 @@ class InMemoryTransactionRepo implements TransactionRepo {
     return this.transactions.filter((t) => t.deletedAt === null)
   }
 
+  async findByDate({
+    date,
+    accountBookId,
+  }: TransactionDateQuery): Promise<Transaction[]> {
+    return this.transactions.filter(
+      (transaction) =>
+        transaction.date === date &&
+        transaction.deletedAt === null &&
+        (accountBookId === undefined ||
+          transaction.accountBookId === accountBookId)
+    )
+  }
+
   async findByAccountBookId(accountBookId: string): Promise<Transaction[]> {
     return this.transactions.filter(
       (transaction) =>
         transaction.accountBookId === accountBookId &&
+        transaction.deletedAt === null
+    )
+  }
+
+  async findByDateRange(
+    query: TransactionDateRangeQuery
+  ): Promise<Transaction[]> {
+    const { startDate, endDate, accountBookId } = query
+
+    return this.transactions.filter(
+      (transaction) =>
+        (accountBookId === undefined ||
+          transaction.accountBookId === accountBookId) &&
+        transaction.date >= startDate &&
+        transaction.date <= endDate &&
         transaction.deletedAt === null
     )
   }
@@ -656,22 +706,87 @@ type RenderOptions = {
   accountBooks?: AccountBook[]
   currentAccountBookId?: string | null
   routeAccountBookId?: string | null
+  routeQuery?: Record<string, string | undefined>
   transactions?: Transaction[]
   users?: User[]
   repo?: TransactionRepo
+  selectedDate?: string | null
+}
+
+type MockRouterTarget =
+  | string
+  | {
+      pathname?: string
+      query?: Record<string, string | string[] | undefined>
+    }
+
+function resolveMockRouterTarget(
+  target: MockRouterTarget,
+  fallbackPathname: string,
+  fallbackQuery: Record<string, string | undefined>
+) {
+  if (typeof target !== 'string') {
+    return {
+      pathname: target.pathname ?? fallbackPathname,
+      query: {
+        ...fallbackQuery,
+        ...(target.query
+          ? Object.fromEntries(
+              Object.entries(target.query).flatMap(([key, value]) =>
+                typeof value === 'string' ? [[key, value]] : []
+              )
+            )
+          : {}),
+      },
+    }
+  }
+
+  if (target === '/') {
+    return { pathname: '/', query: {} }
+  }
+
+  if (target === '/settings') {
+    return { pathname: '/settings', query: {} }
+  }
+
+  const [pathWithoutQuery, queryString = ''] = target.split('?')
+  const nextQuery = Object.fromEntries(
+    new URLSearchParams(queryString).entries()
+  )
+
+  if (pathWithoutQuery.startsWith('/account-books/')) {
+    const settlementMatch = pathWithoutQuery.match(
+      /^\/account-books\/([^/]+)\/settlement$/
+    )
+
+    if (settlementMatch) {
+      return {
+        pathname: '/account-books/[id]/settlement',
+        query: { id: settlementMatch[1]!, ...nextQuery },
+      }
+    }
+
+    const accountBookMatch = pathWithoutQuery.match(
+      /^\/account-books\/([^/]+)$/
+    )
+
+    if (accountBookMatch) {
+      return {
+        pathname: '/account-books/[id]',
+        query: { id: accountBookMatch[1]!, ...nextQuery },
+      }
+    }
+  }
+
+  return {
+    pathname: fallbackPathname,
+    query: { ...fallbackQuery, ...nextQuery },
+  }
 }
 
 async function renderWithProviders(options: RenderOptions = {}) {
   const routeAccountBookId =
     options.routeAccountBookId ?? options.currentAccountBookId ?? 'book-1'
-
-  mockedUseRouter.mockReturnValue({
-    pathname: '/account-books/[id]',
-    query: routeAccountBookId ? { id: routeAccountBookId } : {},
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-  })
 
   const accountBookStore = createAccountBookStore(
     new InMemoryAccountBookRepo(
@@ -695,69 +810,71 @@ async function renderWithProviders(options: RenderOptions = {}) {
   }
 
   // Seed the active repo used by the mocked TransactionLocalRepo
-  mockRepo = options.repo ?? new InMemoryTransactionRepo(
-    options.transactions ?? [
-      createTransactionFixture({
-        id: 'tx-1',
-        accountBookId: 'book-1',
-        date: '2026/03/19',
-        description: 'Breakfast with friends',
-        paymentMethod: DefaultPaymentMethod,
-      }),
-      createTransactionFixture({
-        id: 'tx-2',
-        accountBookId: 'book-1',
-        date: '2026/03/18',
-        description: 'Train ticket',
-        categoryId: '3-1',
-        amount: 80,
-        paymentMethod: 'Line Pay',
-        paidByDetail: [
-          {
-            userId: userList[1]!.id,
-            userType: 'registered' as const,
-            amount: 80,
-          },
-        ],
-        splitDetail: [
-          {
-            userId: userList[0]!.id,
-            userType: 'registered' as const,
-            amount: 50,
-          },
-          {
-            userId: userList[1]!.id,
-            userType: 'registered' as const,
-            amount: 30,
-          },
-        ],
-      }),
-      createTransactionFixture({
-        id: 'tx-3',
-        accountBookId: 'book-2',
-        type: 'income',
-        categoryId: '101-1',
-        description: 'Bonus',
-        paymentMethod: 'Credit Card',
-        receivedByUserId: userList[0]!.id,
-        amount: 500,
-        paidByDetail: [
-          {
-            userId: userList[0]!.id,
-            userType: 'registered' as const,
-            amount: 500,
-          },
-        ],
-        splitDetail: [
-          {
-            userId: userList[0]!.id,
-            userType: 'registered' as const,
-            amount: 500,
-          },
-        ],
-      }),
-    ]
-  )
+  mockRepo =
+    options.repo ??
+    new InMemoryTransactionRepo(
+      options.transactions ?? [
+        createTransactionFixture({
+          id: 'tx-1',
+          accountBookId: 'book-1',
+          date: '2026/03/19',
+          description: 'Breakfast with friends',
+          paymentMethod: DefaultPaymentMethod,
+        }),
+        createTransactionFixture({
+          id: 'tx-2',
+          accountBookId: 'book-1',
+          date: '2026/03/18',
+          description: 'Train ticket',
+          categoryId: '3-1',
+          amount: 80,
+          paymentMethod: 'Line Pay',
+          paidByDetail: [
+            {
+              userId: userList[1]!.id,
+              userType: 'registered' as const,
+              amount: 80,
+            },
+          ],
+          splitDetail: [
+            {
+              userId: userList[0]!.id,
+              userType: 'registered' as const,
+              amount: 50,
+            },
+            {
+              userId: userList[1]!.id,
+              userType: 'registered' as const,
+              amount: 30,
+            },
+          ],
+        }),
+        createTransactionFixture({
+          id: 'tx-3',
+          accountBookId: 'book-2',
+          type: 'income',
+          categoryId: '101-1',
+          description: 'Bonus',
+          paymentMethod: 'Credit Card',
+          receivedByUserId: userList[0]!.id,
+          amount: 500,
+          paidByDetail: [
+            {
+              userId: userList[0]!.id,
+              userType: 'registered' as const,
+              amount: 500,
+            },
+          ],
+          splitDetail: [
+            {
+              userId: userList[0]!.id,
+              userType: 'registered' as const,
+              amount: 500,
+            },
+          ],
+        }),
+      ]
+    )
 
   const categoryRepo = new InMemoryCategoryRepo()
 
@@ -872,48 +989,135 @@ async function renderWithProviders(options: RenderOptions = {}) {
   })
 
   let renderResult: ReturnType<typeof render>
-
-  await act(async () => {
-    renderResult = render(
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="light"
-        enableSystem={false}
-        storageKey={THEME_STORAGE_KEY}
-        themes={['light', 'dark']}
-      >
-        <HeroUIProvider>
-          <AccountBookStoreProvider store={accountBookStore}>
-            <CategoryStoreProvider store={categoryStore}>
-              <UserStoreProvider store={userStore}>
-                <div>
-                  <AccountBookPage />
-                  <NavBar />
-                </div>
-              </UserStoreProvider>
-            </CategoryStoreProvider>
-          </AccountBookStoreProvider>
-        </HeroUIProvider>
-      </ThemeProvider>
-    )
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
   })
+
+  let routerPathname = '/account-books/[id]'
+  let routerQuery = {
+    ...(routeAccountBookId ? { id: routeAccountBookId } : {}),
+    ...(options.routeQuery ?? {}),
+  }
+
+  function renderApp() {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          storageKey={THEME_STORAGE_KEY}
+          themes={['light', 'dark']}
+        >
+          <HeroUIProvider>
+            <AccountBookStoreProvider store={accountBookStore}>
+              <CategoryStoreProvider store={categoryStore}>
+                <UserStoreProvider store={userStore}>
+                  <div>
+                    <AccountBookPage />
+                    <NavBar />
+                  </div>
+                </UserStoreProvider>
+              </CategoryStoreProvider>
+            </AccountBookStoreProvider>
+          </HeroUIProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    )
+  }
+
+  function updateRouter(target: MockRouterTarget) {
+    const next = resolveMockRouterTarget(target, routerPathname, routerQuery)
+    routerPathname = next.pathname
+    routerQuery = next.query
+
+    if (renderResult) {
+      renderResult.rerender(renderApp())
+    }
+  }
+
+  const mockRouter = {
+    get pathname() {
+      return routerPathname
+    },
+    get query() {
+      return routerQuery
+    },
+    push: jest.fn((target: MockRouterTarget) => {
+      updateRouter(target)
+      return true
+    }),
+    replace: jest.fn((target: MockRouterTarget) => {
+      updateRouter(target)
+      return true
+    }),
+    back: jest.fn(),
+  }
+
+  mockedUseRouter.mockImplementation(() => mockRouter)
+
+  renderResult = render(renderApp())
+
+  if (options.selectedDate === null) {
+    deselectCalendarDay()
+  }
 
   return {
     accountBookStore,
+    router: mockRouter,
     userStore,
     ...renderResult!,
   }
 }
 
+function deselectCalendarDay() {
+  const selectedSpan = document.body.querySelector(
+    'button span.bg-primary.text-primary-foreground'
+  )
+  const button = selectedSpan?.closest('button')
+  if (!button) {
+    throw new Error('No selected calendar day button found')
+  }
+  fireEvent.click(button)
+}
+
 describe('Home transaction history', () => {
   beforeEach(() => {
+    jest.useFakeTimers({
+      doNotFake: [
+        'hrtime',
+        'nextTick',
+        'performance',
+        'queueMicrotask',
+        'requestAnimationFrame',
+        'cancelAnimationFrame',
+        'requestIdleCallback',
+        'cancelIdleCallback',
+        'setImmediate',
+        'clearImmediate',
+        'setInterval',
+        'clearInterval',
+        'setTimeout',
+        'clearTimeout',
+      ],
+    })
+    jest.setSystemTime(new Date('2026-03-18T12:00:00Z'))
     mockedUseRouter.mockReset()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
   })
 
   it('renders routed account-book transactions in a flat list with summary metadata', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       routeAccountBookId: 'book-1',
+      selectedDate: null,
     })
 
     await waitFor(() => {
@@ -930,7 +1134,9 @@ describe('Home transaction history', () => {
       within(screen.getByTestId('transaction-row-tx-1')).getByText('Cash')
     ).toBeTruthy()
     expect(
-      within(screen.getByTestId('transaction-row-tx-1')).getByText('均分')
+      within(screen.getByTestId('transaction-row-tx-1')).getByText(
+        'Equal Split'
+      )
     ).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-1')).getByText('Roy')
@@ -939,7 +1145,9 @@ describe('Home transaction history', () => {
       within(screen.getByTestId('transaction-row-tx-2')).getByText('Patty')
     ).toBeTruthy()
     expect(
-      within(screen.getByTestId('transaction-row-tx-2')).queryByText('均分')
+      within(screen.getByTestId('transaction-row-tx-2')).queryByText(
+        'Equal Split'
+      )
     ).toBeNull()
     expect(screen.queryByText('Bonus')).toBeNull()
   })
@@ -948,6 +1156,7 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-2',
       routeAccountBookId: 'book-2',
+      selectedDate: null,
     })
 
     await waitFor(() => {
@@ -966,10 +1175,111 @@ describe('Home transaction history', () => {
     expect(screen.queryByText('Breakfast with friends')).toBeNull()
   })
 
+  it('refreshes both transaction and calendar queries from the refresh button', async () => {
+    const repo = new InMemoryTransactionRepo([
+      createTransactionFixture({
+        id: 'tx-refresh-1',
+        accountBookId: 'book-1',
+        date: '2026/03/18',
+      }),
+      createTransactionFixture({
+        id: 'tx-refresh-2',
+        accountBookId: 'book-1',
+        date: '2026/03/19',
+      }),
+    ])
+    const findByAccountBookIdSpy = jest.spyOn(repo, 'findByAccountBookId')
+    const findByDateRangeSpy = jest.spyOn(repo, 'findByDateRange')
+
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+      repo,
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-row-tx-refresh-1')).toBeTruthy()
+    })
+
+    const initialAccountBookCalls = findByAccountBookIdSpy.mock.calls.length
+    const initialDateRangeCalls = findByDateRangeSpy.mock.calls.length
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Refresh transactions' })
+    )
+
+    await waitFor(() => {
+      expect(findByAccountBookIdSpy.mock.calls.length).toBeGreaterThan(
+        initialAccountBookCalls
+      )
+      expect(findByDateRangeSpy.mock.calls.length).toBeGreaterThan(
+        initialDateRangeCalls
+      )
+    })
+  })
+
+  it('refetches calendar data for the displayed month when navigating without changing the selected date', async () => {
+    const repo = new InMemoryTransactionRepo([
+      createTransactionFixture({
+        id: 'tx-march',
+        accountBookId: 'book-1',
+        date: '2026/03/18',
+      }),
+      createTransactionFixture({
+        id: 'tx-april',
+        accountBookId: 'book-1',
+        date: '2026/04/02',
+      }),
+    ])
+    const findByDateRangeSpy = jest.spyOn(repo, 'findByDateRange')
+
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+      repo,
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transaction-row-tx-march')).toBeTruthy()
+    })
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Expand to month view' })
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+
+    await waitFor(() => {
+      expect(findByDateRangeSpy).toHaveBeenCalledWith({
+        accountBookId: 'book-1',
+        startDate: '2026/03/30',
+        endDate: '2026/05/03',
+      })
+    })
+  })
+
+  it('shows calendar query errors in the transaction list state', async () => {
+    class FailingCalendarRepo extends InMemoryTransactionRepo {
+      async findByDateRange(): Promise<Transaction[]> {
+        throw new Error('calendar query failed')
+      }
+    }
+
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+      repo: new FailingCalendarRepo(),
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('calendar query failed')).toBeTruthy()
+    })
+  })
+
   it('opens the shared edit modal from the home-page list and saves changes back to the row', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       routeAccountBookId: 'book-1',
+      selectedDate: null,
     })
 
     await waitFor(() => {
@@ -1021,6 +1331,7 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       routeAccountBookId: 'book-1',
+      selectedDate: null,
     })
 
     await waitFor(() => {
@@ -1054,13 +1365,13 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       routeAccountBookId: 'book-1',
+      routeQuery: { modal: 'create' },
+      selectedDate: null,
     })
 
     await waitFor(() => {
       expect(screen.getByTestId('transaction-row-tx-1')).toBeTruthy()
     })
-
-    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeTruthy()
@@ -1071,17 +1382,39 @@ describe('Home transaction history', () => {
     ).toBe(DefaultPaymentMethod)
   })
 
+  it('does not open the create modal from modal query params in all-books view', async () => {
+    const { router } = await renderWithProviders({
+      currentAccountBookId: 'all',
+      routeAccountBookId: 'all',
+      routeQuery: { modal: 'create' },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('All Account Books')).toBeTruthy()
+    })
+
+    await waitFor(() => {
+      expect(router.replace).toHaveBeenCalledWith(
+        { pathname: '/account-books/[id]', query: { id: 'all' } },
+        undefined,
+        { shallow: true }
+      )
+    })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
   it('prefills new income transaction drafts with the current account-book owner as the recipient', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-2',
       routeAccountBookId: 'book-2',
+      routeQuery: { modal: 'create' },
+      selectedDate: null,
     })
 
     await waitFor(() => {
       expect(screen.getByTestId('transaction-row-tx-3')).toBeTruthy()
     })
-
-    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeTruthy()
@@ -1100,13 +1433,13 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-2',
       routeAccountBookId: 'book-2',
+      routeQuery: { modal: 'create' },
+      selectedDate: null,
     })
 
     await waitFor(() => {
       expect(screen.getByTestId('transaction-row-tx-3')).toBeTruthy()
     })
-
-    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeTruthy()
@@ -1149,6 +1482,7 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-2',
       routeAccountBookId: 'book-2',
+      selectedDate: null,
     })
 
     await waitFor(() => {
@@ -1199,6 +1533,7 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       users: [activeUser, deletedUser],
+      selectedDate: null,
       transactions: [
         createTransactionFixture({
           id: 'tx-deleted-person',
@@ -1261,6 +1596,7 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       routeAccountBookId: 'book-1',
+      selectedDate: null,
       transactions: [
         createTransactionFixture({
           id: 'tx-deleted-cat',
@@ -1287,6 +1623,7 @@ describe('Home transaction history', () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
       routeAccountBookId: 'book-1',
+      selectedDate: null,
       transactions: [
         createTransactionFixture({
           id: 'tx-deleted-cat-edit',

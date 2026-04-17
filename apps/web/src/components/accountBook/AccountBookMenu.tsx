@@ -19,6 +19,8 @@ type Props = {
 export default function AccountBookMenu({ accountBooks, currentAccountBook }: Props) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
+  const isAllBooksView =
+    typeof router.query.id === 'string' && router.query.id === 'all'
 
   function handleSelect(id: string) {
     void router.push(`/account-books/${id}`)
@@ -45,7 +47,9 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
         className="bg-accent/60 text-foreground"
         onPress={() => setIsOpen(true)}
       >
-        {currentAccountBook?.name ?? 'Select account book'}
+        {isAllBooksView
+          ? 'All Account Books'
+          : (currentAccountBook?.name ?? 'Select account book')}
       </Button>
 
       <Drawer isOpen={isOpen} onOpenChange={setIsOpen} placement="right" size="sm">
@@ -53,6 +57,26 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
           <DrawerHeader className="flex flex-col gap-1">Account books</DrawerHeader>
 
           <DrawerBody className="gap-2 px-3 pb-4">
+            <article
+              className={`flex flex-col gap-3 rounded-2xl border px-4 py-4 transition-colors ${
+                isAllBooksView
+                  ? 'border-primary/30 bg-primary/5'
+                  : 'cursor-pointer border-border bg-card/80 hover:bg-muted/35'
+              }`}
+              onClick={isAllBooksView ? undefined : () => handleSelect('all')}
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex-1 truncate text-sm font-semibold text-foreground">
+                  All Account Books
+                </span>
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground">
+                View transactions across every account book.
+              </p>
+              <p className="text-xs leading-5 text-muted-foreground/60">
+                Settlement and adding transactions are not available in this view.
+              </p>
+            </article>
             {accountBooks.map((ab) => {
               const isActive = ab.id === currentAccountBook?.id
 

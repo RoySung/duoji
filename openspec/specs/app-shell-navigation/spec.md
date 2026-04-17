@@ -516,6 +516,8 @@ The settlement tab SHALL be the third tab, positioned between the add-transactio
 
 The settlement tab SHALL display as active (highlighted) when the current route is `/account-books/[id]/settlement` or `/account-books/[id]/settlement/[recordId]`.
 
+When the user is in the aggregate view (no specific account book selected, or `id === "all"`), the settlement tab SHALL be disabled and SHALL render a visible prohibition overlay (e.g., a semi-transparent mask with a `🚫` or CSS-based prohibition symbol) on top of the icon to communicate that the action is unavailable. The tab SHALL NOT respond to user interaction in this state.
+
 #### Scenario: User taps the settlement tab while viewing an account book
 
 - **WHEN** the user is on `/account-books/abc123` and taps the settlement tab
@@ -526,88 +528,66 @@ The settlement tab SHALL display as active (highlighted) when the current route 
 - **WHEN** the current route is `/account-books/[id]/settlement` or `/account-books/[id]/settlement/[recordId]`
 - **THEN** the settlement tab icon SHALL be in the active/highlighted state
 
+#### Scenario: Settlement tab is disabled in aggregate view
+
+- **WHEN** the user is in the aggregate view (`/account-books/all` or no account book selected)
+- **THEN** the settlement tab SHALL render a prohibition overlay on the icon and SHALL NOT navigate when tapped
+
+
 <!-- @trace
-source: split-settlement-feature
-updated: 2026-04-11
+source: improve-all-books-unsupported-features-ui
+updated: 2026-04-13
 code:
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
-  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - CLAUDE.md
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - apps/web/src/hooks/useSettlement.ts
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/account-books/new.tsx
-  - apps/web/src/utils/settlementUtils.ts
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - .github/skills/spectra-apply/SKILL.md
-  - apps/web/src/components/transaction/TransactionList.tsx
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
-  - apps/web/src/pages/index.tsx
-  - GEMINI.md
-  - apps/web/package.json
-  - apps/web/src/components/accountBook/AccountBookMenu.tsx
-  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/next.config.js
-  - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - .spectra.yaml
-  - AGENTS.md
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/hooks/useUnsettledTransactions.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/src/components/layout/header.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/.babelrc
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/layout/navbar.tsx
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - apps/web/src/stores/accountBook/index.ts
-  - apps/web/src/entities/settlement.ts
-  - .github/skills/spectra-debug/SKILL.md
-  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/utils/transactionUtils.ts
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/stores/transaction/index.ts
+  - apps/web/src/components/calendar/WeekStrip.tsx
+  - apps/web/src/stores/category/categoryStore.ts
   - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/calendar/calendarUtils.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
   - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/prompts/spectra-debug.prompt.md
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
-tests:
-  - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
-  - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/transaction.spec.ts
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/settlementPage.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
-  - apps/web/specs/transactionStore.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/settlement.spec.ts
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/stores/user/userStore.ts
+  - apps/web/src/components/calendar/MonthGrid.tsx
+  - apps/web/src/components/calendar/TransactionCalendar.tsx
+-->
+
+---
+### Requirement: Add Transaction button shows a prohibition overlay in aggregate view
+
+When the user is in the aggregate view, the Add Transaction button in the bottom navigation bar SHALL render a visible prohibition overlay on top of the button icon to communicate that the action is unavailable. The button SHALL NOT trigger any action when pressed in this state.
+
+#### Scenario: Add Transaction button in aggregate view
+
+- **WHEN** the user is in the aggregate view (`/account-books/all` or no account book selected)
+- **THEN** the Add Transaction button SHALL display a prohibition overlay and SHALL NOT open the transaction creation modal when pressed
+
+#### Scenario: Add Transaction button in a specific account book view
+
+- **WHEN** the user is viewing a specific account book
+- **THEN** the Add Transaction button SHALL display normally without any overlay and SHALL open the transaction creation modal when pressed
+
+<!-- @trace
+source: improve-all-books-unsupported-features-ui
+updated: 2026-04-13
+-->
+
+<!-- @trace
+source: improve-all-books-unsupported-features-ui
+updated: 2026-04-13
+code:
+  - apps/web/src/components/calendar/WeekStrip.tsx
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/accountBook/AccountBookMenu.tsx
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/calendar/calendarUtils.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/pages/_app.tsx
+  - apps/web/src/stores/user/userStore.ts
+  - apps/web/src/components/calendar/MonthGrid.tsx
+  - apps/web/src/components/calendar/TransactionCalendar.tsx
 -->

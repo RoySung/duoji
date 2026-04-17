@@ -92,11 +92,33 @@ export type Transaction = z.infer<typeof TransactionSchema>
 export type PaidByDetail = z.infer<typeof PaidByDetailSchema>
 export type SplitDetail = z.infer<typeof SplitDetailSchema>
 
+export type TransactionCalendarSummary = {
+  date: string
+  totalAmount: number
+  transactionCount: number
+  hasTransactions: boolean
+}
+
+export type TransactionDateQuery = {
+  date: string
+  accountBookId?: string
+}
+
+export type TransactionDateRangeQuery = {
+  startDate: string
+  endDate: string
+  accountBookId?: string
+}
+
 export interface TransactionRepo {
   create(transaction: Transaction): Promise<Transaction>
   findById(id: string): Promise<Transaction | null>
   findAll(): Promise<Transaction[]>
+  findByDate(query: TransactionDateQuery): Promise<Transaction[]>
   findByAccountBookId(accountBookId: string): Promise<Transaction[]>
+  findByDateRange(
+    query: TransactionDateRangeQuery
+  ): Promise<Transaction[]>
   findUnsettledExpenseByAccountBookId(
     accountBookId: string
   ): Promise<Transaction[]>

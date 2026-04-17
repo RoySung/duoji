@@ -30,6 +30,7 @@ type Props = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   modalMode: TransactionModalMode
+  defaultDate?: string | null
   selectedTransaction: Transaction | undefined
   isSubmitting: boolean
   onCreateTransaction: (transaction: Transaction) => Promise<Transaction>
@@ -49,6 +50,7 @@ export default function TransactionModal({
   isOpen,
   onOpenChange,
   modalMode,
+  defaultDate,
   selectedTransaction,
   isSubmitting,
   onCreateTransaction,
@@ -77,7 +79,10 @@ export default function TransactionModal({
       return
     }
 
-    if (modalMode === 'edit' && selectedTransaction) {
+    if (
+      (modalMode === 'edit' || modalMode === 'view') &&
+      selectedTransaction
+    ) {
       setDraft(
         createTransactionDraft({
           baseTransaction: selectedTransaction,
@@ -89,20 +94,20 @@ export default function TransactionModal({
       return
     }
 
-    setDraft(
-      createTransactionDraft({
-        accountBookId: currentAccountBookId ?? '',
-        accountBooks,
-        users: activeUsers,
-        categories,
-      })
-    )
+    const next = createTransactionDraft({
+      accountBookId: currentAccountBookId ?? '',
+      accountBooks,
+      users: activeUsers,
+      categories,
+    })
+    setDraft(defaultDate ? { ...next, date: defaultDate } : next)
   }, [
     accountBooks,
     activeUsers,
     allUsers,
     categories,
     currentAccountBookId,
+    defaultDate,
     isOpen,
     modalMode,
     selectedTransaction,
@@ -251,7 +256,7 @@ export default function TransactionModal({
               <ScrollShadow size={50}>
                 <Form
                   value={draft}
-                  onChange={modalMode === 'view' ? () => {} : setDraft}
+                  onChange={modalMode === 'view' ? () => {} : setDraft} // eslint-disable-line @typescript-eslint/no-empty-function
                   isEditMode={isEditMode}
                 />
               </ScrollShadow>

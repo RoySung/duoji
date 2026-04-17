@@ -24,7 +24,7 @@ class DuojiDB extends Dexie {
     this.version(1).stores({
       categories: '&id, name, type, parentId, accountBookId, sortOrder',
       transactions:
-        '&id, accountBookId, date, type, categoryId, settlementRecordId, [accountBookId+deletedAt]',
+        '&id, accountBookId, date, type, categoryId, settlementRecordId, [accountBookId+deletedAt], [accountBookId+date]',
       users: '&id, name, email',
       accountBooks: '&id, name, ownerId, *userIds',
       settlements: '&id, accountBookId, createdAt',

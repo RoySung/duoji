@@ -1,11 +1,13 @@
 import { AppProps } from 'next/app'
 import Head from 'next/head'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { useAppQueryClient } from '@/hooks/useAppQueryClient'
 import { ThemeProvider } from 'next-themes'
 import { Inspector } from 'react-dev-inspector'
 import './styles.css'
 import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
-import { ReactElement, ReactNode, useEffect, useState } from 'react'
+import { ReactElement, ReactNode, useEffect, useMemo, useState } from 'react'
 import { THEME_STORAGE_KEY } from '@/constants/theme'
 import { useRouter } from 'next/router'
 import {
@@ -19,11 +21,7 @@ import {
   createCategoryStore,
   useCategoryStore,
 } from '@/stores/category'
-import {
-  UserStoreProvider,
-  createUserStore,
-  useUserStore,
-} from '@/stores/user'
+import { UserStoreProvider, createUserStore, useUserStore } from '@/stores/user'
 
 // 擴展 AppProps 類型以包含 getLayout
 type AppPropsWithLayout = AppProps & {
@@ -58,9 +56,7 @@ function CategoryStoreWatcher() {
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
   )
-  const initializeCategories = useCategoryStore(
-    (state) => state.initialize
-  )
+  const initializeCategories = useCategoryStore((state) => state.initialize)
 
   useEffect(() => {
     void initializeCategories(currentAccountBookId)
@@ -77,12 +73,17 @@ function UserStoreWatcher() {
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const initializeUsers = useUserStore((state) => state.initialize)
 
-  const currentAccountBook =
-    accountBooks.find((ab) => ab.id === currentAccountBookId) ?? null
+  const scope = useMemo(
+    () =>
+      currentAccountBookId === 'all'
+        ? accountBooks
+        : accountBooks.find((ab) => ab.id === currentAccountBookId) ?? null,
+    [currentAccountBookId, accountBooks]
+  )
 
   useEffect(() => {
-    void initializeUsers(currentAccountBook)
-  }, [currentAccountBook, initializeUsers])
+    void initializeUsers(scope)
+  }, [scope, initializeUsers])
 
   return null
 }
@@ -91,6 +92,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const [accountBookStore] = useState(createAccountBookStore)
   const [categoryStore] = useState(createCategoryStore)
   const [userStore] = useState(createUserStore)
+  const queryClient = useAppQueryClient()
   // 初始化資料庫
   useEffect(() => {
     let isMounted = true
@@ -116,17 +118,18 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? ((page) => <Layout>{page}</Layout>)
 
   const app = (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      disableTransitionOnChange
-      enableSystem={false}
-      storageKey={THEME_STORAGE_KEY}
-      themes={['light', 'dark']}
-    >
-      <AccountBookStoreProvider store={accountBookStore}>
-        <CategoryStoreProvider store={categoryStore}>
-          <UserStoreProvider store={userStore}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        disableTransitionOnChange
+        enableSystem={false}
+        storageKey={THEME_STORAGE_KEY}
+        themes={['light', 'dark']}
+      >
+        <AccountBookStoreProvider store={accountBookStore}>
+          <CategoryStoreProvider store={categoryStore}>
+            <UserStoreProvider store={userStore}>
               <CurrentAccountBookWatcher />
               <CategoryStoreWatcher />
               <UserStoreWatcher />
@@ -142,10 +145,11 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                   <Component {...pageProps} />
                 </>
               )}
-          </UserStoreProvider>
-        </CategoryStoreProvider>
-      </AccountBookStoreProvider>
-    </ThemeProvider>
+            </UserStoreProvider>
+          </CategoryStoreProvider>
+        </AccountBookStoreProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 
   if (process.env.NODE_ENV !== 'production') {

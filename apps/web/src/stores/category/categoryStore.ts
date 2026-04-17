@@ -110,11 +110,13 @@ export function createCategoryStore(
           set({ isLoading: true, error: null })
 
           try {
-            let categories = await categoryRepo.findByAccountBookId(
-              accountBookId
-            )
+            let categories =
+              accountBookId === 'all'
+                ? await categoryRepo.findAll()
+                : await categoryRepo.findByAccountBookId(accountBookId)
 
-            if (categories.length === 0) {
+            // 'all' is a read-only aggregate view; no specific account book to seed defaults into.
+            if (accountBookId !== 'all' && categories.length === 0) {
               await get().seedDefaultCategories(accountBookId)
               categories = await categoryRepo.findByAccountBookId(accountBookId)
             }

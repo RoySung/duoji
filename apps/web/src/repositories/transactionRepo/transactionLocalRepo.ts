@@ -1,10 +1,16 @@
 import {
   Transaction,
+  TransactionDateQuery,
+  TransactionDateRangeQuery,
   TransactionRepo,
   TransactionSchema,
   UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '@/entities/transaction'
 import { db } from '@/lib/dexie'
+
+function excludeSoftDeleted(transactions: Transaction[]): Transaction[] {
+  return transactions.filter((transaction) => transaction.deletedAt === null)
+}
 
 class TransactionLocalRepo implements TransactionRepo {
   async create(transaction: Transaction): Promise<Transaction> {
@@ -49,10 +55,28 @@ class TransactionLocalRepo implements TransactionRepo {
   async findAll(): Promise<Transaction[]> {
     try {
       const all = await db.transactions.toArray()
-      // Filter out soft-deleted transactions
-      return all.filter((transaction) => transaction.deletedAt === null)
+      return excludeSoftDeleted(all)
     } catch (error) {
       console.error('Failed to find all transactions:', error)
+      return []
+    }
+  }
+
+  async findByDate({
+    date,
+    accountBookId,
+  }: TransactionDateQuery): Promise<Transaction[]> {
+    try {
+      const transactions = accountBookId
+        ? await db.transactions
+            .where('[accountBookId+date]')
+            .equals([accountBookId, date])
+            .toArray()
+        : await db.transactions.where('date').equals(date).toArray()
+
+      return excludeSoftDeleted(transactions)
+    } catch (error) {
+      console.error('Failed to find transactions by date query:', error)
       return []
     }
   }
@@ -63,12 +87,37 @@ class TransactionLocalRepo implements TransactionRepo {
         .where('accountBookId')
         .equals(accountBookId)
         .toArray()
-      // Filter out soft-deleted transactions
-      return transactions.filter(
-        (transaction) => transaction.deletedAt === null
-      )
+      return excludeSoftDeleted(transactions)
     } catch (error) {
       console.error('Failed to find transactions by accountBookId:', error)
+      return []
+    }
+  }
+
+  async findByDateRange(
+    query: TransactionDateRangeQuery
+  ): Promise<Transaction[]> {
+    const { startDate, endDate, accountBookId } = query
+
+    try {
+      const transactions = accountBookId
+        ? await db.transactions
+            .where('[accountBookId+date]')
+            .between(
+              [accountBookId, startDate],
+              [accountBookId, endDate],
+              true,
+              true
+            )
+            .toArray()
+        : await db.transactions
+            .where('date')
+            .between(startDate, endDate, true, true)
+            .toArray()
+
+      return excludeSoftDeleted(transactions)
+    } catch (error) {
+      console.error('Failed to find transactions by date range:', error)
       return []
     }
   }
@@ -97,7 +146,6 @@ class TransactionLocalRepo implements TransactionRepo {
   }
 
   // Future entry points for additional retrieval scenarios:
-  // - findByAccountBookIdAndDateRange(accountBookId, startDate, endDate)
   // - findByAccountBookIdAndCategoryId(accountBookId, categoryId)
   // Each scenario should be composed into a dedicated hook rather than shared global state.
 
@@ -108,9 +156,7 @@ class TransactionLocalRepo implements TransactionRepo {
         .equals(recordId)
         .toArray()
 
-      return transactions.filter(
-        (transaction) => transaction.deletedAt === null
-      )
+      return excludeSoftDeleted(transactions)
     } catch (error) {
       console.error('Failed to find transactions by settlementRecordId:', error)
       return []

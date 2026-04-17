@@ -1,37 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Transaction } from '@/entities/transaction'
+import { useMemo, useRef } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Transaction,
+  TransactionCalendarSummary,
+  TransactionRepo,
+} from '@/entities/transaction'
 import { TransactionLocalRepo } from '@/repositories/transactionRepo'
-
-function sortTransactions(transactions: Transaction[]): Transaction[] {
-  return [...transactions].sort((left, right) => {
-    if (left.date !== right.date) {
-      return right.date.localeCompare(left.date)
-    }
-
-    if (left.updatedAt !== right.updatedAt) {
-      return right.updatedAt - left.updatedAt
-    }
-
-    return right.createdAt - left.createdAt
-  })
-}
-
-function upsertTransaction(
-  transactions: Transaction[],
-  transaction: Transaction
-): Transaction[] {
-  const existingIndex = transactions.findIndex(
-    (t) => t.id === transaction.id
-  )
-
-  if (existingIndex === -1) {
-    return sortTransactions([...transactions, transaction])
-  }
-
-  const next = [...transactions]
-  next[existingIndex] = transaction
-  return sortTransactions(next)
-}
+import {
+  TransactionCalendarVisibleRange,
+  patchTransactionRangeQueries,
+  sortTransactions,
+  transactionRangeQueryKey,
+} from './transactionQueryUtils'
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -43,132 +23,168 @@ function toErrorMessage(error: unknown): string {
 
 export function useAccountBookTransactions(
   accountBookId: string | null,
-  repo: TransactionLocalRepo = new TransactionLocalRepo()
+  visibleRange: TransactionCalendarVisibleRange | null,
+  repo: TransactionRepo = new TransactionLocalRepo()
 ) {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const pendingRef = useRef<string | null>(null)
+  const queryClient = useQueryClient()
   const repoRef = useRef(repo)
 
-  const loadTransactions = useCallback(async (id: string | null) => {
-    pendingRef.current = id
-    setIsLoading(true)
-    setError(null)
-
-    if (!id) {
-      setTransactions([])
-      setIsLoading(false)
-      return []
-    }
-
-    try {
-      const results = await repoRef.current.findByAccountBookId(id)
-
-      if (pendingRef.current !== id) {
+  const rangeQuery = useQuery({
+    queryKey: transactionRangeQueryKey(
+      accountBookId,
+      visibleRange?.startDate ?? null,
+      visibleRange?.endDate ?? null
+    ),
+    queryFn: async () => {
+      if (!accountBookId || !visibleRange) {
         return []
       }
 
-      setTransactions(sortTransactions(results))
-      setIsLoading(false)
-      return results
-    } catch (err) {
-      if (pendingRef.current !== id) {
-        return []
-      }
-
-      setError(toErrorMessage(err))
-      setIsLoading(false)
-      return []
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadTransactions(accountBookId)
-  }, [accountBookId, loadTransactions])
-
-  const createTransaction = useCallback(
-    async (transaction: Transaction): Promise<Transaction> => {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const created = await repoRef.current.create(transaction)
-
-        setTransactions((prev) =>
-          created.accountBookId === accountBookId
-            ? upsertTransaction(prev, created)
-            : prev
-        )
-        setIsLoading(false)
-        return created
-      } catch (err) {
-        setIsLoading(false)
-        setError(toErrorMessage(err))
-        throw err
-      }
+      return repoRef.current.findByDateRange({
+        startDate: visibleRange.startDate,
+        endDate: visibleRange.endDate,
+        accountBookId: accountBookId === 'all' ? undefined : accountBookId,
+      })
     },
-    [accountBookId]
-  )
+    enabled: accountBookId !== null && visibleRange !== null,
+    staleTime: 10_000,
+    gcTime: 60_000,
+  })
 
-  const updateTransaction = useCallback(
-    async (
-      id: string,
+  const rangeTransactions = rangeQuery.data ?? []
+
+  const summariesByDate = useMemo(() => {
+    const map: Record<string, TransactionCalendarSummary> = {}
+
+    for (const transaction of rangeTransactions) {
+      const existing = map[transaction.date]
+      if (existing) {
+        existing.totalAmount += transaction.amount
+        existing.transactionCount += 1
+      } else {
+        map[transaction.date] = {
+          date: transaction.date,
+          totalAmount: transaction.amount,
+          transactionCount: 1,
+          hasTransactions: true,
+        }
+      }
+    }
+
+    return map
+  }, [rangeTransactions])
+
+  const transactionsByDate = useMemo(() => {
+    const map: Record<string, Transaction[]> = {}
+
+    for (const transaction of rangeTransactions) {
+      if (!map[transaction.date]) {
+        map[transaction.date] = []
+      }
+      map[transaction.date].push(transaction)
+    }
+
+    for (const date of Object.keys(map)) {
+      map[date] = sortTransactions(map[date])
+    }
+
+    return map
+  }, [rangeTransactions])
+
+  const createTransactionMutation = useMutation({
+    mutationFn: (transaction: Transaction) =>
+      repoRef.current.create(transaction),
+    onSuccess: (createdTransaction) => {
+      patchTransactionRangeQueries(queryClient, null, createdTransaction)
+      void queryClient.invalidateQueries({
+        queryKey: ['transactions', 'range'],
+      })
+    },
+  })
+
+  const updateTransactionMutation = useMutation({
+    mutationFn: async ({
+      id,
+      updates,
+    }: {
+      id: string
       updates: Partial<Transaction>
-    ): Promise<Transaction | null> => {
-      setIsLoading(true)
-      setError(null)
+    }) => {
+      const previousTransaction = await repoRef.current.findById(id)
+      const updatedTransaction = await repoRef.current.update(id, updates)
 
-      try {
-        const updated = await repoRef.current.update(id, updates)
-
-        setTransactions((prev) => {
-          if (!updated) {
-            return prev
-          }
-
-          return updated.accountBookId === accountBookId
-            ? upsertTransaction(prev, updated)
-            : prev.filter((t) => t.id !== id)
-        })
-        setIsLoading(false)
-        return updated
-      } catch (err) {
-        setIsLoading(false)
-        setError(toErrorMessage(err))
-        throw err
+      return {
+        previousTransaction,
+        updatedTransaction,
       }
     },
-    [accountBookId]
-  )
+    onSuccess: ({ previousTransaction, updatedTransaction }) => {
+      if (!updatedTransaction) {
+        return
+      }
 
-  const deleteTransaction = useCallback(async (id: string): Promise<boolean> => {
-    setIsLoading(true)
-    setError(null)
+      patchTransactionRangeQueries(
+        queryClient,
+        previousTransaction,
+        updatedTransaction
+      )
+      void queryClient.invalidateQueries({
+        queryKey: ['transactions', 'range'],
+      })
+    },
+  })
 
-    try {
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const previousTransaction = await repoRef.current.findById(id)
       const deleted = await repoRef.current.delete(id)
 
-      if (deleted) {
-        setTransactions((prev) => prev.filter((t) => t.id !== id))
+      return {
+        previousTransaction,
+        deleted,
+      }
+    },
+    onSuccess: ({ previousTransaction, deleted }) => {
+      if (!deleted || !previousTransaction) {
+        return
       }
 
-      setIsLoading(false)
-      return deleted
-    } catch (err) {
-      setIsLoading(false)
-      setError(toErrorMessage(err))
-      return false
-    }
-  }, [])
+      patchTransactionRangeQueries(queryClient, previousTransaction, null)
+      void queryClient.invalidateQueries({
+        queryKey: ['transactions', 'range'],
+      })
+    },
+  })
+
+  const error =
+    rangeQuery.error ??
+    createTransactionMutation.error ??
+    updateTransactionMutation.error ??
+    deleteTransactionMutation.error
 
   return {
-    transactions,
-    isLoading,
-    error,
-    loadTransactions,
-    createTransaction,
-    updateTransaction,
-    deleteTransaction,
+    summariesByDate,
+    transactionsByDate,
+    rangeTransactions,
+    isLoading:
+      rangeQuery.isPending ||
+      createTransactionMutation.isPending ||
+      updateTransactionMutation.isPending ||
+      deleteTransactionMutation.isPending,
+    error: error ? toErrorMessage(error) : null,
+    refetch: rangeQuery.refetch,
+    createTransaction: createTransactionMutation.mutateAsync,
+    updateTransaction: async (id: string, updates: Partial<Transaction>) => {
+      const result = await updateTransactionMutation.mutateAsync({
+        id,
+        updates,
+      })
+
+      return result.updatedTransaction
+    },
+    deleteTransaction: async (id: string) => {
+      const result = await deleteTransactionMutation.mutateAsync(id)
+      return result.deleted
+    },
   }
 }

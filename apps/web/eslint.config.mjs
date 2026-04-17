@@ -20,6 +20,8 @@ const config = [
   ...tailwind.configs["flat/recommended"],
   {
     ignores: ['.next/**/*', 'out/**/*'],
+  },
+  {
     rules: {
       'tailwindcss/no-custom-classname': 'off',
     }

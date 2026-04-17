@@ -1,4 +1,5 @@
-import { Button } from '@heroui/react'
+import { useState, useEffect, ReactNode, CSSProperties } from 'react'
+import { Button, Tooltip } from '@heroui/react'
 import styled from '@emotion/styled'
 import {
   PiHouseFill,
@@ -77,6 +78,52 @@ const StyledWrapper = styled.div`
   }
 `
 
+function ProhibitionMask() {
+  return (
+    <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <span className="h-[2px] w-[14px] rotate-45 rounded-full bg-orange-400/60" />
+    </span>
+  )
+}
+
+function DisabledWithTooltip({
+  message,
+  children,
+  className,
+  style,
+}: {
+  message: string
+  children: ReactNode
+  className?: string
+  style?: CSSProperties
+}) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    const t = setTimeout(() => setMobileOpen(false), 2000)
+    return () => clearTimeout(t)
+  }, [mobileOpen])
+
+  return (
+    <Tooltip
+      content={message}
+      showArrow
+      placement="top"
+      isOpen={mobileOpen || undefined}
+      onOpenChange={(open) => { if (!open) setMobileOpen(false) }}
+    >
+      <div
+        className={`relative cursor-default ${className ?? ''}`}
+        style={style}
+        onClick={() => setMobileOpen((s) => !s)}
+      >
+        {children}
+      </div>
+    </Tooltip>
+  )
+}
+
 export default function NavBar() {
   const router = useRouter()
   const isSettlement = router.pathname.includes('/settlement')
@@ -91,9 +138,10 @@ export default function NavBar() {
   const accountBookId =
     (typeof router.query.id === 'string' ? router.query.id : null) ??
     currentAccountBookId
+  const isAggregateView = !accountBookId || accountBookId === 'all'
 
   function handleAddTransaction() {
-    if (!accountBookId) {
+    if (isAggregateView) {
       return
     }
 
@@ -114,28 +162,44 @@ export default function NavBar() {
             />
             <PiHouseFill></PiHouseFill>
           </label>
-          <label title="settlement" htmlFor="settlement" className="label">
-            <input
-              id="settlement"
-              name="page"
-              type="radio"
-              checked={isSettlement}
-              onChange={() => {
-                if (accountBookId) {
-                  void router.push(`/account-books/${accountBookId}/settlement`)
-                }
-              }}
-            />
-            <PiArrowsLeftRight></PiArrowsLeftRight>
-          </label>
-          <Button
-            className="bg-gray-600/75 text-white mx-2 "
-            isIconOnly
-            style={{ transform: 'scale(1.2)' }}
-            onPress={handleAddTransaction}
-          >
-            <PiListPlusFill size={28}></PiListPlusFill>
-          </Button>
+          {isAggregateView ? (
+            <DisabledWithTooltip message="Not available in All Books view">
+              <label title="settlement" className="label" aria-disabled style={{ position: 'relative' }}>
+                <input id="settlement" name="page" type="radio" checked={false} onChange={() => {}} disabled /> {/* eslint-disable-line @typescript-eslint/no-empty-function */}
+                <PiArrowsLeftRight />
+                <ProhibitionMask />
+              </label>
+            </DisabledWithTooltip>
+          ) : (
+            <label title="settlement" htmlFor="settlement" className="label">
+              <input
+                id="settlement"
+                name="page"
+                type="radio"
+                checked={isSettlement}
+                onChange={() => void router.push(`/account-books/${accountBookId}/settlement`)}
+              />
+              <PiArrowsLeftRight />
+            </label>
+          )}
+          {isAggregateView ? (
+            <DisabledWithTooltip message="Not available in All Books view" className="relative mx-2" style={{ transform: 'scale(1.2)' }}>
+              <Button className="bg-gray-600/75 text-white" isIconOnly isDisabled>
+                <PiListPlusFill size={28} />
+              </Button>
+              <ProhibitionMask />
+            </DisabledWithTooltip>
+          ) : (
+            <Button
+              aria-label="New Transaction"
+              className="bg-gray-600/75 text-white mx-2"
+              isIconOnly
+              style={{ transform: 'scale(1.2)' }}
+              onPress={handleAddTransaction}
+            >
+              <PiListPlusFill size={28} />
+            </Button>
+          )}
           <label title="settings" htmlFor="settings" className="label">
             <input
               id="settings"
