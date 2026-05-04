@@ -6,6 +6,7 @@ import {
   PiListPlusFill,
   PiGearFill,
   PiArrowsLeftRight,
+  PiChartPieSliceFill,
 } from 'react-icons/pi'
 import { useRouter } from 'next/router'
 // @ts-expect-error 暫時忽略，不影響功能
@@ -127,9 +128,12 @@ function DisabledWithTooltip({
 export default function NavBar() {
   const router = useRouter()
   const isSettlement = router.pathname.includes('/settlement')
+  const isReport = router.pathname === '/account-books/[id]/report'
   const isHome =
     router.pathname === '/' ||
-    (router.pathname.startsWith('/account-books') && !isSettlement)
+    (router.pathname.startsWith('/account-books') &&
+      !isSettlement &&
+      !isReport)
   const isSettings = router.pathname.startsWith('/settings')
 
   const currentAccountBookId = useAccountBookStore(
@@ -200,6 +204,18 @@ export default function NavBar() {
               <PiListPlusFill size={28} />
             </Button>
           )}
+          <label title="report" htmlFor="report" className="label">
+            <input
+              id="report"
+              name="page"
+              type="radio"
+              checked={isReport}
+              onChange={() =>
+                router.push(`/account-books/${accountBookId ?? 'all'}/report`)
+              }
+            />
+            <PiChartPieSliceFill />
+          </label>
           <label title="settings" htmlFor="settings" className="label">
             <input
               id="settings"

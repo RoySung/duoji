@@ -1,0 +1,181 @@
+import { useMemo } from 'react'
+import { Chip } from '@heroui/react'
+import { PiReceiptBold } from 'react-icons/pi'
+import { AccountBook, Currency } from '@/entities/accountBook'
+import { Category } from '@/entities/category'
+import { Transaction } from '@/entities/transaction'
+import {
+  getCategoryBucketIdentity,
+  groupByCategory,
+  groupByMonth,
+  summarize,
+} from '@/utils/reportAggregate'
+import ReportCategoryBreakdown from './ReportCategoryBreakdown'
+import ReportEmptyState from './ReportEmptyState'
+import ReportMonthlyTrend from './ReportMonthlyTrend'
+import ReportSummaryCards from './ReportSummaryCards'
+
+type ReportSectionProps = {
+  transactions: Transaction[]
+  categories: Category[]
+  mergeByName: boolean
+  currency: Currency
+  label?: string
+  showCurrencyHeading?: boolean
+  accountBook?: AccountBook | null
+  excludedKeys: Set<string>
+  onToggleKey: (key: string) => void
+}
+
+export default function ReportSection({
+  transactions,
+  categories,
+  mergeByName,
+  currency,
+  label,
+  showCurrencyHeading = false,
+  accountBook,
+  excludedKeys,
+  onToggleKey,
+}: ReportSectionProps) {
+  const categoryById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category])),
+    [categories]
+  )
+
+  // Category-filtered transactions: used for summary cards and monthly trend only.
+  // The breakdown list always uses the full `transactions` so excluded rows stay visible.
+  const activeTransactions = useMemo(() => {
+    if (excludedKeys.size === 0) return transactions
+
+    return transactions.filter((tx) => {
+      const category = categoryById.get(tx.categoryId) ?? null
+      const currentKey = getCategoryBucketIdentity(
+        tx,
+        category,
+        mergeByName
+      ).key
+      if (excludedKeys.has(currentKey)) {
+        return false
+      }
+
+      if (!mergeByName && category?.parentId) {
+        const parentCategory = categoryById.get(category.parentId) ?? null
+        if (parentCategory) {
+          const parentKey = getCategoryBucketIdentity(
+            tx,
+            parentCategory,
+            mergeByName
+          ).key
+          if (excludedKeys.has(parentKey)) {
+            return false
+          }
+        }
+      }
+
+      return true
+    })
+  }, [transactions, excludedKeys, categoryById, mergeByName])
+
+  const totals = useMemo(
+    () => summarize(activeTransactions),
+    [activeTransactions]
+  )
+  const expenseCategories = useMemo(
+    () => groupByCategory(transactions, categories, 'expense', { mergeByName }),
+    [transactions, categories, mergeByName]
+  )
+  const incomeCategories = useMemo(
+    () => groupByCategory(transactions, categories, 'income', { mergeByName }),
+    [transactions, categories, mergeByName]
+  )
+  const monthlyTrend = useMemo(
+    () => groupByMonth(activeTransactions),
+    [activeTransactions]
+  )
+
+  const heading = label ?? accountBook?.name ?? null
+  // Used to connect the section landmark to its heading for screen readers
+  const headingId = showCurrencyHeading
+    ? `report-section-${currency}`
+    : undefined
+
+  if (transactions.length === 0) {
+    return (
+      <section
+        className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5"
+        aria-labelledby={headingId}
+        aria-label={headingId ? undefined : 'Financial Report'}
+      >
+        {showCurrencyHeading ? (
+          <div className="mb-4 flex items-center gap-2">
+            <h2
+              id={headingId}
+              className="text-lg font-semibold text-foreground"
+            >
+              {heading ?? currency}
+            </h2>
+            <Chip
+              size="sm"
+              variant="flat"
+              className="bg-accent text-muted-foreground"
+            >
+              {currency}
+            </Chip>
+          </div>
+        ) : (
+          <h2 className="sr-only">Financial Report</h2>
+        )}
+        <ReportEmptyState
+          icon={<PiReceiptBold size={22} />}
+          title="No data in range"
+          description="Try a different time range or add some transactions."
+        />
+      </section>
+    )
+  }
+
+  return (
+    <section
+      className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5"
+      aria-labelledby={headingId}
+      aria-label={headingId ? undefined : 'Financial Report'}
+    >
+      {showCurrencyHeading ? (
+        <div className="mb-5 flex items-center gap-2">
+          <h2 id={headingId} className="text-lg font-semibold text-foreground">
+            {heading ?? currency}
+          </h2>
+          <Chip
+            size="sm"
+            variant="flat"
+            className="bg-accent text-muted-foreground"
+          >
+            {currency}
+          </Chip>
+          <Chip
+            size="sm"
+            variant="flat"
+            className="bg-accent text-muted-foreground"
+          >
+            {transactions.length} records
+          </Chip>
+        </div>
+      ) : (
+        <h2 className="sr-only">Financial Report</h2>
+      )}
+
+      <div className="space-y-8">
+        <ReportSummaryCards totals={totals} currency={currency} />
+        <ReportCategoryBreakdown
+          expense={expenseCategories}
+          income={incomeCategories}
+          currency={currency}
+          excludedKeys={excludedKeys}
+          onToggleKey={onToggleKey}
+        />
+        <ReportMonthlyTrend points={monthlyTrend} currency={currency} />
+      </div>
+    </section>
+  )
+}
