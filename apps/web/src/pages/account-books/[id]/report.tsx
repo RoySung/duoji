@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import dayjs from 'dayjs'
-import { PiBooksBold } from 'react-icons/pi'
+import { Button } from '@heroui/react'
+import { PiBooksBold, PiCheckBold, PiDownloadSimpleBold } from 'react-icons/pi'
 import BookFilterSelector from '@/components/report/BookFilterSelector'
 import ReportSection from '@/components/report/ReportSection'
 import TimeRangeSelector from '@/components/report/TimeRangeSelector'
+import { useExportTransactionsCsv } from '@/hooks/useExportTransactionsCsv'
 import { useReportTransactions } from '@/hooks/useReportTransactions'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
@@ -60,6 +62,19 @@ export default function AccountBookReportPage() {
     return groupByCurrency(bookFilteredTransactions, accountBooks)
   }, [isAllBooksView, bookFilteredTransactions, accountBooks])
 
+  const { exportCsv } = useExportTransactionsCsv(
+    bookFilteredTransactions,
+    categories
+  )
+
+  const [justExported, setJustExported] = useState(false)
+
+  function handleExportCsv() {
+    exportCsv()
+    setJustExported(true)
+    setTimeout(() => setJustExported(false), 1500)
+  }
+
   function toggleKey(key: string) {
     setExcludedKeys((prev) => {
       const next = new Set(prev)
@@ -109,15 +124,36 @@ export default function AccountBookReportPage() {
                 : currentAccountBook?.name ?? 'Account book'}
             </h1>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {isAllBooksView ? (
-              <BookFilterSelector
-                accountBooks={accountBooks}
-                excludedBookIds={excludedBookIds}
-                onChange={setExcludedBookIds}
-              />
-            ) : null}
-            <TimeRangeSelector value={dateRange} onChange={setDateRange} />
+          <div className="flex flex-col items-end gap-2">
+            <Button
+              variant="flat"
+              size="sm"
+              startContent={
+                justExported ? (
+                  <PiCheckBold size={14} />
+                ) : (
+                  <PiDownloadSimpleBold size={14} />
+                )
+              }
+              isDisabled={
+                isLoading || isFetching || bookFilteredTransactions.length === 0
+              }
+              onPress={handleExportCsv}
+              aria-label={`Export ${bookFilteredTransactions.length} transactions as CSV`}
+              className="bg-accent/60 text-foreground"
+            >
+              {justExported ? 'Exported!' : 'Export CSV'}
+            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {isAllBooksView ? (
+                <BookFilterSelector
+                  accountBooks={accountBooks}
+                  excludedBookIds={excludedBookIds}
+                  onChange={setExcludedBookIds}
+                />
+              ) : null}
+              <TimeRangeSelector value={dateRange} onChange={setDateRange} />
+            </div>
           </div>
         </header>
 
