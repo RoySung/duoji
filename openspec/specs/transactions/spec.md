@@ -169,7 +169,7 @@ code:
 ---
 ### Requirement: Transactions are presented in an account-book-scoped list
 
-The system SHALL present transactions for the current account book on the home page in a browsable flat list. Each visible transaction row SHALL surface key summary details, including date, category, description, expense payer information for expense transactions, income recipient information for income transactions, tags when present, payment method when present, an equal-split indicator when applicable, and signed amount, and SHALL provide direct access to edit that transaction. The transaction list query state for that view SHALL be owned by the active account-book page rather than an app-level shared transaction store.
+The system SHALL present transactions for the current account book on the home page in a browsable flat list. Each visible transaction row SHALL surface key summary details, including date, category, description, expense payer information for expense transactions, income recipient information for income transactions, tags when present, payment method when present, an equal-split indicator when applicable, and the transaction amount, and SHALL provide direct access to edit that transaction. Income amounts SHALL be prefixed with a `+` sign; expense amounts SHALL be displayed without a sign prefix, with expense versus income distinction conveyed through color (danger for expense, success for income). The transaction list query state for that view SHALL be owned by the active account-book page rather than an app-level shared transaction store.
 
 #### Scenario: View the current account book transaction list
 
@@ -179,98 +179,66 @@ The system SHALL present transactions for the current account book on the home p
 #### Scenario: View transaction summary details
 
 - **WHEN** a transaction row is rendered in the home-page list
-- **THEN** the system SHALL display enough summary information to distinguish the transaction, including its date, category, description or note, expense payer information for expense transactions, income recipient information for income transactions, tags when present, payment method when present, an equal-split indicator when the split detail is even, and signed amount
+- **THEN** the system SHALL display enough summary information to distinguish the transaction, including its date, category, description or note, expense payer information for expense transactions, income recipient information for income transactions, tags when present, payment method when present, an equal-split indicator when the split detail is even, and the transaction amount with a `+` prefix for income and no sign prefix for expense
 
 #### Scenario: Edit a transaction from the visible list
 
 - **WHEN** a user chooses the edit action for a visible transaction row
 - **THEN** the system SHALL open the transaction editing flow for the current account-book page, prefilled with that transaction's current values, without requiring an app-shell-wide transaction store
 
+#### Scenario: Transaction query cache stays coherent after mutation
+
+- **WHEN** a transaction is created, updated, or deleted from the account-book page
+- **THEN** the visible transaction list query state SHALL update the affected cached list results and related calendar-summary query results without waiting for the cache TTL to expire
+
 
 <!-- @trace
-source: refactor-transaction-state-boundaries
-updated: 2026-04-11
+source: account-book-calendar
+updated: 2026-05-05
 code:
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - .github/skills/spectra-propose/SKILL.md
-  - apps/web/src/hooks/useSettlement.ts
-  - .spectra.yaml
-  - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/src/components/transaction/TransactionList.tsx
-  - CLAUDE.md
-  - .github/prompts/spectra-apply.prompt.md
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/.babelrc
-  - apps/web/src/stores/transaction/index.ts
   - apps/web/src/components/accountBook/AccountBookMenu.tsx
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
-  - apps/web/src/components/layout/header.tsx
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
+  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
+  - apps/web/src/components/report/TimeRangeSelector.tsx
   - apps/web/src/entities/transaction.ts
-  - .github/prompts/spectra-propose.prompt.md
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - apps/web/src/pages/_app.tsx
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - .github/prompts/spectra-ask.prompt.md
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - .github/prompts/spectra-debug.prompt.md
-  - apps/web/src/utils/settlementUtils.ts
-  - .github/skills/spectra-apply/SKILL.md
+  - apps/web/src/hooks/useReportTransactions.ts
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/hooks/transactionQueryUtils.ts
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web/src/components/report/ReportSummaryCards.tsx
+  - apps/web/src/components/report/ReportSection.tsx
+  - apps/web/tsconfig.spec.json
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/components/calendar/MonthGrid.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/components/report/ReportEmptyState.tsx
+  - apps/web/src/components/calendar/calendarUtils.ts
+  - apps/web/src/components/report/CategoryTransactionsModal.tsx
+  - apps/web/src/components/report/ReportApexChart.tsx
   - apps/web/package.json
+  - apps/web/src/components/report/BookFilterSelector.tsx
+  - apps/web/src/stores/user/userStore.ts
+  - apps/web/src/hooks/useAppQueryClient.ts
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/src/components/calendar/WeekStrip.tsx
+  - apps/web/src/pages/styles.css
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web/src/components/report/ReportMonthlyTrend.tsx
+  - apps/web/src/components/calendar/TransactionCalendar.tsx
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
   - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/hooks/useUnsettledTransactions.ts
-  - .github/skills/spectra-ask/SKILL.md
-  - apps/web/next.config.js
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
-  - .github/prompts/spectra-ingest.prompt.md
-  - AGENTS.md
-  - .github/skills/spectra-debug/SKILL.md
-  - apps/web/src/pages/account-books/new.tsx
-  - apps/web/src/entities/settlement.ts
-  - GEMINI.md
-  - apps/web/jest.config.ts
-  - apps/web/src/stores/accountBook/index.ts
-  - .github/prompts/spectra-discuss.prompt.md
-  - apps/web/src/utils/transactionUtils.ts
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/eslint.config.mjs
+  - apps/web/src/components/report/reportTypes.ts
   - apps/web/src/components/layout/navbar.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/pages/_app.tsx
 tests:
-  - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/settlement.spec.ts
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/transaction.spec.ts
-  - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
   - apps/web/specs/transactionStore.spec.ts
-  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/reportAggregate.spec.ts
+  - apps/web/specs/timeRangeSelector.spec.tsx
+  - apps/web/specs/reportSection.spec.tsx
+  - apps/web/specs/transaction.spec.ts
 -->
 
 ---

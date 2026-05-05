@@ -591,3 +591,57 @@ code:
   - apps/web/src/components/calendar/MonthGrid.tsx
   - apps/web/src/components/calendar/TransactionCalendar.tsx
 -->
+
+---
+### Requirement: Navbar includes a report tab
+
+The bottom navigation bar SHALL include a report tab that navigates to `/account-books/[id]/report`, where `[id]` is the account book ID from the current URL context (or the persisted current account book ID when the URL has none).
+
+The report tab SHALL be positioned as the fourth item, between the add-transaction button (the center item) and the settings tab. The final tab order SHALL be: Home, Settlement, Add Transaction, Report, Settings.
+
+The report tab SHALL display as active (highlighted) when the current route matches `/account-books/[id]/report`.
+
+The report tab SHALL remain enabled in the aggregate view (`accountBookId === 'all'` or no specific account book selected) and SHALL navigate to `/account-books/all/report` in that case. The report tab SHALL NOT display a prohibition overlay.
+
+#### Scenario: User taps the report tab while viewing an account book
+
+- **WHEN** the user is on `/account-books/abc123` and taps the report tab
+- **THEN** the system SHALL navigate to `/account-books/abc123/report`
+
+#### Scenario: Report tab is active on report pages
+
+- **WHEN** the current route is `/account-books/[id]/report`
+- **THEN** the report tab icon SHALL be in the active/highlighted state
+
+#### Scenario: Report tab is enabled in aggregate view
+
+- **WHEN** the user is in the aggregate view (`/account-books/all` or no account book selected)
+- **THEN** the report tab SHALL remain enabled, SHALL NOT render a prohibition overlay, and SHALL navigate to `/account-books/all/report` when tapped
+
+<!-- @trace
+source: add-report-page
+updated: 2026-05-05
+code:
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/src/components/report/ReportSummaryCards.tsx
+  - apps/web/src/components/report/TimeRangeSelector.tsx
+  - apps/web/src/components/report/ReportApexChart.tsx
+  - apps/web/src/components/report/BookFilterSelector.tsx
+  - apps/web/src/hooks/useReportTransactions.ts
+  - apps/web/tsconfig.spec.json
+  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
+  - apps/web/src/components/report/CategoryTransactionsModal.tsx
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web/src/components/report/ReportSection.tsx
+  - apps/web/package.json
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/report/reportTypes.ts
+  - apps/web/src/components/report/ReportMonthlyTrend.tsx
+  - apps/web/src/components/report/ReportEmptyState.tsx
+  - apps/web/src/pages/styles.css
+tests:
+  - apps/web/specs/reportAggregate.spec.ts
+  - apps/web/specs/timeRangeSelector.spec.tsx
+  - apps/web/specs/reportSection.spec.tsx
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
+-->

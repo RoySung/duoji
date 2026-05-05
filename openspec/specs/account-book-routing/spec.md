@@ -310,3 +310,53 @@ tests:
   - apps/web/specs/homeTransactions.spec.tsx
   - apps/web/specs/settlement.spec.ts
 -->
+
+---
+### Requirement: Report page is accessible at the account book route
+
+The report page SHALL be accessible at `/account-books/[id]/report`. The page SHALL scope its data to the account book identified by `[id]`, where `[id]` MAY be either a concrete account book ID or the literal string `all` representing the aggregate view across all non-deleted account books.
+
+When `[id]` is a concrete ID that does not match any existing account book, the system SHALL render the same "account book not found" state used by other `/account-books/[id]/*` routes.
+
+#### Scenario: Viewing the report for a specific account book
+
+- **WHEN** the user navigates to `/account-books/abc123/report`
+- **THEN** the system SHALL display the report page scoped to account book `abc123`
+
+#### Scenario: Viewing the aggregate report
+
+- **WHEN** the user navigates to `/account-books/all/report`
+- **THEN** the system SHALL display the report page aggregating transactions from all non-deleted account books
+
+#### Scenario: Report page inherits the account book header menu
+
+- **WHEN** the user is on any `/account-books/[id]/report` route
+- **THEN** the header SHALL display the account book menu button used on other `/account-books/[id]/*` routes so the user MAY switch between account books
+
+<!-- @trace
+source: add-report-page
+updated: 2026-05-05
+code:
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/src/components/report/ReportSummaryCards.tsx
+  - apps/web/src/components/report/TimeRangeSelector.tsx
+  - apps/web/src/components/report/ReportApexChart.tsx
+  - apps/web/src/components/report/BookFilterSelector.tsx
+  - apps/web/src/hooks/useReportTransactions.ts
+  - apps/web/tsconfig.spec.json
+  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
+  - apps/web/src/components/report/CategoryTransactionsModal.tsx
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web/src/components/report/ReportSection.tsx
+  - apps/web/package.json
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/report/reportTypes.ts
+  - apps/web/src/components/report/ReportMonthlyTrend.tsx
+  - apps/web/src/components/report/ReportEmptyState.tsx
+  - apps/web/src/pages/styles.css
+tests:
+  - apps/web/specs/reportAggregate.spec.ts
+  - apps/web/specs/timeRangeSelector.spec.tsx
+  - apps/web/specs/reportSection.spec.tsx
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
+-->
