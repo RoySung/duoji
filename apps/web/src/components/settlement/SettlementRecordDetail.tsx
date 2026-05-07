@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button, Chip } from '@heroui/react'
-import { PiCaretDownBold, PiCaretUpBold } from 'react-icons/pi'
+import {
+  PiCaretDownBold,
+  PiCaretUpBold,
+  PiCheckBold,
+  PiCopyBold,
+} from 'react-icons/pi'
 import { SettlementRecord, SettlementTransfer } from '@/entities/settlement'
 import { Transaction } from '@/entities/transaction'
 import { User, isDeletedUser } from '@/entities/user'
 import { useUserStore } from '@/stores/user'
+import { useCategoryStore } from '@/stores/category'
 import TransactionList from '@/components/transaction/TransactionList'
+import { generateSettlementMarkdown } from '@/utils/settlementMarkdown'
 import SettlementTransferModal from './SettlementTransferModal'
+import SettlementMarkdownModal from './SettlementMarkdownModal'
 
 type Props = {
   record: SettlementRecord
@@ -43,8 +51,31 @@ export default function SettlementRecordDetail({
   const [isTransactionsExpanded, setIsTransactionsExpanded] = useState(false)
   const [selectedTransfer, setSelectedTransfer] =
     useState<SettlementTransfer | null>(null)
+  const [isMarkdownModalOpen, setIsMarkdownModalOpen] = useState(false)
   const allUsers = useUserStore((state) => state.allUsers)
-  const userMap = new Map(allUsers.map((u) => [u.id, u]))
+  const categories = useCategoryStore((state) => state.categories)
+
+  const userMap = useMemo(
+    () => new Map(allUsers.map((u) => [u.id, u])),
+    [allUsers]
+  )
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.name])),
+    [categories]
+  )
+
+  const markdownText = useMemo(
+    () =>
+      generateSettlementMarkdown({
+        sequenceNumber,
+        record,
+        transactions,
+        currency,
+        userMap,
+        categoryMap,
+      }),
+    [sequenceNumber, record, transactions, currency, userMap, categoryMap]
+  )
 
   const coveredTransactions = transactions
 
@@ -63,6 +94,14 @@ export default function SettlementRecordDetail({
           </h2>
           <p className="text-sm text-muted-foreground">{date}</p>
         </div>
+        <Button
+          size="sm"
+          startContent={<PiCopyBold size={14} />}
+          variant="flat"
+          onPress={() => setIsMarkdownModalOpen(true)}
+        >
+          Export Markdown
+        </Button>
       </div>
 
       {/* Member statuses */}
@@ -97,24 +136,24 @@ export default function SettlementRecordDetail({
                   </Chip>
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                  <div>
+                  <div className="min-w-0">
                     <p>Split</p>
-                    <p className="font-medium text-foreground">
+                    <p className="break-words font-medium tabular-nums text-foreground">
                       {ms.splitAmount.toLocaleString()}
                       {currency ? ` ${currency}` : ''}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p>Paid</p>
-                    <p className="font-medium text-foreground">
+                    <p className="break-words font-medium tabular-nums text-foreground">
                       {ms.paidAmount.toLocaleString()}
                       {currency ? ` ${currency}` : ''}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p>{isCreditor ? 'To receive' : 'To pay'}</p>
                     <p
-                      className={`font-semibold ${
+                      className={`break-words font-semibold tabular-nums ${
                         isCreditor ? 'text-success' : 'text-danger'
                       }`}
                     >
@@ -163,9 +202,10 @@ export default function SettlementRecordDetail({
                     <Chip
                       className="shrink-0 bg-success/10 text-success"
                       size="sm"
+                      startContent={<PiCheckBold className="ml-1" size={12} />}
                       variant="flat"
                     >
-                      Done ✓
+                      Done
                     </Chip>
                   ) : (
                     <Button
@@ -188,6 +228,8 @@ export default function SettlementRecordDetail({
       {/* Covered transactions */}
       <section>
         <button
+          aria-controls={`settlement-${sequenceNumber}-covered-transactions`}
+          aria-expanded={isTransactionsExpanded}
           className="flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left transition hover:bg-accent/50"
           type="button"
           onClick={() => setIsTransactionsExpanded((v) => !v)}
@@ -203,13 +245,15 @@ export default function SettlementRecordDetail({
         </button>
 
         {isTransactionsExpanded && (
-          <TransactionList
-            currency={currency}
-            error={null}
-            isLoading={false}
-            transactions={coveredTransactions}
-            onEditTransaction={onViewTransaction}
-          />
+          <div id={`settlement-${sequenceNumber}-covered-transactions`}>
+            <TransactionList
+              currency={currency}
+              error={null}
+              isLoading={false}
+              transactions={coveredTransactions}
+              onEditTransaction={onViewTransaction}
+            />
+          </div>
         )}
       </section>
 
@@ -224,6 +268,15 @@ export default function SettlementRecordDetail({
           onClose={() => setSelectedTransfer(null)}
         />
       )}
+
+      {isMarkdownModalOpen && (
+        <SettlementMarkdownModal
+          markdown={markdownText}
+          sequenceNumber={sequenceNumber}
+          onClose={() => setIsMarkdownModalOpen(false)}
+        />
+      )}
+
     </div>
   )
 }
