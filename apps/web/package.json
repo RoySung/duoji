@@ -5,6 +5,13 @@
   "nx": {
     "name": "web",
     "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "apps/web",
+          "command": "next build && cp public/_redirects out/_redirects"
+        }
+      },
       "dev": {
         "executor": "nx:run-commands",
         "options": {

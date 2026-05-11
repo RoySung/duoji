@@ -2,8 +2,17 @@
 
 const { composePlugins, withNx } = require('@nx/next');
 
-// Get repository name from package.json or environment variable
-const repo = process.env.GITHUB_REPOSITORY?.split('/')[1];
+function normalizeBasePath(value) {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = value.trim().replace(/^\/+|\/+$/g, '');
+
+  return trimmed ? `/${trimmed}` : '';
+}
+
+const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH);
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -13,8 +22,8 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_PROJECT_ROOT: __dirname,
   },
-  basePath: process.env.NODE_ENV === 'production' && repo ? `/${repo}` : '',
-  assetPrefix: process.env.NODE_ENV === 'production' && repo ? `/${repo}/` : '',
+  basePath,
+  assetPrefix: basePath ? `${basePath}/` : '',
   nx: {
     // Set this to true if you would like to use SVGR
     // See: https://github.com/gregberge/svgr
