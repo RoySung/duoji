@@ -11,6 +11,8 @@ import {
   addToast,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { useTranslations } from 'next-intl'
 import {
   Transaction,
   TransactionModalMode,
@@ -57,6 +59,9 @@ export default function TransactionModal({
   onUpdateTransaction,
   onDeleteTransaction,
 }: Props) {
+  const router = useRouter()
+  const t = useTranslations()
+  const isOnboardingActive = Number(router.query.onboarding) === 6
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
@@ -150,9 +155,9 @@ export default function TransactionModal({
         }
 
         addToast({
-          title: 'Transaction updated',
+          title: t('transactionModal.toast.updatedTitle'),
           color: 'success',
-          description: 'The transaction changes have been saved.',
+          description: t('transactionModal.toast.updatedDesc'),
         })
       } else {
         await onCreateTransaction({
@@ -161,10 +166,9 @@ export default function TransactionModal({
         })
 
         addToast({
-          title: 'Transaction created',
+          title: t('transactionModal.toast.createdTitle'),
           color: 'success',
-          description:
-            'The transaction has been added to the current account book.',
+          description: t('transactionModal.toast.createdDesc'),
         })
       }
 
@@ -173,11 +177,11 @@ export default function TransactionModal({
       addToast({
         title:
           modalMode === 'edit'
-            ? 'Unable to update transaction'
-            : 'Unable to create transaction',
+            ? t('transactionModal.toast.updateFailTitle')
+            : t('transactionModal.toast.createFailTitle'),
         color: 'danger',
         description:
-          error instanceof Error ? error.message : 'Unknown transaction error',
+          error instanceof Error ? error.message : t('transactionModal.toast.unknownError'),
       })
     }
   }
@@ -196,17 +200,17 @@ export default function TransactionModal({
 
       setIsDeleteConfirmOpen(false)
       addToast({
-        title: 'Transaction deleted',
+        title: t('transactionModal.toast.deletedTitle'),
         color: 'success',
-        description: 'The transaction has been removed from the account book.',
+        description: t('transactionModal.toast.deletedDesc'),
       })
       onOpenChange(false)
     } catch (error) {
       addToast({
-        title: 'Unable to delete transaction',
+        title: t('transactionModal.toast.deleteFailTitle'),
         color: 'danger',
         description:
-          error instanceof Error ? error.message : 'Unknown transaction error',
+          error instanceof Error ? error.message : t('transactionModal.toast.unknownError'),
       })
     }
   }
@@ -218,20 +222,23 @@ export default function TransactionModal({
         onOpenChange={onOpenChange}
         placement="bottom"
         scrollBehavior="inside"
+        isDismissable={!isOnboardingActive}
+        isKeyboardDismissDisabled={isOnboardingActive}
+        hideCloseButton={isOnboardingActive}
       >
         <ModalContent>
           <ModalHeader>
             <div className="flex flex-col gap-2 items-center w-full">
               <h2>
                 {modalMode === 'edit'
-                  ? 'Edit Transaction'
+                  ? t('transactionModal.titleEdit')
                   : modalMode === 'view'
-                    ? 'Transaction Detail'
-                    : 'New Transaction'}
+                    ? t('transactionModal.titleView')
+                    : t('transactionModal.titleCreate')}
               </h2>
               <Tabs
                 fullWidth
-                aria-label="Transaction Type"
+                aria-label={t('transactionModal.typeAriaLabel')}
                 selectedKey={draft.type}
                 size="md"
                 onSelectionChange={(key) => {
@@ -246,8 +253,8 @@ export default function TransactionModal({
                   )
                 }}
               >
-                <Tab key="expense" title="Expense"></Tab>
-                <Tab key="income" title="Income"></Tab>
+                <Tab key="expense" title={t('transactionModal.tabExpense')}></Tab>
+                <Tab key="income" title={t('transactionModal.tabIncome')}></Tab>
               </Tabs>
             </div>
           </ModalHeader>
@@ -265,11 +272,10 @@ export default function TransactionModal({
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
                       <h3 className="text-sm font-semibold text-danger">
-                        Delete transaction
+                        {t('transactionModal.delete.heading')}
                       </h3>
                       <p className="text-sm text-danger-700">
-                        This action cannot be undone. Are you sure you want to
-                        delete it?
+                        {t('transactionModal.delete.warning')}
                       </p>
                     </div>
                     <div className="flex justify-end">
@@ -278,7 +284,7 @@ export default function TransactionModal({
                         isDisabled={isDeleteDisabled}
                         onPress={() => setIsDeleteConfirmOpen(true)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </Button>
                     </div>
                   </div>
@@ -288,17 +294,19 @@ export default function TransactionModal({
           </ModalBody>
           <ModalFooter>
             {modalMode === 'view' ? (
-              <Button onPress={handleClose}>Close</Button>
+              <Button onPress={handleClose}>{t('common.close')}</Button>
             ) : (
               <>
-                <Button onPress={handleClose}>Cancel</Button>
-                <Button
-                  color="primary"
-                  isDisabled={isSaveDisabled}
-                  onPress={handleSave}
-                >
-                  {modalMode === 'edit' ? 'Save' : 'Create'}
-                </Button>
+                <Button onPress={handleClose}>{t('common.cancel')}</Button>
+                <span data-onboarding-anchor="transaction-form-submit">
+                  <Button
+                    color="primary"
+                    isDisabled={isSaveDisabled}
+                    onPress={handleSave}
+                  >
+                    {modalMode === 'edit' ? t('common.save') : t('common.create')}
+                  </Button>
+                </span>
               </>
             )}
           </ModalFooter>
@@ -311,25 +319,25 @@ export default function TransactionModal({
       >
         <ModalContent>
           <ModalHeader>
-            <h3>Delete Transaction</h3>
+            <h3>{t('transactionModal.delete.confirmTitle')}</h3>
           </ModalHeader>
           <ModalBody>
-            <p>Are you sure you want to delete this transaction?</p>
-            <p>This action cannot be undone.</p>
+            <p>{t('transactionModal.delete.confirmBody1')}</p>
+            <p>{t('transactionModal.delete.confirmBody2')}</p>
           </ModalBody>
           <ModalFooter>
             <Button
               isDisabled={isSubmitting}
               onPress={() => setIsDeleteConfirmOpen(false)}
             >
-              Keep Transaction
+              {t('transactionModal.delete.keep')}
             </Button>
             <Button
               color="danger"
               isDisabled={isDeleteDisabled}
               onPress={handleDelete}
             >
-              Confirm Delete
+              {t('transactionModal.delete.confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>

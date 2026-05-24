@@ -25,7 +25,25 @@ import {
   createCategoryStore,
 } from '../src/stores/category'
 import { UserStoreProvider, createUserStore } from '../src/stores/user'
+import {
+  SettingsStoreProvider,
+  createSettingsStore,
+} from '../src/stores/settings'
 import { THEME_STORAGE_KEY } from '../src/constants/theme'
+
+const FAKE_SETTINGS_REPO = {
+  async getSettings() {
+    return {
+      id: 'app' as const,
+      language: 'en-US' as const,
+      onboardingCompleted: true,
+      updatedAt: 0,
+    }
+  },
+  async upsertSettings(s: any) {
+    return s
+  },
+}
 import {
   Category,
   CategoryBulkDeleteResult,
@@ -450,6 +468,10 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
 
   const categoryStore = createCategoryStore(new InMemoryCategoryRepo())
   const userStore = createUserStore()
+  const settingsStore = createSettingsStore(FAKE_SETTINGS_REPO, {
+    initialized: true,
+    onboardingCompleted: true,
+  })
 
   let renderResult: ReturnType<typeof render>
 
@@ -465,7 +487,11 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
         <HeroUIProvider>
           <AccountBookStoreProvider store={store}>
             <CategoryStoreProvider store={categoryStore}>
-              <UserStoreProvider store={userStore}>{ui}</UserStoreProvider>
+              <UserStoreProvider store={userStore}>
+                <SettingsStoreProvider store={settingsStore}>
+                  {ui}
+                </SettingsStoreProvider>
+              </UserStoreProvider>
             </CategoryStoreProvider>
           </AccountBookStoreProvider>
         </HeroUIProvider>

@@ -6,6 +6,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 
 type DeleteAccountBookModalProps = {
   accountBookName: string
@@ -22,6 +23,8 @@ export default function DeleteAccountBookModal({
   onClose,
   onConfirm,
 }: DeleteAccountBookModalProps) {
+  const t = useTranslations()
+
   return (
     <Modal
       disableAnimation
@@ -29,20 +32,19 @@ export default function DeleteAccountBookModal({
       onOpenChange={(open) => !open && onClose()}
     >
       <ModalContent>
-        <ModalHeader>Delete account book</ModalHeader>
+        <ModalHeader>{t('accountBook.deleteModal.title')}</ModalHeader>
         <ModalBody>
           <p className="text-sm text-zinc-500">
-            Permanently delete{' '}
+            {t('accountBook.deleteModal.bodyPrefix')}
             <span className="font-semibold text-zinc-900">
               {accountBookName}
             </span>
-            ? All its categories and settings will be removed. This can&apos;t
-            be undone.
+            {t('accountBook.deleteModal.bodySuffix')}
           </p>
         </ModalBody>
         <ModalFooter>
           <Button variant="light" onPress={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             color="danger"
@@ -50,7 +52,7 @@ export default function DeleteAccountBookModal({
             isLoading={isSubmitting}
             onPress={() => void onConfirm()}
           >
-            Delete account book
+            {t('accountBook.deleteModal.confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>

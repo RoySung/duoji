@@ -160,6 +160,7 @@ describe('AccountBook Store runtime composition', () => {
     const store = createAccountBookStore()
 
     await initializeDB()
+    await db.accountBooks.bulkPut(accountBookList)
     await store.getState().initialize()
 
     expect(store.getState().accountBooks).toHaveLength(accountBookList.length)

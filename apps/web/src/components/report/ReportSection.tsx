@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Chip } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { PiReceiptBold } from 'react-icons/pi'
 import { AccountBook, Currency } from '@/entities/accountBook'
 import { Category } from '@/entities/category'
@@ -38,6 +39,8 @@ export default function ReportSection({
   excludedKeys,
   onToggleKey,
 }: ReportSectionProps) {
+  const t = useTranslations()
+
   const categoryById = useMemo(
     () => new Map(categories.map((category) => [category.id, category])),
     [categories]
@@ -105,7 +108,7 @@ export default function ReportSection({
       <section
         className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5"
         aria-labelledby={headingId}
-        aria-label={headingId ? undefined : 'Financial Report'}
+        aria-label={headingId ? undefined : t('report.section.ariaLabel')}
       >
         {showCurrencyHeading ? (
           <div className="mb-4 flex items-center gap-2">
@@ -124,12 +127,12 @@ export default function ReportSection({
             </Chip>
           </div>
         ) : (
-          <h2 className="sr-only">Financial Report</h2>
+          <h2 className="sr-only">{t('report.section.ariaLabel')}</h2>
         )}
         <ReportEmptyState
           icon={<PiReceiptBold size={22} />}
-          title="No data in range"
-          description="Try a different time range or add some transactions."
+          title={t('report.section.emptyTitle')}
+          description={t('report.section.emptyDescription')}
         />
       </section>
     )
@@ -139,7 +142,7 @@ export default function ReportSection({
     <section
       className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5"
       aria-labelledby={headingId}
-      aria-label={headingId ? undefined : 'Financial Report'}
+      aria-label={headingId ? undefined : t('report.section.ariaLabel')}
     >
       {showCurrencyHeading ? (
         <div className="mb-5 flex items-center gap-2">
@@ -158,11 +161,11 @@ export default function ReportSection({
             variant="flat"
             className="bg-accent text-muted-foreground"
           >
-            {transactions.length} records
+            {t('report.section.recordsCount', { count: transactions.length })}
           </Chip>
         </div>
       ) : (
-        <h2 className="sr-only">Financial Report</h2>
+        <h2 className="sr-only">{t('report.section.ariaLabel')}</h2>
       )}
 
       <div className="space-y-8">

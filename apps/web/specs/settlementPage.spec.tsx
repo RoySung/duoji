@@ -28,6 +28,24 @@ import {
   createCategoryStore,
 } from '../src/stores/category'
 import { UserStoreProvider, createUserStore } from '../src/stores/user'
+import {
+  SettingsStoreProvider,
+  createSettingsStore,
+} from '../src/stores/settings'
+
+const FAKE_SETTINGS_REPO = {
+  async getSettings() {
+    return {
+      id: 'app' as const,
+      language: 'en-US' as const,
+      onboardingCompleted: true,
+      updatedAt: 0,
+    }
+  },
+  async upsertSettings(s: any) {
+    return s
+  },
+}
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
@@ -299,6 +317,10 @@ function renderSettlementPage() {
     })),
     scopedAccountBookId: 'book-1',
   })
+  const settingsStore = createSettingsStore(FAKE_SETTINGS_REPO, {
+    initialized: true,
+    onboardingCompleted: true,
+  })
 
   return render(
     <ThemeProvider attribute="class">
@@ -306,7 +328,9 @@ function renderSettlementPage() {
         <AccountBookStoreProvider store={accountBookStore}>
           <CategoryStoreProvider store={categoryStore}>
             <UserStoreProvider store={userStore}>
+              <SettingsStoreProvider store={settingsStore}>
                 <SettlementPage />
+              </SettingsStoreProvider>
             </UserStoreProvider>
           </CategoryStoreProvider>
         </AccountBookStoreProvider>

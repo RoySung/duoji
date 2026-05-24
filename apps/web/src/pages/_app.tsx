@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { useAppQueryClient } from '@/hooks/useAppQueryClient'
 import { ThemeProvider } from 'next-themes'
 import { Inspector } from 'react-dev-inspector'
+import { IntlGate } from '@/i18n/IntlGate'
 import './styles.css'
 import Layout from '@/components/layout/layout'
 import { NextPage } from 'next'
@@ -22,7 +23,12 @@ import {
   useCategoryStore,
 } from '@/stores/category'
 import { UserStoreProvider, createUserStore, useUserStore } from '@/stores/user'
-
+import {
+  SettingsStoreProvider,
+  createSettingsStore,
+  useSettingsStore,
+} from '@/stores/settings'
+import OnboardingWelcomeModal from '@/components/onboarding/OnboardingWelcomeModal'
 // 擴展 AppProps 類型以包含 getLayout
 type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout
@@ -88,23 +94,50 @@ function UserStoreWatcher() {
   return null
 }
 
+function OnboardingGate({ children }: { children: ReactNode }) {
+  const router = useRouter()
+  const initialized = useSettingsStore((s) => s.initialized)
+  const onboardingCompleted = useSettingsStore((s) => s.onboardingCompleted)
+  const accountBookInitialized = useAccountBookStore((s) => s.initialized)
+
+  useEffect(() => {
+    if (!initialized || !accountBookInitialized) return
+    if (onboardingCompleted) return
+    if (router.pathname === '/onboarding') return
+    // Allow tutorial steps 3-5 to run on their real pages via ?onboarding=N
+    if (router.query.onboarding) return
+    void router.replace('/onboarding')
+  }, [
+    initialized,
+    accountBookInitialized,
+    onboardingCompleted,
+    router,
+  ])
+
+  return <>{children}</>
+}
+
+
 function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
   const [accountBookStore] = useState(createAccountBookStore)
   const [categoryStore] = useState(createCategoryStore)
   const [userStore] = useState(createUserStore)
+  const [settingsStore] = useState(createSettingsStore)
   const queryClient = useAppQueryClient()
-  // 初始化資料庫
+
   useEffect(() => {
     let isMounted = true
 
     async function bootstrap() {
       await initializeDB()
-
-      if (!isMounted) {
-        return
-      }
+      if (!isMounted) return
 
       await accountBookStore.getState().initialize()
+      if (!isMounted) return
+
+      const hasExistingAccountBooks =
+        accountBookStore.getState().accountBooks.length > 0
+      await settingsStore.getState().hydrate({ hasExistingAccountBooks })
     }
 
     void bootstrap()
@@ -112,7 +145,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
     return () => {
       isMounted = false
     }
-  }, [accountBookStore])
+  }, [accountBookStore, settingsStore])
 
   // 使用頁面的 getLayout 或使用默認布局
   const getLayout = Component.getLayout ?? ((page) => <Layout>{page}</Layout>)
@@ -130,21 +163,28 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
         <AccountBookStoreProvider store={accountBookStore}>
           <CategoryStoreProvider store={categoryStore}>
             <UserStoreProvider store={userStore}>
-              <CurrentAccountBookWatcher />
-              <CategoryStoreWatcher />
-              <UserStoreWatcher />
-              {getLayout(
-                <>
-                  <Head>
-                    <title>Welcome to Duoji!</title>
-                    <meta
-                      name="viewport"
-                      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-                    />
-                  </Head>
-                  <Component {...pageProps} />
-                </>
-              )}
+              <SettingsStoreProvider store={settingsStore}>
+                <IntlGate>
+                  <CurrentAccountBookWatcher />
+                  <CategoryStoreWatcher />
+                  <UserStoreWatcher />
+                  <OnboardingGate>
+                  {getLayout(
+                    <>
+                      <Head>
+                        <title>Welcome to Duoji!</title>
+                        <meta
+                          name="viewport"
+                          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+                        />
+                      </Head>
+                      <Component {...pageProps} />
+                      <OnboardingWelcomeModal />
+                    </>
+                  )}
+                  </OnboardingGate>
+                </IntlGate>
+              </SettingsStoreProvider>
             </UserStoreProvider>
           </CategoryStoreProvider>
         </AccountBookStoreProvider>

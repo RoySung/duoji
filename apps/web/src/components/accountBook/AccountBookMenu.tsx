@@ -7,6 +7,7 @@ import {
   DrawerContent,
   DrawerHeader,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { PiBooksBold, PiCaretDownBold, PiPlusCircleDuotone } from 'react-icons/pi'
 import { AccountBook } from '@/entities/accountBook'
@@ -17,6 +18,7 @@ type Props = {
 }
 
 export default function AccountBookMenu({ accountBooks, currentAccountBook }: Props) {
+  const t = useTranslations()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const isAllBooksView =
@@ -48,13 +50,13 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
         onPress={() => setIsOpen(true)}
       >
         {isAllBooksView
-          ? 'All Account Books'
-          : (currentAccountBook?.name ?? 'Select account book')}
+          ? t('accountBook.menu.allBooks')
+          : (currentAccountBook?.name ?? t('accountBook.menu.selectPlaceholder'))}
       </Button>
 
       <Drawer isOpen={isOpen} onOpenChange={setIsOpen} placement="right" size="sm">
         <DrawerContent>
-          <DrawerHeader className="flex flex-col gap-1">Account books</DrawerHeader>
+          <DrawerHeader className="flex flex-col gap-1">{t('accountBook.menu.drawerTitle')}</DrawerHeader>
 
           <DrawerBody className="gap-2 px-3 pb-4">
             <article
@@ -63,18 +65,18 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
                   ? 'border-primary/30 bg-primary/5'
                   : 'cursor-pointer border-border bg-card/80 hover:bg-muted/35'
               }`}
-              onClick={isAllBooksView ? undefined : () => handleSelect('all')}
+              onClick={isAllBooksView ? undefined : () => handleSelect('accountBook.menu.all')}
             >
               <div className="flex items-center gap-2">
                 <span className="flex-1 truncate text-sm font-semibold text-foreground">
-                  All Account Books
+                  {t('accountBook.menu.allBooks')}
                 </span>
               </div>
               <p className="text-xs leading-5 text-muted-foreground">
-                View transactions across every account book.
+                {t('accountBook.menu.allBooksDescription')}
               </p>
               <p className="text-xs leading-5 text-muted-foreground/60">
-                Settlement and adding transactions are not available in this view.
+                {t('accountBook.menu.allBooksHint')}
               </p>
             </article>
             {accountBooks.map((ab) => {
@@ -114,7 +116,7 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
                       variant="bordered"
                       onPress={() => handleEdit(ab.id)}
                     >
-                      Edit
+                      {t('accountBook.menu.edit')}
                     </Button>
                   </div>
                 </article>
@@ -125,7 +127,7 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
               type="button"
               onClick={handleCreate}
             >
-              <PiPlusCircleDuotone className="text-base" /> New account book
+              <PiPlusCircleDuotone className="text-base" /> {t('accountBook.menu.newAccountBook')}
             </button>
           </DrawerBody>
         </DrawerContent>

@@ -1,25 +1,46 @@
 import { Button } from '@heroui/react'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useTranslations } from 'next-intl'
 import { PiBooksBold } from 'react-icons/pi'
 import { useAccountBookStore } from '@/stores/accountBook'
+import { useSettingsStore } from '@/stores/settings'
 
 export function Index() {
   const router = useRouter()
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const initialized = useAccountBookStore((state) => state.initialized)
+  const settingsInitialized = useSettingsStore((s) => s.initialized)
+  const onboardingCompleted = useSettingsStore((s) => s.onboardingCompleted)
+  const t = useTranslations()
 
   useEffect(() => {
-    if (!initialized) {
+    if (!initialized || !settingsInitialized) {
+      return
+    }
+
+    if (!onboardingCompleted && accountBooks.length === 0) {
+      void router.replace('/onboarding?step=1')
       return
     }
 
     if (accountBooks.length > 0) {
       void router.replace(`/account-books/${accountBooks[0].id}`)
     }
-  }, [initialized, accountBooks, router])
+  }, [
+    initialized,
+    settingsInitialized,
+    onboardingCompleted,
+    accountBooks,
+    router,
+  ])
 
-  if (!initialized || accountBooks.length > 0) {
+  if (
+    !initialized ||
+    !settingsInitialized ||
+    accountBooks.length > 0 ||
+    !onboardingCompleted
+  ) {
     return null
   }
 
@@ -31,10 +52,10 @@ export function Index() {
             <PiBooksBold size={26} />
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
-            No account books yet
+            {t('emptyState.noAccountBooks.title')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create an account book to start tracking expenses.
+            {t('emptyState.noAccountBooks.description')}
           </p>
           <Button
             className="mt-6"
@@ -42,7 +63,7 @@ export function Index() {
             disableRipple
             onPress={() => void router.push('/account-books/new')}
           >
-            New account book
+            {t('emptyState.noAccountBooks.action')}
           </Button>
         </div>
       </div>

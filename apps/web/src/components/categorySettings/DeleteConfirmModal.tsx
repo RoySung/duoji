@@ -6,6 +6,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { PiWarningDuotone } from 'react-icons/pi'
 
 type DeleteConfirmModalProps = {
@@ -23,23 +24,27 @@ export default function DeleteConfirmModal({
   onConfirm,
   onClose,
 }: DeleteConfirmModalProps) {
+  const t = useTranslations()
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalContent>
-        <ModalHeader>Delete Category</ModalHeader>
+        <ModalHeader>{t('categorySettings.deleteModal.title')}</ModalHeader>
 
         <ModalBody className="flex flex-col gap-3">
           <p className="text-sm text-foreground">
-            Are you sure you want to delete{' '}
-            <span className="font-semibold">{categoryName}</span>?
+            {t('categorySettings.deleteModal.confirmPrefix')}
+            <span className="font-semibold">{categoryName}</span>
+            {t('categorySettings.deleteModal.confirmSuffix')}
           </p>
 
           {subCount > 0 && (
             <div className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2 text-danger">
               <PiWarningDuotone className="mt-0.5 flex-shrink-0 text-base" />
               <p className="text-xs">
-                This will also delete{' '}
-                <span className="font-semibold">{subCount}</span> sub-category
+                {t('categorySettings.deleteModal.subAlsoPrefix')}
+                <span className="font-semibold">{subCount}</span>
+                {t('categorySettings.deleteModal.subAlsoSuffix')}
               </p>
             </div>
           )}
@@ -47,10 +52,10 @@ export default function DeleteConfirmModal({
 
         <ModalFooter>
           <Button disableRipple variant="flat" onPress={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button color="danger" disableRipple onPress={onConfirm}>
-            Delete
+            {t('common.delete')}
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -9,6 +9,7 @@ import {
   PiChartPieSliceFill,
 } from 'react-icons/pi'
 import { useRouter } from 'next/router'
+import { useTranslations } from 'next-intl'
 // @ts-expect-error 暫時忽略，不影響功能
 import tailwindConfig from '../../../tailwind.config' // 根據你的路徑調整
 import { useAccountBookStore } from '@/stores/accountBook'
@@ -127,6 +128,7 @@ function DisabledWithTooltip({
 
 export default function NavBar() {
   const router = useRouter()
+  const t = useTranslations()
   const isSettlement = router.pathname.includes('/settlement')
   const isReport = router.pathname === '/account-books/[id]/report'
   const isHome =
@@ -149,14 +151,20 @@ export default function NavBar() {
       return
     }
 
-    void router.push(`/account-books/${accountBookId}?modal=create`)
+    const onboardingParam =
+      typeof router.query.onboarding === 'string'
+        ? `&onboarding=${router.query.onboarding}`
+        : ''
+    void router.push(
+      `/account-books/${accountBookId}?modal=create${onboardingParam}`
+    )
   }
 
   return (
     <div className="navbar h-[72px] flex w-full p-4 justify-center items-center">
       <StyledWrapper>
         <section>
-          <label title="home" htmlFor="home" className="label">
+          <label title={t('navbar.home')} htmlFor="home" className="label">
             <input
               id="home"
               name="page"
@@ -167,15 +175,15 @@ export default function NavBar() {
             <PiHouseFill></PiHouseFill>
           </label>
           {isAggregateView ? (
-            <DisabledWithTooltip message="Not available in All Books view">
-              <label title="settlement" className="label" aria-disabled style={{ position: 'relative' }}>
+            <DisabledWithTooltip message={t('navbar.notAvailableAllBooks')}>
+              <label title={t('navbar.settlement')} className="label" aria-disabled style={{ position: 'relative' }}>
                 <input id="settlement" name="page" type="radio" checked={false} onChange={() => {}} disabled /> {/* eslint-disable-line @typescript-eslint/no-empty-function */}
                 <PiArrowsLeftRight />
                 <ProhibitionMask />
               </label>
             </DisabledWithTooltip>
           ) : (
-            <label title="settlement" htmlFor="settlement" className="label">
+            <label title={t('navbar.settlement')} htmlFor="settlement" className="label">
               <input
                 id="settlement"
                 name="page"
@@ -187,7 +195,7 @@ export default function NavBar() {
             </label>
           )}
           {isAggregateView ? (
-            <DisabledWithTooltip message="Not available in All Books view" className="relative mx-2" style={{ transform: 'scale(1.2)' }}>
+            <DisabledWithTooltip message={t('navbar.notAvailableAllBooks')} className="relative mx-2" style={{ transform: 'scale(1.2)' }}>
               <Button className="bg-gray-600/75 text-white" isIconOnly isDisabled>
                 <PiListPlusFill size={28} />
               </Button>
@@ -195,8 +203,9 @@ export default function NavBar() {
             </DisabledWithTooltip>
           ) : (
             <Button
-              aria-label="New Transaction"
+              aria-label={t('navbar.newTransaction')}
               className="bg-gray-600/75 text-white mx-2"
+              data-onboarding-anchor="create-transaction"
               isIconOnly
               style={{ transform: 'scale(1.2)' }}
               onPress={handleAddTransaction}
@@ -204,7 +213,7 @@ export default function NavBar() {
               <PiListPlusFill size={28} />
             </Button>
           )}
-          <label title="report" htmlFor="report" className="label">
+          <label title={t('navbar.reports')} htmlFor="report" className="label">
             <input
               id="report"
               name="page"
@@ -216,7 +225,7 @@ export default function NavBar() {
             />
             <PiChartPieSliceFill />
           </label>
-          <label title="settings" htmlFor="settings" className="label">
+          <label title={t('navbar.settings')} htmlFor="settings" className="label">
             <input
               id="settings"
               name="page"

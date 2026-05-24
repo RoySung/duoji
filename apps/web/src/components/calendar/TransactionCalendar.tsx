@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import dayjs from 'dayjs'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import {
   PiCaretDownBold,
   PiCaretUpBold,
@@ -38,6 +39,8 @@ export default function TransactionCalendar({
   viewMode: controlledViewMode,
   onViewModeChange,
 }: Props) {
+  const t = useTranslations()
+
   const [internalViewMode, setInternalViewMode] = useState<'week' | 'month'>(
     'week'
   )
@@ -111,10 +114,14 @@ export default function TransactionCalendar({
           type="button"
           aria-label={
             displayMode === 'dot'
-              ? 'Show daily total amount'
-              : 'Show transaction indicator'
+              ? t('calendar.toggleDisplay.showAmountsAria')
+              : t('calendar.toggleDisplay.showDotsAria')
           }
-          title={displayMode === 'dot' ? 'Show amounts' : 'Show dots'}
+          title={
+            displayMode === 'dot'
+              ? t('calendar.toggleDisplay.showAmountsTitle')
+              : t('calendar.toggleDisplay.showDotsTitle')
+          }
           className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
           onClick={toggleDisplayMode}
         >
@@ -168,8 +175,8 @@ export default function TransactionCalendar({
           type="button"
           aria-label={
             viewMode === 'week'
-              ? 'Expand to month view'
-              : 'Collapse to week view'
+              ? t('calendar.toggleView.expandAria')
+              : t('calendar.toggleView.collapseAria')
           }
           className="flex h-8 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
           onClick={toggleViewMode}

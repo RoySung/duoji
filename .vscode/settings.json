@@ -22,5 +22,10 @@
   "cSpell.words": ["Duoji", "heroui"],
   "chat.tools.terminal.autoApprove": {
     "spectra": true
-  }
+  },
+  "i18n-ally.enabledFrameworks": ["next-intl"],
+  "i18n-ally.localesPaths": ["apps/web/src/i18n/messages"],
+  "i18n-ally.pathMatcher": "{locale}.json",
+  "i18n-ally.keystyle": "nested",
+  "i18n-ally.sourceLanguage": "en-US"
 }

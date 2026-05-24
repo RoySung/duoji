@@ -1,6 +1,11 @@
 {
   "includeGitInstructions": false,
   "permissions": {
-    "allow": ["Bash(nx run:*)"]
+    "allow": [
+      "Bash(nx run:*)",
+      "Bash(sed -i '' \"s/const t = useTranslations\\('transactionForm'\\)/const t = useTranslations\\(\\)/\" ExpenseForm.tsx)",
+      "Bash(sed -i '' \"s/t\\('/t\\('transactionForm./g\" ExpenseForm.tsx)",
+      "Bash(pnpm --filter web exec jest --testPathPattern defaultCategories --no-coverage --verbose)"
+    ]
   }
 }

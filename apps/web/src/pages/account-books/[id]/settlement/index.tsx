@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { useTranslations } from 'next-intl'
 import { Tabs, Tab, addToast } from '@heroui/react'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
@@ -10,9 +11,11 @@ import UnsettledTransactionList from '@/components/settlement/UnsettledTransacti
 import SettlementRecordList from '@/components/settlement/SettlementRecordList'
 import SettlementConfirmModal from '@/components/settlement/SettlementConfirmModal'
 import { TransactionModal } from '@/components/TransactionModal'
+import SplitTutorial from '@/components/onboarding/SplitTutorial'
 
 export default function SettlementPage() {
   const router = useRouter()
+  const t = useTranslations()
   const { id } = router.query
   const accountBookId = typeof id === 'string' ? id : null
 
@@ -64,14 +67,14 @@ export default function SettlementPage() {
       await refreshUnsettled()
       setIsConfirmOpen(false)
       addToast({
-        title: 'Settlement record created',
+        title: t('settlement.toast.created'),
         color: 'success',
       })
     } catch {
       addToast({
-        title: 'Unable to create settlement',
+        title: t('settlement.toast.failureTitle'),
         color: 'danger',
-        description: 'Please try again.',
+        description: t('settlement.toast.failureDescription'),
       })
     } finally {
       setIsSubmitting(false)
@@ -115,19 +118,24 @@ export default function SettlementPage() {
   if (!accountBookId || unsettledTransactions === null) return null
 
   return (
+    <SplitTutorial>
     <div className="h-full overflow-y-auto bg-background text-foreground">
       <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-8">
         <div className="space-y-1">
           <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
-            Settlement
+            {t('settlement.label')}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {currentAccountBook?.name ?? 'Account book'}
+            {currentAccountBook?.name ?? t('transactions.fallbackName')}
           </h1>
         </div>
 
-        <Tabs aria-label="Settlement tabs" fullWidth>
-          <Tab key="unsettled" title="Unsettled">
+        <Tabs
+          aria-label={t('settlement.tabsAriaLabel')}
+          data-onboarding-anchor="settlement-tabs"
+          fullWidth
+        >
+          <Tab key="unsettled" title={t('settlement.tabs.unsettled')}>
             <div className="pt-4">
               <UnsettledTransactionList
                 transactions={unsettledTransactions}
@@ -137,7 +145,7 @@ export default function SettlementPage() {
               />
             </div>
           </Tab>
-          <Tab key="records" title="History">
+          <Tab key="records" title={t('settlement.tabs.history')}>
             <div className="pt-4">
               <SettlementRecordList
                 records={records}
@@ -173,5 +181,6 @@ export default function SettlementPage() {
         onDeleteTransaction={handleDeleteTransaction}
       />
     </div>
+    </SplitTutorial>
   )
 }

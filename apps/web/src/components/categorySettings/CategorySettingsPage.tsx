@@ -1,5 +1,6 @@
 import { Button, Tab, Tabs, addToast } from '@heroui/react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Reorder, useDragControls } from 'framer-motion'
 import { CATEGORY_ICONS, CategoryIconKey } from '@/constants/categoryIcons'
 import { Category } from '@/entities/category'
@@ -68,6 +69,7 @@ export default function CategorySettingsPage({
   accountBookId,
   onClose,
 }: CategorySettingsPageProps) {
+  const t = useTranslations()
   const isModalMode = onClose !== undefined
   const accountBooks = useAccountBookStore((s) => s.accountBooks)
   const accountBook = accountBooks.find((b) => b.id === accountBookId) ?? null
@@ -265,9 +267,9 @@ export default function CategorySettingsPage({
       editedIds.current.clear()
       deletedIds.current.clear()
       setIsDirty(false)
-      addToast({ title: 'Categories saved', color: 'success' })
+      addToast({ title: t('categorySettings.toast.saved'), color: 'success' })
     } catch {
-      addToast({ title: 'Failed to save categories', color: 'danger' })
+      addToast({ title: t('categorySettings.toast.saveFailed'), color: 'danger' })
     } finally {
       setIsSaving(false)
     }

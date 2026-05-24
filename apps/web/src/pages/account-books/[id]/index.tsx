@@ -2,6 +2,7 @@ import { Button, Chip } from '@heroui/react'
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
+import { useTranslations } from 'next-intl'
 import { PiArrowsClockwiseBold, PiBooksBold } from 'react-icons/pi'
 import TransactionCalendar from '@/components/calendar/TransactionCalendar'
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/components/calendar/calendarUtils'
 import TransactionList from '@/components/transaction/TransactionList'
 import { TransactionModal } from '@/components/TransactionModal'
+import TransactionTutorial from '@/components/onboarding/TransactionTutorial'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useAccountBookTransactions } from '@/hooks/useAccountBookTransactions'
 import { TransactionModalMode } from '@/entities/transaction'
@@ -18,6 +20,7 @@ import { TransactionCalendarVisibleRange } from '@/hooks/transactionQueryUtils'
 
 export default function AccountBookPage() {
   const router = useRouter()
+  const t = useTranslations()
   const { id } = router.query
   const accountBookId = typeof id === 'string' ? id : null
 
@@ -122,7 +125,7 @@ export default function AccountBookPage() {
   } = useAccountBookTransactions(accountBookId, queryRange)
 
   const transactions = selectedDate
-    ? (transactionsByDate[selectedDate] ?? [])
+    ? transactionsByDate[selectedDate] ?? []
     : allTransactions
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -203,7 +206,12 @@ export default function AccountBookPage() {
       return
     }
 
-    const baseQuery = accountBookId ? { id: accountBookId } : {}
+    const baseQuery: Record<string, string> = accountBookId
+      ? { id: accountBookId }
+      : {}
+    if (typeof router.query.onboarding === 'string') {
+      baseQuery.onboarding = router.query.onboarding
+    }
 
     if (!accountBookId || isAllBooksView) {
       void router.replace(
@@ -249,10 +257,10 @@ export default function AccountBookPage() {
               <PiBooksBold size={26} />
             </div>
             <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
-              Account book not found
+              {t('transactions.notFoundTitle')}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              This account book does not exist or has been deleted.
+              {t('transactions.notFoundDescription')}
             </p>
           </div>
         </div>
@@ -261,87 +269,94 @@ export default function AccountBookPage() {
   }
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="h-full overflow-y-auto bg-background text-foreground"
-      onWheel={handleScrollContainerWheel}
-      onTouchStart={handleScrollContainerTouchStart}
-      onTouchMove={handleScrollContainerTouchMove}
-      onTouchEnd={handleScrollContainerTouchEnd}
-    >
-      <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-8 px-4 py-8">
-        <section className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
-                Transactions
-              </p>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                  {isAllBooksView
-                    ? 'All Account Books'
-                    : currentAccountBook?.name ?? 'Account book'}
-                </h2>
+    <TransactionTutorial>
+      <div
+        ref={scrollContainerRef}
+        className="h-full overflow-y-auto bg-background text-foreground"
+        onWheel={handleScrollContainerWheel}
+        onTouchStart={handleScrollContainerTouchStart}
+        onTouchMove={handleScrollContainerTouchMove}
+        onTouchEnd={handleScrollContainerTouchEnd}
+      >
+        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-8 px-4 py-8">
+          <section className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
+                  {t('transactions.label')}
+                </p>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    {isAllBooksView
+                      ? t('transactions.allBooks')
+                      : currentAccountBook?.name ??
+                        t('transactions.fallbackName')}
+                  </h2>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 self-start">
+                <Button
+                  aria-label={t('transactions.refreshAria')}
+                  className="border border-border bg-background text-foreground hover:bg-accent"
+                  disableRipple
+                  isDisabled={isLoading || isRefreshing}
+                  radius="full"
+                  size="sm"
+                  startContent={<PiArrowsClockwiseBold size={14} />}
+                  variant="flat"
+                  onPress={handleRefresh}
+                >
+                  {isRefreshing
+                    ? t('transactions.refreshing')
+                    : t('transactions.refresh')}
+                </Button>
+                <Chip
+                  className="bg-accent text-muted-foreground"
+                  size="sm"
+                  variant="flat"
+                >
+                  {t('transactions.records', {
+                    count: selectedDate ? transactions.length : totalCount,
+                  })}
+                </Chip>
               </div>
             </div>
-            <div className="flex items-center gap-3 self-start">
-              <Button
-                aria-label="Refresh transactions"
-                className="border border-border bg-background text-foreground hover:bg-accent"
-                disableRipple
-                isDisabled={isLoading || isRefreshing}
-                radius="full"
-                size="sm"
-                startContent={<PiArrowsClockwiseBold size={14} />}
-                variant="flat"
-                onPress={handleRefresh}
-              >
-                {isRefreshing ? 'Refreshing...' : 'Refresh'}
-              </Button>
-              <Chip
-                className="bg-accent text-muted-foreground"
-                size="sm"
-                variant="flat"
-              >
-                {`${selectedDate ? transactions.length : totalCount} records`}
-              </Chip>
-            </div>
-          </div>
 
-          <TransactionCalendar
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            calendarSummaries={summariesByDate}
-            onQueryRangeChange={handleQueryRangeChange}
-            viewMode={calendarViewMode}
-            onViewModeChange={setCalendarViewMode}
-          />
+            <TransactionCalendar
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              calendarSummaries={summariesByDate}
+              onQueryRangeChange={handleQueryRangeChange}
+              viewMode={calendarViewMode}
+              onViewModeChange={setCalendarViewMode}
+            />
 
-          <TransactionList
-            currency={currentAccountBook?.currency ?? null}
-            emptyMessage={
-              selectedDate ? 'No transactions on this date' : undefined
-            }
-            error={error}
-            isLoading={isLoading}
-            transactions={transactions}
-            showAccountBook={isAllBooksView}
-            onEditTransaction={openEditModal}
-          />
-        </section>
+            <TransactionList
+              currency={currentAccountBook?.currency ?? null}
+              emptyMessage={
+                selectedDate ? t('transactions.emptyOnDate') : undefined
+              }
+              error={error}
+              isLoading={isLoading}
+              transactions={transactions}
+              showAccountBook={isAllBooksView}
+              onEditTransaction={openEditModal}
+            />
+          </section>
+        </div>
+
+        <TransactionModal
+          isOpen={isModalOpen}
+          onOpenChange={handleModalOpenChange}
+          modalMode={modalMode}
+          defaultDate={selectedDate}
+          selectedTransaction={selectedTransaction}
+          isSubmitting={isLoading}
+          onCreateTransaction={createTransaction}
+          onUpdateTransaction={updateTransaction}
+          onDeleteTransaction={deleteTransaction}
+        />
       </div>
-
-      <TransactionModal
-        isOpen={isModalOpen}
-        onOpenChange={handleModalOpenChange}
-        modalMode={modalMode}
-        defaultDate={selectedDate}
-        selectedTransaction={selectedTransaction}
-        isSubmitting={isLoading}
-        onCreateTransaction={createTransaction}
-        onUpdateTransaction={updateTransaction}
-        onDeleteTransaction={deleteTransaction}
-      />
-    </div>
+    </TransactionTutorial>
   )
 }

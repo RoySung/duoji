@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Select,
   SelectItem,
@@ -38,6 +39,7 @@ type Props = {
 }
 
 export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
+  const t = useTranslations()
   const now = new Date()
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
@@ -98,9 +100,9 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
       .filter((u): u is User => {
         if (!u) {
           addToast({
-            title: 'Error',
+            title: t('transactionForm.errorTitle'),
             color: 'danger',
-            description: 'Selected person was not found.',
+            description: t('transactionForm.errorNotFound'),
           })
         }
         return Boolean(u)
@@ -131,44 +133,48 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   return (
     <div className="expense-form">
       <Form className="flex flex-col gap-4">
-        <Input
-          size="sm"
-          isRequired
-          label="Amount"
-          type="number"
-          isClearable
-          onClear={() => {
-            onChange(distributeTransactionAmount(value, 0))
-          }}
-          value={value.amount.toString()}
-          startContent={
-            <div className="pointer-events-none flex items-center">
-              <span className="text-default-400 text-small">$</span>
-            </div>
-          }
-          onChange={(e) => {
-            const nextAmount = parseFloat(e.target.value)
-            if (!isNaN(nextAmount)) {
-              onChange(distributeTransactionAmount(value, nextAmount))
-            } else {
+        <div data-onboarding-anchor="transaction-form-amount" className="w-full">
+          <Input
+            size="sm"
+            isRequired
+            label={t('transactionForm.amount')}
+            type="number"
+            isClearable
+            onClear={() => {
               onChange(distributeTransactionAmount(value, 0))
+            }}
+            value={value.amount.toString()}
+            startContent={
+              <div className="pointer-events-none flex items-center">
+                <span className="text-default-400 text-small">$</span>
+              </div>
             }
-          }}
-        />
-        <CategorySelector
-          categoryList={expenseCategories}
-          selectedCategoryId={value.categoryId}
-          onSelectCategory={(category) => {
-            onChange({
-              ...value,
-              categoryId: category.id,
-            })
-          }}
-        />
+            onChange={(e) => {
+              const nextAmount = parseFloat(e.target.value)
+              if (!isNaN(nextAmount)) {
+                onChange(distributeTransactionAmount(value, nextAmount))
+              } else {
+                onChange(distributeTransactionAmount(value, 0))
+              }
+            }}
+          />
+        </div>
+        <div data-onboarding-anchor="transaction-form-category" className="w-full">
+          <CategorySelector
+            categoryList={expenseCategories}
+            selectedCategoryId={value.categoryId}
+            onSelectCategory={(category) => {
+              onChange({
+                ...value,
+                categoryId: category.id,
+              })
+            }}
+          />
+        </div>
         <DatePicker
           isRequired
           size="sm"
-          label="Date"
+          label={t('transactionForm.date')}
           granularity="day"
           value={date}
           onChange={(nextDate) => {
@@ -180,7 +186,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         />
         <Input
           size="sm"
-          label="Description"
+          label={t('transactionForm.description')}
           value={value.description}
           isClearable
           onClear={() => {
@@ -189,14 +195,18 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           onChange={(event) => {
             onChange({ ...value, description: event.target.value })
           }}
-          placeholder='Enter a description (e.g. "Lunch with friends")'
+          onFocus={(e) => {
+            const target = e.target
+            setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)
+          }}
+          placeholder={t('transactionForm.descriptionPlaceholderExpense')}
         />
         <Select
           size="sm"
           isRequired
-          label="Payment Method"
+          label={t('transactionForm.paymentMethod')}
           selectedKeys={value.paymentMethod ? [value.paymentMethod] : []}
-          placeholder="Select a payment method"
+          placeholder={t('transactionForm.paymentMethodPlaceholder')}
           onSelectionChange={(keys) => {
             const paymentMethod = Array.from(keys)[0]
 
@@ -222,10 +232,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <Select
           size="sm"
-          label="Account Book"
+          label={t('transactionForm.accountBook')}
           items={accountBooks}
           selectedKeys={value.accountBookId ? [value.accountBookId] : []}
-          placeholder="Select an account book"
+          placeholder={t('transactionForm.accountBookPlaceholder')}
           isRequired
           isDisabled={accountBooks.length === 0}
           onSelectionChange={(keys) => {
@@ -242,7 +252,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         {/* tags */}
         <TagsInput
           className="w-full"
-          label="Tags"
+          label={t('transactionForm.tags')}
           data={{
             keywords: value.tags,
           }}
@@ -250,14 +260,14 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             onChange({ ...value, tags })
           }}
         />
-        <div className="flex items-center w-full">
+        <div className="flex items-center w-full" data-onboarding-anchor="transaction-form-payer">
           <Select
             className="flex-1"
             size="sm"
-            label="Paid By"
+            label={t('transactionForm.paidBy')}
             items={usersForPaidBy}
             selectionMode="multiple"
-            placeholder="Select who paid"
+            placeholder={t('transactionForm.paidByPlaceholder')}
             isRequired
             selectedKeys={selectedPaidByIds}
             onSelectionChange={(ids) =>
@@ -301,21 +311,21 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             }}
           />
         </div>
-        <div className="flex items-start w-full">
+        <div className="flex items-start w-full" data-onboarding-anchor="transaction-form-split">
           <div className="w-full">
             <Select
               className="flex-1"
               size="sm"
-              label="Split With"
+              label={t('transactionForm.splitWith')}
               items={usersForSplit}
               selectionMode="multiple"
-              placeholder="Select people to split with"
+              placeholder={t('transactionForm.splitWithPlaceholder')}
               isRequired
               selectedKeys={selectedSplitIds}
               onSelectionChange={(ids) =>
                 selectSplitUsers(Array.from(ids) as User['id'][])
               }
-              description="💡 Split equally by default. You can customize amounts if needed."
+              description={t('transactionForm.splitDescription')}
             >
               {(user) => (
                 <SelectItem

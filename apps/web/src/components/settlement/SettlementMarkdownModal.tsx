@@ -8,6 +8,7 @@ import {
   Button,
   addToast,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { PiCopyBold, PiCheckBold } from 'react-icons/pi'
 
 type Props = {
@@ -21,19 +22,20 @@ export default function SettlementMarkdownModal({
   sequenceNumber,
   onClose,
 }: Props) {
+  const t = useTranslations()
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(markdown)
       setCopied(true)
-      addToast({ title: 'Copied to clipboard', color: 'success' })
+      addToast({ title: t('settlement.markdown.copiedToast'), color: 'success' })
       setTimeout(() => setCopied(false), 2000)
     } catch {
       addToast({
-        title: 'Copy failed',
+        title: t('settlement.markdown.copyFailedTitle'),
         color: 'danger',
-        description: 'Please select and copy the text manually.',
+        description: t('settlement.markdown.copyFailedDesc'),
       })
     }
   }
@@ -47,10 +49,10 @@ export default function SettlementMarkdownModal({
       size="2xl"
     >
       <ModalContent>
-        <ModalHeader>Export as Markdown — Settlement #{sequenceNumber}</ModalHeader>
+        <ModalHeader>{t('settlement.markdown.title', { sequenceNumber })}</ModalHeader>
         <ModalBody>
           <p className="text-xs text-muted-foreground">
-            Paste into Notion, Obsidian, or any markdown-compatible app.
+            {t('settlement.markdown.helper')}
           </p>
           <pre
             aria-live="polite"
@@ -61,15 +63,15 @@ export default function SettlementMarkdownModal({
         </ModalBody>
         <ModalFooter>
           <Button variant="light" onPress={onClose}>
-            Close
+            {t('common.close')}
           </Button>
           <Button
-            aria-label={copied ? 'Markdown copied to clipboard' : 'Copy markdown'}
+            aria-label={copied ? t('settlement.markdown.copiedAria') : t('settlement.markdown.copyAria')}
             color="primary"
             startContent={copied ? <PiCheckBold /> : <PiCopyBold />}
             onPress={handleCopy}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? t('settlement.markdown.copied') : t('settlement.markdown.copy')}
           </Button>
         </ModalFooter>
       </ModalContent>

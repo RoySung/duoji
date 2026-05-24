@@ -124,7 +124,7 @@ code:
 ---
 ### Requirement: Categories are scoped to an account book
 
-The system SHALL associate each category with exactly one account book via an `accountBookId` field so that categories can be managed independently per book.
+The system SHALL associate each category with exactly one account book via an `accountBookId` field so that categories can be managed independently per book. When seeding default categories on account book creation, the system SHALL use the active locale (`Settings.language`) to choose the language of seeded category names and descriptions.
 
 #### Scenario: Load categories for the active account book
 
@@ -134,39 +134,65 @@ The system SHALL associate each category with exactly one account book via an `a
 #### Scenario: Seed default categories for a new account book
 
 - **WHEN** an account book has no categories stored
-- **THEN** the system SHALL seed a default set of expense and income categories scoped to that account book's ID
+- **THEN** the system SHALL seed a default set of expense and income categories scoped to that account book's ID, with names and descriptions taken from the i18n message catalog of the active locale
 
 #### Scenario: Automatically seed default categories on account book creation
 
 - **WHEN** a new account book is created
-- **THEN** the system SHALL immediately seed the default category set (as defined in `mocks/category`) scoped to the newly created account book's ID, so the book is usable for transaction recording without any additional setup
+- **THEN** the system SHALL immediately seed the default category set scoped to the newly created account book's ID, using the active locale at creation time to translate category names and descriptions, so the book is usable for transaction recording without any additional setup
+
+#### Scenario: Existing categories are not retranslated when the locale changes
+
+- **WHEN** the user changes the active locale after an account book's default categories have been seeded
+- **THEN** the system SHALL NOT rename, retranslate, or otherwise mutate the existing category records
+
 
 <!-- @trace
-source: category-store
-updated: 2026-03-23
+source: add-i18n-and-onboarding
+updated: 2026-05-11
 code:
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/pages/_app.tsx
+  - apps/web/src/components/onboarding/TransactionTutorial.tsx
+  - apps/web/src/components/onboarding/LanguageStep.tsx
   - apps/web/src/pages/index.tsx
-  - apps/web/src/stores/category/categoryStoreProvider.tsx
-  - apps/web/src/mocks/category.ts
-  - apps/web/src/stores/category/categoryStore.ts
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - apps/web/src/stores/category/index.ts
-  - apps/web/src/entities/category.ts
+  - apps/web/src/components/onboarding/StepShell.tsx
+  - apps/web/src/pages/settings.tsx
+  - apps/web/src/repositories/settingsRepo/index.ts
+  - apps/web/src/constants/defaultCategories.ts
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/package.json
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/onboarding/SplitTutorial.tsx
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web/src/i18n/__mocks__/next-intl.ts
+  - apps/web/src/repositories/settingsRepo/settingsLocalRepo.ts
   - apps/web/jest.config.ts
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/stores/settings/settingsStore.ts
+  - apps/web/src/i18n/messages/zh-TW.json
+  - apps/web/src/entities/settings.ts
+  - apps/web/src/stores/settings/index.ts
+  - apps/web/test-setup.ts
+  - apps/web/src/i18n/config.ts
+  - apps/web/src/components/onboarding/OnboardingTutorial.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/stores/category/categoryStore.ts
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/components/onboarding/ReportTutorial.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/stores/settings/settingsStoreProvider.tsx
+  - apps/web/tsconfig.json
+  - apps/web/src/components/onboarding/LedgerStep.tsx
   - apps/web/src/lib/dexie.ts
-  - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/components/TransactionModal/CategorySelector.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/pages/onboarding/index.tsx
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/src/pages/_app.tsx
+  - apps/web/next.config.js
 tests:
-  - apps/web/specs/category.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web-e2e/src/onboarding.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/src/stores/settings/settingsStore.test.ts
+  - apps/web/src/constants/defaultCategories.test.ts
+  - apps/web/specs/homeTransactions.spec.tsx
 -->
 
 ---

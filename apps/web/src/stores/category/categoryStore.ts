@@ -14,6 +14,7 @@ import {
   getDefaultIncomeCategories,
 } from '@/constants/defaultCategories'
 import { genUuid } from '@/utils/genUuid'
+import type { Language } from '@/entities/settings'
 
 type CategoryStoreState = {
   categories: Category[]
@@ -32,7 +33,10 @@ type CategoryCreateInput = Omit<Category, 'id' | 'sortOrder'> & {
 
 type CategoryStoreActions = {
   initialize: (accountBookId: string | null) => Promise<void>
-  seedDefaultCategories: (accountBookId: string) => Promise<void>
+  seedDefaultCategories: (
+    accountBookId: string,
+    locale?: Language
+  ) => Promise<void>
   addCategory: (payload: CategoryCreateInput) => Promise<Category>
   bulkCreate: (
     payloads: CategoryCreateInput[]
@@ -137,10 +141,14 @@ export function createCategoryStore(
           }
         },
 
-        seedDefaultCategories: async (accountBookId) => {
-          const expenseCategories = getDefaultExpenseCategories(accountBookId)
+        seedDefaultCategories: async (accountBookId, locale = 'en-US') => {
+          const expenseCategories = getDefaultExpenseCategories(
+            accountBookId,
+            locale
+          )
           const incomeCategories = getDefaultIncomeCategories(
             accountBookId,
+            locale,
             expenseCategories.length
           )
 

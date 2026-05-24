@@ -1,8 +1,20 @@
 import 'fake-indexeddb/auto'
+import { webcrypto } from 'crypto'
 
 // Polyfill for structuredClone in Node.js test environment
 if (typeof globalThis.structuredClone === 'undefined') {
   globalThis.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj))
+}
+
+// Polyfill crypto.randomUUID for the jsdom test environment
+if (
+  typeof globalThis.crypto === 'undefined' ||
+  typeof (globalThis.crypto as Crypto).randomUUID !== 'function'
+) {
+  Object.defineProperty(globalThis, 'crypto', {
+    value: webcrypto,
+    configurable: true,
+  })
 }
 
 if (typeof window !== 'undefined' && typeof window.matchMedia === 'undefined') {

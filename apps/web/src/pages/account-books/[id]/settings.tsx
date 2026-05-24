@@ -1,5 +1,8 @@
 import { useRouter } from 'next/router'
 import AccountBookEditPage from '@/components/accountBookSettings/AccountBookEditPage'
+import EditAccountBookTutorial from '@/components/onboarding/EditAccountBookTutorial'
+import AddMemberTutorial from '@/components/onboarding/AddMemberTutorial'
+import ManageCategoriesTutorial from '@/components/onboarding/ManageCategoriesTutorial'
 
 export default function AccountBookSettingsRoute() {
   const router = useRouter()
@@ -10,5 +13,13 @@ export default function AccountBookSettingsRoute() {
     return null
   }
 
-  return <AccountBookEditPage accountBookId={accountBookId} />
+  return (
+    <EditAccountBookTutorial>
+      <AddMemberTutorial>
+        <ManageCategoriesTutorial>
+          <AccountBookEditPage accountBookId={accountBookId} />
+        </ManageCategoriesTutorial>
+      </AddMemberTutorial>
+    </EditAccountBookTutorial>
+  )
 }

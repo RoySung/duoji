@@ -27,6 +27,10 @@ import {
   createAccountBookStore,
 } from '../src/stores/accountBook'
 import {
+  SettingsStoreProvider,
+  createSettingsStore,
+} from '../src/stores/settings'
+import {
   CategoryStoreProvider,
   createCategoryStore,
 } from '../src/stores/category'
@@ -987,6 +991,22 @@ async function renderWithProviders(options: RenderOptions = {}) {
     allUsers,
     activeUsers,
   })
+  const settingsStore = createSettingsStore(
+    {
+      async getSettings() {
+        return {
+          id: 'app',
+          language: 'en-US',
+          onboardingCompleted: true,
+          updatedAt: 0,
+        }
+      },
+      async upsertSettings(s) {
+        return s
+      },
+    },
+    { initialized: true, onboardingCompleted: true }
+  )
 
   const renderResultHolder: { current: ReturnType<typeof render> | null } = {
     current: null,
@@ -1019,10 +1039,12 @@ async function renderWithProviders(options: RenderOptions = {}) {
             <AccountBookStoreProvider store={accountBookStore}>
               <CategoryStoreProvider store={categoryStore}>
                 <UserStoreProvider store={userStore}>
-                  <div>
-                    <AccountBookPage />
-                    <NavBar />
-                  </div>
+                  <SettingsStoreProvider store={settingsStore}>
+                    <div>
+                      <AccountBookPage />
+                      <NavBar />
+                    </div>
+                  </SettingsStoreProvider>
                 </UserStoreProvider>
               </CategoryStoreProvider>
             </AccountBookStoreProvider>

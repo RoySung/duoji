@@ -1,5 +1,6 @@
 import { addToast, Button, Input } from '@heroui/react'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { PiCheckBold, PiPencilSimpleBold, PiUserCircleBold, PiXBold } from 'react-icons/pi'
 import { useUserStore } from '@/stores/user'
 
@@ -8,6 +9,7 @@ type UserSectionProps = {
 }
 
 export default function UserSection({ accountBookId }: UserSectionProps) {
+  const t = useTranslations()
   const users = useUserStore((state) => state.activeUsers)
   const isLoading = useUserStore((state) => state.isLoading)
   const addVirtualUser = useUserStore((state) => state.addVirtualUser)
@@ -30,9 +32,9 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
       const result = await addVirtualUser(accountBookId, trimmed)
       if (result) {
         setNewName('')
-        addToast({ title: `${trimmed} added`, color: 'success' })
+        addToast({ title: t('userSection.toast.added', { name: trimmed }), color: 'success' })
       } else {
-        addToast({ title: 'Could not add person', color: 'danger' })
+        addToast({ title: t('userSection.toast.addFailed'), color: 'danger' })
       }
     } finally {
       setIsAdding(false)
@@ -53,9 +55,9 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
     try {
       const ok = await renameVirtualUser(accountBookId, id, trimmed)
       if (ok) {
-        addToast({ title: 'Name updated', color: 'success' })
+        addToast({ title: t('userSection.toast.nameUpdated'), color: 'success' })
       } else {
-        addToast({ title: 'Could not update name', color: 'danger' })
+        addToast({ title: t('userSection.toast.nameUpdateFailed'), color: 'danger' })
       }
     } finally {
       setIsSaving(false)
@@ -66,9 +68,9 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
   async function handleRemove(virtualUserId: string, name: string) {
     const removed = await softDeleteVirtualUser(accountBookId, virtualUserId)
     if (removed) {
-      addToast({ title: `${name} removed`, color: 'success' })
+      addToast({ title: t('userSection.toast.removed', { name }), color: 'success' })
     } else {
-      addToast({ title: 'Could not remove person', color: 'danger' })
+      addToast({ title: t('userSection.toast.removeFailed'), color: 'danger' })
     }
     setConfirmRemoveId(null)
   }
@@ -76,17 +78,16 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
   return (
     <section className="rounded-3xl border border-border bg-card p-5 shadow-lg shadow-black/5">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-foreground">Users</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t('userSection.title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Members of this account book. Add virtual users to track split
-          expenses with anyone, registered or not.
+          {t('userSection.description')}
         </p>
       </div>
 
       <ul className="mt-4 divide-y divide-border overflow-hidden rounded-2xl border border-border">
         {users.length === 0 && !isLoading ? (
           <li className="px-4 py-3 text-sm text-muted-foreground">
-            No users yet.
+            {t('userSection.empty')}
           </li>
         ) : null}
 
@@ -157,7 +158,7 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
                   </span>
                   {user.type === 'registered' ? (
                     <span className="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary-700">
-                      Registered
+                      {t('userSection.registered')}
                     </span>
                   ) : null}
                 </div>
@@ -165,7 +166,7 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
                 {user.type === 'virtual' ? (
                   confirmRemoveId === user.id ? (
                     <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Remove?</span>
+                      <span className="text-xs text-muted-foreground">{t('userSection.removePrompt')}</span>
                       <Button
                         color="danger"
                         disableRipple
@@ -174,7 +175,7 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
                         variant="flat"
                         onPress={() => void handleRemove(user.id, user.name)}
                       >
-                        Yes
+                        {t('common.yes')}
                       </Button>
                       <Button
                         disableRipple
@@ -182,7 +183,7 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
                         variant="light"
                         onPress={() => setConfirmRemoveId(null)}
                       >
-                        No
+                        {t('common.no')}
                       </Button>
                     </div>
                   ) : (
@@ -223,7 +224,7 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
       >
         <Input
           className="flex-1"
-          placeholder="Add a virtual person (e.g. Dad, Roommate)"
+          placeholder={t('userSection.addPlaceholder')}
           size="sm"
           value={newName}
           onValueChange={setNewName}
@@ -237,7 +238,7 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
           type="submit"
           variant="flat"
         >
-          Add
+          {t('userSection.addButton')}
         </Button>
       </form>
     </section>

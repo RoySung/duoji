@@ -4,7 +4,8 @@ import { Transaction } from '@/entities/transaction'
 import { RegisteredUser } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
 import { SettlementRecord } from '@/entities/settlement'
-import { accountBookList, userList } from '@/mocks'
+import { Settings } from '@/entities/settings'
+import { userList } from '@/mocks'
 
 // TODO: remove mocks data
 /**
@@ -17,6 +18,7 @@ class DuojiDB extends Dexie {
   users!: EntityTable<RegisteredUser, 'id'>
   accountBooks!: EntityTable<AccountBook, 'id'>
   settlements!: EntityTable<SettlementRecord, 'id'>
+  appSettings!: EntityTable<Settings, 'id'>
 
   constructor() {
     super('DuojiDB')
@@ -29,9 +31,24 @@ class DuojiDB extends Dexie {
       accountBooks: '&id, name, ownerId, *userIds',
       settlements: '&id, accountBookId, createdAt',
     })
+
+    this.version(2).stores({
+      appSettings: '&id',
+    })
   }
 }
 export const db = new DuojiDB()
+
+export async function resetAllData(): Promise<void> {
+  try {
+    db.close()
+    await Dexie.delete('DuojiDB')
+  } finally {
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear()
+    }
+  }
+}
 
 // 資料庫初始化函數
 export async function initializeDB(): Promise<void> {
@@ -56,12 +73,6 @@ async function initializeMockData(): Promise<void> {
     if (userCount === 0) {
       await db.users.bulkPut(userList)
       console.log('Mock user data initialized')
-    }
-
-    const accountBookCount = await db.accountBooks.count()
-    if (accountBookCount === 0) {
-      await db.accountBooks.bulkPut(accountBookList)
-      console.log('Mock account book data initialized')
     }
   } catch (error) {
     console.error('Failed to initialize mock data:', error)

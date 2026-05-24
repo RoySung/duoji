@@ -1,4 +1,5 @@
 import { Button } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { PiReceiptBold } from 'react-icons/pi'
 import { Transaction } from '@/entities/transaction'
 import TransactionList from '@/components/transaction/TransactionList'
@@ -16,6 +17,8 @@ export default function UnsettledTransactionList({
   onConfirm,
   onEditTransaction,
 }: Props) {
+  const t = useTranslations()
+
   if (transactions.length === 0) {
     return (
       <div className="mt-6 rounded-3xl border border-dashed border-border bg-background px-5 py-10 text-center">
@@ -23,16 +26,16 @@ export default function UnsettledTransactionList({
           <PiReceiptBold size={22} />
         </div>
         <h3 className="mt-4 text-lg font-semibold text-foreground">
-          All settled
+          {t('settlement.unsettled.emptyTitle')}
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          There are no unsettled transactions.
+          {t('settlement.unsettled.emptyDescription')}
         </p>
       </div>
     )
   }
 
-  const total = transactions.reduce((sum, t) => sum + t.amount, 0)
+  const total = transactions.reduce((sum, tx) => sum + tx.amount, 0)
 
   return (
     <div className="space-y-4">
@@ -45,7 +48,7 @@ export default function UnsettledTransactionList({
       />
 
       <div className="flex items-center justify-between rounded-2xl bg-accent/60 px-4 py-3">
-        <p className="text-sm font-medium text-foreground">Total</p>
+        <p className="text-sm font-medium text-foreground">{t('settlement.unsettled.total')}</p>
         <p className="text-sm font-semibold text-danger">
           -{total.toLocaleString()}
           {currency ? ` ${currency}` : ''}
@@ -54,7 +57,7 @@ export default function UnsettledTransactionList({
 
       <div className="flex justify-end pt-2">
         <Button color="primary" disableRipple onPress={onConfirm}>
-          Review & settle
+          {t('settlement.unsettled.reviewAndSettle')}
         </Button>
       </div>
     </div>

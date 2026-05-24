@@ -18,6 +18,7 @@ export default {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^next-intl$': '<rootDir>/src/i18n/__mocks__/next-intl.ts',
   },
   coverageDirectory: 'test-output/jest/coverage',
 }

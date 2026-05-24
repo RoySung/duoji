@@ -1,0 +1,368 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "done": "Done",
+    "close": "Close",
+    "delete": "Delete",
+    "add": "Add",
+    "edit": "Edit",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "settings": {
+    "title": "Settings",
+    "heading": "Personal workspace",
+    "subheading": "Manage the local account books that power transaction entry and account-book-scoped views.",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Switch between light and dark theme for DuoJi.",
+      "dark": "Dark mode",
+      "light": "Light mode"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Choose the language for the app interface.",
+      "helper": "Switching language won't rename existing categories.",
+      "label": "Language",
+      "options": {
+        "en-US": "English",
+        "zh-TW": "繁體中文"
+      }
+    },
+    "reset": {
+      "title": "Reset app",
+      "description": "Clear all local settings and data on this device. This action cannot be undone.",
+      "action": "Reset",
+      "confirmTitle": "Reset everything?",
+      "confirmDescription": "This will permanently delete all account books, transactions, settlements, and settings stored on this device. Are you sure?",
+      "confirmAction": "Yes, reset",
+      "resetting": "Resetting..."
+    }
+  },
+  "onboarding": {
+    "shell": {
+      "progress": "Step {current} of {total}",
+      "skipStep": "Skip this step",
+      "finish": "Finish"
+    },
+    "step1": {
+      "title": "Choose your language",
+      "description": "Pick the language you'd like to use in DuoJi. You can change it later in Settings."
+    },
+    "step2": {
+      "title": "Create your first account book",
+      "description": "An account book groups your transactions. Step 2 cannot be skipped — let's create one to continue.",
+      "cannotSkip": "Create an account book to continue."
+    },
+    "step3": {
+      "title": "Edit your account book",
+      "description": "Need to change the name or currency later? Open the highlighted area to update the basics anytime."
+    },
+    "step4": {
+      "title": "Add members",
+      "description": "Bring in the people you share expenses with so splits and settlements work seamlessly."
+    },
+    "step5": {
+      "title": "Manage categories",
+      "description": "Default categories are ready to go. Tap here to add, rename, reorder, or remove them to fit your habits."
+    },
+    "step6": {
+      "title": "Record a transaction",
+      "description": "Tap the highlighted button to record your first transaction.",
+      "sub1": {
+        "title": "Open the new transaction form",
+        "description": "Tap the highlighted button to start recording a transaction."
+      },
+      "sub2": {
+        "title": "Enter the amount",
+        "description": "Type how much was spent. The total drives the per-person split."
+      },
+      "sub3": {
+        "title": "Pick a category",
+        "description": "Choose what this spending was for. Tap Next when you're ready."
+      },
+      "sub4": {
+        "title": "Set who paid",
+        "description": "Select the person who paid. You can split the payment across multiple people later."
+      },
+      "sub5": {
+        "title": "Set the split",
+        "description": "Choose who shares the cost. Equal split is applied by default."
+      },
+      "sub6": {
+        "title": "Save the transaction",
+        "description": "Tap Create to save your first transaction."
+      }
+    },
+    "step7": {
+      "title": "Split with friends",
+      "description": "Settle balances and view who owes whom on the settlement page."
+    },
+    "step8": {
+      "title": "View reports",
+      "description": "Filter by time range to see how money moves across categories."
+    },
+    "welcome": {
+      "eyebrow": "You're all set",
+      "title": "Welcome to DuoJi!",
+      "description": "Tutorial done.\nTime to take every dollar from blurry to clear.",
+      "cta": "Log my first expense",
+      "highlights": {
+        "log": {
+          "title": "Log in seconds",
+          "description": "Capture amount, category, and notes without slowing down."
+        },
+        "split": {
+          "title": "Split with friends",
+          "description": "Share a book and instantly see who owes whom."
+        },
+        "insights": {
+          "title": "See where it goes",
+          "description": "Charts and reports turn spending into clear answers."
+        }
+      }
+    }
+  },
+  "navbar": {
+    "home": "Home",
+    "reports": "Reports",
+    "settlement": "Settlement",
+    "settings": "Settings",
+    "notAvailableAllBooks": "Not available in All Books view",
+    "newTransaction": "New Transaction"
+  },
+  "accountBook": {
+    "menu": {
+      "selectPlaceholder": "Select account book",
+      "allBooks": "All Account Books",
+      "drawerTitle": "Account books",
+      "allBooksDescription": "View transactions across every account book.",
+      "allBooksHint": "Settlement and adding transactions are not available in this view.",
+      "edit": "Edit",
+      "newAccountBook": "New account book"
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Daily Life",
+      "currency": "Currency",
+      "description": "Description",
+      "descriptionPlaceholder": "Shared grocery budget or personal everyday spending"
+    },
+    "createTitle": "New account book",
+    "createSubtitle": "Set up a new account book for tracking expenses.",
+    "editFallback": "Account book",
+    "editSubtitle": "Edit this account book's settings.",
+    "categoriesHeading": "Categories",
+    "manageCategories": "Manage categories",
+    "deleteSection": {
+      "title": "Delete account book",
+      "description": "Permanently removes all categories and settings in this account book. This can't be undone.",
+      "button": "Delete account book"
+    },
+    "deleteModal": {
+      "title": "Delete account book",
+      "bodyPrefix": "Permanently delete ",
+      "bodySuffix": "? All its categories and settings will be removed. This can't be undone.",
+      "confirm": "Delete account book"
+    },
+    "toast": {
+      "missingNameTitle": "Missing account book name",
+      "missingNameDesc": "Enter a name before saving this account book.",
+      "createdTitle": "Account book created",
+      "createdReady": "{name} is ready. Configure categories below.",
+      "createdSeedFailed": "{name} was created, but default categories could not be prepared.",
+      "createFailTitle": "Unable to create account book",
+      "createUnknownError": "Unexpected account book error",
+      "updatedTitle": "Account book updated",
+      "updatedDesc": "{name} is ready to use.",
+      "updateFailTitle": "Unable to update account book",
+      "deleteFailTitle": "Unable to delete account book",
+      "deleteFailDesc": "Could not delete {name}.",
+      "deletedTitle": "Account book deleted",
+      "deletedDesc": "{name} has been removed."
+    }
+  },
+  "userSection": {
+    "title": "Users",
+    "description": "Members of this account book. Add virtual users to track split expenses with anyone, registered or not.",
+    "empty": "No users yet.",
+    "addPlaceholder": "Add a virtual person (e.g. Dad, Roommate)",
+    "addButton": "Add",
+    "registered": "Registered",
+    "removePrompt": "Remove?",
+    "toast": {
+      "added": "{name} added",
+      "addFailed": "Could not add person",
+      "nameUpdated": "Name updated",
+      "nameUpdateFailed": "Could not update name",
+      "removed": "{name} removed",
+      "removeFailed": "Could not remove person"
+    }
+  },
+  "emptyState": {
+    "noAccountBooks": {
+      "title": "No account books yet",
+      "description": "Create an account book to start tracking expenses.",
+      "action": "New account book"
+    }
+  },
+  "calendar": {
+    "toggleDisplay": {
+      "showAmountsAria": "Show daily total amount",
+      "showDotsAria": "Show transaction indicator",
+      "showAmountsTitle": "Show amounts",
+      "showDotsTitle": "Show dots"
+    },
+    "toggleView": {
+      "expandAria": "Expand to month view",
+      "collapseAria": "Collapse to week view"
+    }
+  },
+  "transactions": {
+    "label": "Transactions",
+    "allBooks": "All Account Books",
+    "fallbackName": "Account book",
+    "notFoundTitle": "Account book not found",
+    "notFoundDescription": "This account book does not exist or has been deleted.",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "refreshAria": "Refresh transactions",
+    "records": "{count} records",
+    "emptyOnDate": "No transactions on this date"
+  },
+  "transactionModal": {
+    "titleEdit": "Edit Transaction",
+    "titleView": "Transaction Detail",
+    "titleCreate": "New Transaction",
+    "typeAriaLabel": "Transaction Type",
+    "tabExpense": "Expense",
+    "tabIncome": "Income",
+    "delete": {
+      "heading": "Delete transaction",
+      "warning": "This action cannot be undone. Are you sure you want to delete it?",
+      "confirmTitle": "Delete Transaction",
+      "confirmBody1": "Are you sure you want to delete this transaction?",
+      "confirmBody2": "This action cannot be undone.",
+      "keep": "Keep Transaction",
+      "confirm": "Confirm Delete"
+    },
+    "toast": {
+      "updatedTitle": "Transaction updated",
+      "updatedDesc": "The transaction changes have been saved.",
+      "createdTitle": "Transaction created",
+      "createdDesc": "The transaction has been added to the current account book.",
+      "updateFailTitle": "Unable to update transaction",
+      "createFailTitle": "Unable to create transaction",
+      "unknownError": "Unknown transaction error",
+      "deletedTitle": "Transaction deleted",
+      "deletedDesc": "The transaction has been removed from the account book.",
+      "deleteFailTitle": "Unable to delete transaction"
+    }
+  },
+  "transactionForm": {
+    "amount": "Amount",
+    "date": "Date",
+    "description": "Description",
+    "descriptionPlaceholderExpense": "Enter a description (e.g. \"Lunch with friends\")",
+    "descriptionPlaceholderIncome": "Enter a description (e.g. \"Monthly salary\")",
+    "paymentMethod": "Payment Method",
+    "paymentMethodPlaceholder": "Select a payment method",
+    "accountBook": "Account Book",
+    "accountBookPlaceholder": "Select an account book",
+    "tags": "Tags",
+    "paidBy": "Paid By",
+    "paidByPlaceholder": "Select who paid",
+    "splitWith": "Split With",
+    "splitWithPlaceholder": "Select people to split with",
+    "splitDescription": "💡 Split equally by default. You can customize amounts if needed.",
+    "receivedBy": "Received By",
+    "receivedByPlaceholder": "Select an income recipient",
+    "errorTitle": "Error",
+    "errorNotFound": "Selected person was not found."
+  },
+  "categorySettings": {
+    "editTitle": "Edit Category",
+    "addSubTitle": "Add Sub-Category",
+    "addExpenseGroup": "Add Expense Group",
+    "addIncomeGroup": "Add Income Group",
+    "name": "Name",
+    "namePlaceholder": "e.g. Dining",
+    "icon": "Icon",
+    "type": "Type",
+    "typeLabel": "Type:",
+    "typeInherited": "(inherited from parent)",
+    "expense": "Expense",
+    "income": "Income",
+    "nameRequired": "Name is required.",
+    "toast": {
+      "saved": "Categories saved",
+      "saveFailed": "Failed to save categories"
+    },
+    "deleteModal": {
+      "title": "Delete Category",
+      "confirmPrefix": "Are you sure you want to delete ",
+      "confirmSuffix": "?",
+      "subAlsoPrefix": "This will also delete ",
+      "subAlsoSuffix": " sub-category"
+    }
+  },
+  "settlement": {
+    "label": "Settlement",
+    "tabs": { "unsettled": "Unsettled", "history": "History" },
+    "tabsAriaLabel": "Settlement tabs",
+    "toast": {
+      "created": "Settlement record created",
+      "failureTitle": "Unable to create settlement",
+      "failureDescription": "Please try again."
+    },
+    "confirm": {
+      "title": "Review & settle",
+      "balances": "Member balances",
+      "transfers": "Suggested transfers",
+      "submit": "Create settlement record"
+    },
+    "unsettled": {
+      "emptyTitle": "All settled",
+      "emptyDescription": "There are no unsettled transactions.",
+      "total": "Total",
+      "reviewAndSettle": "Review & settle"
+    },
+    "markdown": {
+      "title": "Export as Markdown — Settlement #{sequenceNumber}",
+      "helper": "Paste into Notion, Obsidian, or any markdown-compatible app.",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "copyAria": "Copy markdown",
+      "copiedAria": "Markdown copied to clipboard",
+      "copiedToast": "Copied to clipboard",
+      "copyFailedTitle": "Copy failed",
+      "copyFailedDesc": "Please select and copy the text manually."
+    }
+  },
+  "report": {
+    "label": "Report",
+    "exportCsv": "Export CSV",
+    "exported": "Exported!",
+    "loading": "Loading report...",
+    "updating": "Updating...",
+    "dateRangeAria": "Report date range",
+    "presets": {
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "threeMonths": "3 Months",
+      "oneYear": "1 Year",
+      "all": "All"
+    },
+    "section": {
+      "ariaLabel": "Financial Report",
+      "recordsCount": "{count} records",
+      "emptyTitle": "No data in range",
+      "emptyDescription": "Try a different time range or add some transactions."
+    }
+  }
+}

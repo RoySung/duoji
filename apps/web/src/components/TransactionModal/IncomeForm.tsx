@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Avatar, DatePicker, Form, Input, Select, SelectItem } from '@heroui/react'
 import { AccountBook } from '@/entities/accountBook'
 import {
@@ -27,6 +28,7 @@ type Props = {
 }
 
 export default function IncomeForm({ value, onChange, isEditMode }: Props) {
+  const t = useTranslations()
   const now = new Date()
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
@@ -99,7 +101,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         <Input
           size="sm"
           isRequired
-          label="Amount"
+          label={t('transactionForm.amount')}
           type="number"
           isClearable
           onClear={() => {
@@ -134,7 +136,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         <DatePicker
           isRequired
           size="sm"
-          label="Date"
+          label={t('transactionForm.date')}
           granularity="day"
           value={date}
           onChange={(nextDate) => {
@@ -146,7 +148,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         />
         <Input
           size="sm"
-          label="Description"
+          label={t('transactionForm.description')}
           value={value.description}
           isClearable
           onClear={() => {
@@ -155,14 +157,18 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           onChange={(event) => {
             onChange({ ...value, description: event.target.value })
           }}
-          placeholder='Enter a description (e.g. "Monthly salary")'
+          onFocus={(e) => {
+            const target = e.target
+            setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)
+          }}
+          placeholder={t('transactionForm.descriptionPlaceholderIncome')}
         />
         <Select
           size="sm"
           isRequired
-          label="Payment Method"
+          label={t('transactionForm.paymentMethod')}
           selectedKeys={value.paymentMethod ? [value.paymentMethod] : []}
-          placeholder="Select a payment method"
+          placeholder={t('transactionForm.paymentMethodPlaceholder')}
           onSelectionChange={(keys) => {
             const paymentMethod = Array.from(keys)[0]
 
@@ -188,10 +194,10 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <Select
           size="sm"
-          label="Account Book"
+          label={t('transactionForm.accountBook')}
           items={accountBooks}
           selectedKeys={value.accountBookId ? [value.accountBookId] : []}
-          placeholder="Select an account book"
+          placeholder={t('transactionForm.accountBookPlaceholder')}
           isRequired
           isDisabled={accountBooks.length === 0}
           onSelectionChange={(keys) => {
@@ -207,12 +213,12 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <Select
           size="sm"
-          label="Received By"
+          label={t('transactionForm.receivedBy')}
           items={usersForSelector}
           selectedKeys={
             value.receivedByUserId ? [value.receivedByUserId] : []
           }
-          placeholder="Select an income recipient"
+          placeholder={t('transactionForm.receivedByPlaceholder')}
           isRequired
           isDisabled={usersForSelector.length === 0}
           disabledKeys={deletedRecipientId ? [deletedRecipientId] : []}
@@ -253,7 +259,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <TagsInput
           className="w-full"
-          label="Tags"
+          label={t('transactionForm.tags')}
           data={{
             keywords: value.tags,
           }}

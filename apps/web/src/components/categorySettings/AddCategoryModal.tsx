@@ -10,6 +10,7 @@ import {
   SelectItem,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   CATEGORY_ICONS,
   CategoryIconKey,
@@ -44,6 +45,7 @@ export default function AddCategoryModal({
   onClose,
   onSubmit,
 }: AddCategoryModalProps) {
+  const t = useTranslations()
   const [name, setName] = useState('')
   const [iconKey, setIconKey] = useState<CategoryIconKey>(
     DEFAULT_CATEGORY_ICON_KEY
@@ -75,7 +77,7 @@ export default function AddCategoryModal({
   function handleSubmit() {
     const trimmed = name.trim()
     if (!trimmed) {
-      setNameError('Name is required.')
+      setNameError(t('categorySettings.nameRequired'))
       return
     }
     onSubmit({ name: trimmed, iconKey, type: resolvedType })
@@ -85,10 +87,14 @@ export default function AddCategoryModal({
   const isEditMode = mode === 'edit'
 
   function resolveTitle() {
-    if (isEditMode) return 'Edit Category'
+    if (isEditMode) return t('categorySettings.editTitle')
 
-    if (parentType) return 'Add Sub-Category'
-    return `Add ${sectionType === 'income' ? 'Income' : 'Expense'} Group`
+    if (parentType) return t('categorySettings.addSubTitle')
+    return sectionType === 'income' ? t('categorySettings.addIncomeGroup') : t('categorySettings.addExpenseGroup')
+  }
+
+  function typeDisplay(type: TransactionType) {
+    return type === 'income' ? t('categorySettings.income') : t('categorySettings.expense')
   }
 
   return (
@@ -101,8 +107,8 @@ export default function AddCategoryModal({
             isRequired
             errorMessage={nameError}
             isInvalid={!!nameError}
-            label="Name"
-            placeholder="e.g. Dining"
+            label={t('categorySettings.name')}
+            placeholder={t('categorySettings.namePlaceholder')}
             value={name}
             onChange={(e) => {
               setName(e.target.value)
@@ -111,7 +117,7 @@ export default function AddCategoryModal({
           />
 
           <Select
-            label="Icon"
+            label={t('categorySettings.icon')}
             selectedKeys={[iconKey]}
             onSelectionChange={(keys) => {
               const key = Array.from(keys)[0] as CategoryIconKey
@@ -139,29 +145,29 @@ export default function AddCategoryModal({
           {!isEditMode &&
             (parentType ? (
               <p className="text-xs text-muted-foreground">
-                Type:{' '}
-                <span className="font-medium capitalize">{parentType}</span>{' '}
-                (inherited from parent)
+                {t('categorySettings.typeLabel')}{' '}
+                <span className="font-medium">{typeDisplay(parentType)}</span>{' '}
+                {t('categorySettings.typeInherited')}
               </p>
             ) : sectionType ? (
               <p className="text-xs text-muted-foreground">
-                Type:{' '}
-                <span className="font-medium capitalize">{sectionType}</span>
+                {t('categorySettings.typeLabel')}{' '}
+                <span className="font-medium">{typeDisplay(sectionType)}</span>
               </p>
             ) : (
               <Select
-                label="Type"
+                label={t('categorySettings.type')}
                 selectedKeys={[type]}
                 onSelectionChange={(keys) => {
                   const val = Array.from(keys)[0] as TransactionType
                   if (val) setType(val)
                 }}
               >
-                <SelectItem key="expense" textValue="Expense">
-                  Expense
+                <SelectItem key="expense" textValue={t('categorySettings.expense')}>
+                  {t('categorySettings.expense')}
                 </SelectItem>
-                <SelectItem key="income" textValue="Income">
-                  Income
+                <SelectItem key="income" textValue={t('categorySettings.income')}>
+                  {t('categorySettings.income')}
                 </SelectItem>
               </Select>
             ))}
@@ -169,10 +175,10 @@ export default function AddCategoryModal({
 
         <ModalFooter>
           <Button disableRipple variant="flat" onPress={handleClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button color="primary" disableRipple onPress={handleSubmit}>
-            {isEditMode ? 'Save' : 'Add'}
+            {isEditMode ? t('common.save') : t('common.add')}
           </Button>
         </ModalFooter>
       </ModalContent>

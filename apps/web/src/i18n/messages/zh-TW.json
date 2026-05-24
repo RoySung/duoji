@@ -1,0 +1,368 @@
+{
+  "common": {
+    "next": "下一步",
+    "back": "上一步",
+    "skip": "略過",
+    "cancel": "取消",
+    "save": "儲存",
+    "create": "建立",
+    "done": "完成",
+    "close": "關閉",
+    "delete": "刪除",
+    "add": "新增",
+    "edit": "編輯",
+    "yes": "是",
+    "no": "否"
+  },
+  "settings": {
+    "title": "設定",
+    "heading": "個人工作區",
+    "subheading": "管理本地帳本,掌控交易記錄與帳本範圍的檢視。",
+    "appearance": {
+      "title": "外觀",
+      "description": "在淺色與深色主題之間切換 DuoJi 的外觀。",
+      "dark": "深色模式",
+      "light": "淺色模式"
+    },
+    "language": {
+      "title": "語言",
+      "description": "選擇 App 介面所使用的語言。",
+      "helper": "切換語言不會重新命名既有分類。",
+      "label": "語言",
+      "options": {
+        "en-US": "English",
+        "zh-TW": "繁體中文"
+      }
+    },
+    "reset": {
+      "title": "重置 App",
+      "description": "清除此裝置上所有的本地設定與資料。此動作無法復原。",
+      "action": "重置",
+      "confirmTitle": "確定要重置嗎？",
+      "confirmDescription": "這將永久刪除此裝置上所有的帳本、交易、結算紀錄與設定。確定要繼續嗎？",
+      "confirmAction": "確認重置",
+      "resetting": "重置中..."
+    }
+  },
+  "onboarding": {
+    "shell": {
+      "progress": "第 {current} / {total} 步",
+      "skipStep": "略過此步驟",
+      "finish": "完成"
+    },
+    "step1": {
+      "title": "選擇你的語言",
+      "description": "選擇你想在 DuoJi 中使用的語言，之後可在「設定」中變更。"
+    },
+    "step2": {
+      "title": "建立你的第一個帳本",
+      "description": "帳本用來歸納你的交易。第 2 步無法略過，先建立一個帳本以繼續。",
+      "cannotSkip": "請先建立帳本才能繼續。"
+    },
+    "step3": {
+      "title": "編輯帳本",
+      "description": "想改帳本名稱或幣別嗎？在這裡可以隨時更新基本資訊。"
+    },
+    "step4": {
+      "title": "新增成員",
+      "description": "把一起花錢的人加進來，之後就能順利分帳與結算。"
+    },
+    "step5": {
+      "title": "管理分類",
+      "description": "預設分類已經為你準備好，你可以新增、編輯、排序或刪除，讓記帳更貼近自己。"
+    },
+    "step6": {
+      "title": "記錄一筆交易",
+      "description": "點擊高亮的按鈕，記錄你的第一筆交易。",
+      "sub1": {
+        "title": "打開新增交易表單",
+        "description": "點擊高亮的按鈕，開始記錄一筆新交易。"
+      },
+      "sub2": {
+        "title": "輸入金額",
+        "description": "輸入這筆交易花了多少錢，金額會用來計算每人分攤。"
+      },
+      "sub3": {
+        "title": "選擇分類",
+        "description": "選一個適合的分類，讓你之後好分析支出。準備好時點下一步。"
+      },
+      "sub4": {
+        "title": "設定誰付款",
+        "description": "選擇實際付錢的人，之後可以再調整多人付款。"
+      },
+      "sub5": {
+        "title": "設定分攤",
+        "description": "選擇要一起分攤費用的人，預設平均分攤。"
+      },
+      "sub6": {
+        "title": "建立交易",
+        "description": "點擊「建立」按鈕，把這筆交易存起來。"
+      }
+    },
+    "step7": {
+      "title": "與朋友分帳",
+      "description": "在結算頁查看誰欠誰多少，輕鬆完成結算。"
+    },
+    "step8": {
+      "title": "查看報表",
+      "description": "依時間範圍篩選，看看各分類的金錢流向。"
+    },
+    "welcome": {
+      "eyebrow": "準備就緒",
+      "title": "歡迎加入 DuoJi！",
+      "description": "教學完成囉。\n接下來就讓每一筆花費都被輕鬆掌握。",
+      "cta": "開始記第一筆",
+      "highlights": {
+        "log": {
+          "title": "快速記帳",
+          "description": "幾秒內輸入金額、分類與備註，隨手就記。"
+        },
+        "split": {
+          "title": "聰明分帳",
+          "description": "和朋友共建帳本，誰欠誰一目了然。"
+        },
+        "insights": {
+          "title": "花費洞察",
+          "description": "圖表與報表幫你看懂錢花到哪去。"
+        }
+      }
+    }
+  },
+  "navbar": {
+    "home": "首頁",
+    "reports": "報表",
+    "settlement": "結算",
+    "settings": "設定",
+    "notAvailableAllBooks": "在「所有帳本」檢視下無法使用",
+    "newTransaction": "新增交易"
+  },
+  "accountBook": {
+    "menu": {
+      "selectPlaceholder": "選擇帳本",
+      "allBooks": "全部帳本",
+      "drawerTitle": "帳本",
+      "allBooksDescription": "檢視所有帳本的交易紀錄。",
+      "allBooksHint": "此檢視無法進行結算或新增交易。",
+      "edit": "編輯",
+      "newAccountBook": "新增帳本"
+    },
+    "form": {
+      "name": "名稱",
+      "namePlaceholder": "日常生活",
+      "currency": "幣別",
+      "description": "說明",
+      "descriptionPlaceholder": "共同的日用採買預算或個人日常支出"
+    },
+    "createTitle": "新增帳本",
+    "createSubtitle": "建立一個新的帳本來記錄支出。",
+    "editFallback": "帳本",
+    "editSubtitle": "編輯此帳本的設定。",
+    "categoriesHeading": "分類",
+    "manageCategories": "管理分類",
+    "deleteSection": {
+      "title": "刪除帳本",
+      "description": "將永久刪除此帳本內的所有分類與設定，此動作無法復原。",
+      "button": "刪除帳本"
+    },
+    "deleteModal": {
+      "title": "刪除帳本",
+      "bodyPrefix": "確定要永久刪除 ",
+      "bodySuffix": " 嗎？所有分類與設定都會被移除，此動作無法復原。",
+      "confirm": "刪除帳本"
+    },
+    "toast": {
+      "missingNameTitle": "尚未輸入帳本名稱",
+      "missingNameDesc": "請輸入名稱後再儲存此帳本。",
+      "createdTitle": "帳本已建立",
+      "createdReady": "{name} 已準備好，請於下方設定分類。",
+      "createdSeedFailed": "{name} 已建立，但預設分類無法建立。",
+      "createFailTitle": "無法建立帳本",
+      "createUnknownError": "建立帳本時發生未預期的錯誤",
+      "updatedTitle": "帳本已更新",
+      "updatedDesc": "{name} 已可使用。",
+      "updateFailTitle": "無法更新帳本",
+      "deleteFailTitle": "無法刪除帳本",
+      "deleteFailDesc": "無法刪除 {name}。",
+      "deletedTitle": "帳本已刪除",
+      "deletedDesc": "{name} 已移除。"
+    }
+  },
+  "userSection": {
+    "title": "成員",
+    "description": "此帳本的成員。可新增虛擬成員，與未註冊的對象一起記錄分攤支出。",
+    "empty": "尚無成員。",
+    "addPlaceholder": "新增虛擬成員（例如：爸爸、室友）",
+    "addButton": "新增",
+    "registered": "已註冊",
+    "removePrompt": "確定移除？",
+    "toast": {
+      "added": "已新增 {name}",
+      "addFailed": "無法新增成員",
+      "nameUpdated": "名稱已更新",
+      "nameUpdateFailed": "無法更新名稱",
+      "removed": "已移除 {name}",
+      "removeFailed": "無法移除成員"
+    }
+  },
+  "emptyState": {
+    "noAccountBooks": {
+      "title": "尚未建立帳本",
+      "description": "建立帳本開始記錄你的支出。",
+      "action": "新增帳本"
+    }
+  },
+  "calendar": {
+    "toggleDisplay": {
+      "showAmountsAria": "顯示每日總金額",
+      "showDotsAria": "顯示交易指示點",
+      "showAmountsTitle": "顯示金額",
+      "showDotsTitle": "顯示圓點"
+    },
+    "toggleView": {
+      "expandAria": "展開為月檢視",
+      "collapseAria": "收合為週檢視"
+    }
+  },
+  "transactions": {
+    "label": "交易",
+    "allBooks": "所有帳本",
+    "fallbackName": "帳本",
+    "notFoundTitle": "找不到此帳本",
+    "notFoundDescription": "此帳本不存在或已被刪除。",
+    "refresh": "重新整理",
+    "refreshing": "重新整理中…",
+    "refreshAria": "重新整理交易",
+    "records": "{count} 筆紀錄",
+    "emptyOnDate": "這一天沒有交易紀錄"
+  },
+  "transactionModal": {
+    "titleEdit": "編輯交易",
+    "titleView": "交易詳情",
+    "titleCreate": "新增交易",
+    "typeAriaLabel": "交易類型",
+    "tabExpense": "支出",
+    "tabIncome": "收入",
+    "delete": {
+      "heading": "刪除交易",
+      "warning": "此動作無法復原，確定要刪除嗎？",
+      "confirmTitle": "刪除交易",
+      "confirmBody1": "確定要刪除這筆交易嗎？",
+      "confirmBody2": "此動作無法復原。",
+      "keep": "保留交易",
+      "confirm": "確認刪除"
+    },
+    "toast": {
+      "updatedTitle": "交易已更新",
+      "updatedDesc": "已儲存交易的修改。",
+      "createdTitle": "交易已建立",
+      "createdDesc": "交易已加入目前的帳本。",
+      "updateFailTitle": "無法更新交易",
+      "createFailTitle": "無法建立交易",
+      "unknownError": "未知的交易錯誤",
+      "deletedTitle": "交易已刪除",
+      "deletedDesc": "交易已從帳本移除。",
+      "deleteFailTitle": "無法刪除交易"
+    }
+  },
+  "transactionForm": {
+    "amount": "金額",
+    "date": "日期",
+    "description": "描述",
+    "descriptionPlaceholderExpense": "輸入描述（例如：與朋友的午餐）",
+    "descriptionPlaceholderIncome": "輸入描述（例如：每月薪資）",
+    "paymentMethod": "付款方式",
+    "paymentMethodPlaceholder": "選擇付款方式",
+    "accountBook": "帳本",
+    "accountBookPlaceholder": "選擇帳本",
+    "tags": "標籤",
+    "paidBy": "付款人",
+    "paidByPlaceholder": "選擇付款人",
+    "splitWith": "分攤對象",
+    "splitWithPlaceholder": "選擇一起分攤的人",
+    "splitDescription": "💡 預設平均分攤，可依需求自訂金額。",
+    "receivedBy": "收款人",
+    "receivedByPlaceholder": "選擇收款人",
+    "errorTitle": "錯誤",
+    "errorNotFound": "找不到所選的成員。"
+  },
+  "categorySettings": {
+    "editTitle": "編輯分類",
+    "addSubTitle": "新增子分類",
+    "addExpenseGroup": "新增支出群組",
+    "addIncomeGroup": "新增收入群組",
+    "name": "名稱",
+    "namePlaceholder": "例如：餐飲",
+    "icon": "圖示",
+    "type": "類型",
+    "typeLabel": "類型：",
+    "typeInherited": "（繼承自上層）",
+    "expense": "支出",
+    "income": "收入",
+    "nameRequired": "請輸入名稱。",
+    "toast": {
+      "saved": "分類已儲存",
+      "saveFailed": "儲存分類失敗"
+    },
+    "deleteModal": {
+      "title": "刪除分類",
+      "confirmPrefix": "確定要刪除 ",
+      "confirmSuffix": " 嗎？",
+      "subAlsoPrefix": "這將同時刪除 ",
+      "subAlsoSuffix": " 個子分類"
+    }
+  },
+  "settlement": {
+    "label": "結算",
+    "tabs": { "unsettled": "未結算", "history": "歷史" },
+    "tabsAriaLabel": "結算分頁",
+    "toast": {
+      "created": "結算紀錄已建立",
+      "failureTitle": "無法建立結算",
+      "failureDescription": "請再試一次。"
+    },
+    "confirm": {
+      "title": "確認並結算",
+      "balances": "成員餘額",
+      "transfers": "建議轉帳",
+      "submit": "建立結算紀錄"
+    },
+    "unsettled": {
+      "emptyTitle": "已全部結算",
+      "emptyDescription": "目前沒有未結算的交易。",
+      "total": "總計",
+      "reviewAndSettle": "確認並結算"
+    },
+    "markdown": {
+      "title": "匯出為 Markdown — 結算 #{sequenceNumber}",
+      "helper": "可貼到 Notion、Obsidian 或任何支援 Markdown 的工具。",
+      "copy": "複製",
+      "copied": "已複製！",
+      "copyAria": "複製 Markdown",
+      "copiedAria": "Markdown 已複製到剪貼簿",
+      "copiedToast": "已複製到剪貼簿",
+      "copyFailedTitle": "複製失敗",
+      "copyFailedDesc": "請手動選取並複製文字。"
+    }
+  },
+  "report": {
+    "label": "報表",
+    "exportCsv": "匯出 CSV",
+    "exported": "已匯出！",
+    "loading": "載入報表中…",
+    "updating": "更新中…",
+    "dateRangeAria": "報表日期範圍",
+    "presets": {
+      "thisWeek": "本週",
+      "thisMonth": "本月",
+      "threeMonths": "近 3 個月",
+      "oneYear": "近 1 年",
+      "all": "全部"
+    },
+    "section": {
+      "ariaLabel": "財務報表",
+      "recordsCount": "{count} 筆紀錄",
+      "emptyTitle": "此期間沒有資料",
+      "emptyDescription": "試試其他時間範圍或新增一些交易。"
+    }
+  }
+}

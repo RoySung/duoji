@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Button, DateRangePicker } from '@heroui/react'
 import { CalendarDate, parseDate } from '@internationalized/date'
+import { useTranslations } from 'next-intl'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import { TimeRangePreset } from './reportTypes'
@@ -55,34 +56,43 @@ function resolveTimeRangePreset(preset: TimeRangePreset): DateRange | null {
   }
 }
 
-const QUICK_PRESETS: { value: TimeRangePreset; label: string }[] = [
-  { value: 'thisWeek', label: 'This Week' },
-  { value: 'month', label: 'This Month' },
-  { value: '3m', label: '3 Months' },
-  { value: '1y', label: '1 Year' },
-  { value: 'all', label: 'All' },
+const QUICK_PRESET_VALUES: TimeRangePreset[] = [
+  'thisWeek',
+  'month',
+  '3m',
+  '1y',
+  'all',
 ]
 
 function detectPreset(value: DateRange | null): TimeRangePreset | null {
   if (value === null) return 'all'
-  for (const preset of QUICK_PRESETS) {
-    if (preset.value === 'all') continue
-    const resolved = resolveTimeRangePreset(preset.value)
+  for (const preset of QUICK_PRESET_VALUES) {
+    if (preset === 'all') continue
+    const resolved = resolveTimeRangePreset(preset)
     if (
       resolved &&
       resolved.startDate === value.startDate &&
       resolved.endDate === value.endDate
     ) {
-      return preset.value
+      return preset
     }
   }
   return null
+}
+
+const PRESET_LABEL_KEYS: Record<TimeRangePreset, string> = {
+  thisWeek: 'thisWeek',
+  month: 'thisMonth',
+  '3m': 'threeMonths',
+  '1y': 'oneYear',
+  all: 'all',
 }
 
 export default function TimeRangeSelector({
   value,
   onChange,
 }: TimeRangeSelectorProps) {
+  const t = useTranslations()
   const [activePreset, setActivePreset] = useState<TimeRangePreset | null>(
     () => detectPreset(value)
   )
@@ -119,20 +129,20 @@ export default function TimeRangeSelector({
         onChange={handlePickerChange}
         size="sm"
         granularity="day"
-        aria-label="Report date range"
+        aria-label={t('report.dateRangeAria')}
         showMonthAndYearPickers
         firstDayOfWeek={'mon'}
       />
       <div className="flex flex-wrap gap-1">
-        {QUICK_PRESETS.map((p) => (
+        {QUICK_PRESET_VALUES.map((p) => (
           <Button
-            key={p.value}
+            key={p}
             size="sm"
-            variant={activePreset === p.value ? 'solid' : 'flat'}
-            color={activePreset === p.value ? 'warning' : 'default'}
-            onPress={() => handlePresetClick(p.value)}
+            variant={activePreset === p ? 'solid' : 'flat'}
+            color={activePreset === p ? 'warning' : 'default'}
+            onPress={() => handlePresetClick(p)}
           >
-            {p.label}
+            {t(`report.presets.${PRESET_LABEL_KEYS[p]}`)}
           </Button>
         ))}
       </div>
