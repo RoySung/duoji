@@ -34,6 +34,28 @@ async function completeWelcomeModal(page: Page) {
   await expect(page).toHaveURL(/account-books\/[^/?]+$/)
 }
 
+async function completeProfileStep(
+  page: Page,
+  profile: { name: string; email: string }
+) {
+  await expect(page).toHaveURL(/step=2/)
+  await page
+    .getByLabel(/name|名稱|姓名/i)
+    .first()
+    .fill(profile.name)
+  await page.getByLabel(/email/i).first().fill(profile.email)
+  await page.getByRole('button', { name: /下一步|Next/ }).click()
+  await expect(page).toHaveURL(/step=3/)
+}
+
+async function createFirstAccountBook(page: Page, accountBookName: string) {
+  await page
+    .getByLabel(/name|名稱/i)
+    .first()
+    .fill(accountBookName)
+  await page.getByRole('button', { name: /建立|Create/ }).click()
+}
+
 test.describe('onboarding flow', () => {
   test.beforeEach(async ({ page }) => {
     await clearLocalData(page)
@@ -48,12 +70,11 @@ test.describe('onboarding flow', () => {
     await page.getByRole('button', { name: '繁體中文' }).click()
     await page.getByRole('button', { name: /下一步|Next/ }).click()
 
-    await expect(page).toHaveURL(/step=2/)
-    await page
-      .getByLabel(/name|名稱/i)
-      .first()
-      .fill('My Book')
-    await page.getByRole('button', { name: /建立|Create/ }).click()
+    await completeProfileStep(page, {
+      name: 'Roy',
+      email: 'roy@example.com',
+    })
+    await createFirstAccountBook(page, 'My Book')
 
     await expect(page).toHaveURL(/account-books\/.+\/settings\?onboarding=3/)
   })
@@ -64,8 +85,12 @@ test.describe('onboarding flow', () => {
     await page.goto('/')
     await page.getByRole('button', { name: /English/ }).click()
     await page.getByRole('button', { name: /Next/ }).click()
-    await page.getByLabel(/name/i).first().fill('Tutorial Book')
-    await page.getByRole('button', { name: /Create/ }).click()
+
+    await completeProfileStep(page, {
+      name: 'Tutor',
+      email: 'tutor@example.com',
+    })
+    await createFirstAccountBook(page, 'Tutorial Book')
 
     // Step 3 — settings page coachmark anchored on edit-account-book section
     await expect(page).toHaveURL(/settings\?onboarding=3/)
@@ -120,8 +145,12 @@ test.describe('onboarding flow', () => {
     await page.goto('/')
     await page.getByRole('button', { name: /English/ }).click()
     await page.getByRole('button', { name: /Next/ }).click()
-    await page.getByLabel(/name/i).first().fill('Skipper')
-    await page.getByRole('button', { name: /Create/ }).click()
+
+    await completeProfileStep(page, {
+      name: 'Skipper',
+      email: 'skipper@example.com',
+    })
+    await createFirstAccountBook(page, 'Skipper Book')
 
     await expect(page).toHaveURL(/onboarding=3/)
     await page.getByRole('button', { name: 'Skip' }).last().click()

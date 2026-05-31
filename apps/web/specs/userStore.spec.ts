@@ -123,7 +123,7 @@ class DeferredFirstFindUserRepo extends InMemoryUserRepo {
 
   constructor(
     users: RegisteredUser[] = [],
-    private readonly blockedFindCall: number = 1
+    private readonly blockedFindCall = 1
   ) {
     super(users)
   }

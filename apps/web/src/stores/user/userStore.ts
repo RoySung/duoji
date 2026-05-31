@@ -102,15 +102,20 @@ async function applyVirtualUserMutation<T>(
     virtualUsers: VirtualUser[]
   ) => VirtualUserMutationOutcome<T>
 ): Promise<{ allUsers: User[]; result: T } | null> {
-  let outcome: VirtualUserMutationOutcome<T> | null = null
+  const outcomeRef: { current: VirtualUserMutationOutcome<T> | null } = {
+    current: null,
+  }
 
   const updatedAccountBook = await accountBookRepo.mutateVirtualUsers(
     accountBookId,
     (virtualUsers) => {
-      outcome = buildOutcome(virtualUsers)
-      return outcome.nextVirtualUsers
+      const nextOutcome = buildOutcome(virtualUsers)
+      outcomeRef.current = nextOutcome
+      return nextOutcome.nextVirtualUsers
     }
   )
+
+  const outcome = outcomeRef.current
 
   if (!updatedAccountBook || !outcome) {
     return null
