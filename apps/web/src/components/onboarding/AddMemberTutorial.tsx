@@ -10,8 +10,8 @@ export default function AddMemberTutorial({
     <OnboardingTutorial
       step={4}
       selector='[data-onboarding-anchor="add-member"]'
-      titleKey="onboarding.step4.title"
-      descriptionKey="onboarding.step4.description"
+      titleKey="onboarding.step5.title"
+      descriptionKey="onboarding.step5.description"
     >
       {children}
     </OnboardingTutorial>

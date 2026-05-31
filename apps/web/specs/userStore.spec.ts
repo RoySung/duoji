@@ -1,7 +1,7 @@
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import { User, VirtualUser, RegisteredUser, UserRepo } from '../src/entities/user'
 import { createUserStore } from '../src/stores/user'
-import { userList } from '../src/mocks/user'
+import { userList } from './fixtures'
 
 const baseTimestamp = 1710000000000
 
@@ -55,6 +55,22 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
     return [...this.accountBooks]
   }
 
+  async mutateVirtualUsers(
+    id: string,
+    mutate: (virtualUsers: VirtualUser[]) => VirtualUser[]
+  ): Promise<AccountBook | null> {
+    const index = this.accountBooks.findIndex((ab) => ab.id === id)
+    if (index === -1) return null
+
+    const updatedAccountBook = {
+      ...this.accountBooks[index]!,
+      virtualUsers: mutate(this.accountBooks[index]!.virtualUsers ?? []),
+    }
+
+    this.accountBooks[index] = updatedAccountBook
+    return updatedAccountBook
+  }
+
   async update(
     id: string,
     updates: Partial<AccountBook>
@@ -78,7 +94,8 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 }
 
 class InMemoryUserRepo implements UserRepo {
-  private users: RegisteredUser[]
+  users: RegisteredUser[]
+  shouldFailCreate = false
 
   constructor(users: RegisteredUser[] = []) {
     this.users = [...users]
@@ -86,6 +103,59 @@ class InMemoryUserRepo implements UserRepo {
 
   async findByIds(ids: string[]): Promise<RegisteredUser[]> {
     return this.users.filter((u) => ids.includes(u.id))
+  }
+
+  async create(user: RegisteredUser): Promise<void> {
+    if (this.shouldFailCreate) {
+      throw new Error('simulated create failure')
+    }
+    const idx = this.users.findIndex((u) => u.id === user.id)
+    if (idx === -1) this.users.push(user)
+    else this.users[idx] = user
+  }
+}
+
+class DeferredFirstFindUserRepo extends InMemoryUserRepo {
+  private findCallCount = 0
+  private notifyFirstFindBlocked: (() => void) | null = null
+  private releaseFirstFind: (() => void) | null = null
+  private firstFindBlocked = false
+
+  constructor(
+    users: RegisteredUser[] = [],
+    private readonly blockedFindCall: number = 1
+  ) {
+    super(users)
+  }
+
+  waitForFirstFind(): Promise<void> {
+    if (this.firstFindBlocked) {
+      return Promise.resolve()
+    }
+
+    return new Promise((resolve) => {
+      this.notifyFirstFindBlocked = resolve
+    })
+  }
+
+  unblockFirstFind() {
+    this.releaseFirstFind?.()
+    this.releaseFirstFind = null
+  }
+
+  override async findByIds(ids: string[]): Promise<RegisteredUser[]> {
+    this.findCallCount += 1
+
+    if (!this.firstFindBlocked && this.findCallCount === this.blockedFindCall) {
+      this.firstFindBlocked = true
+      this.notifyFirstFindBlocked?.()
+      this.notifyFirstFindBlocked = null
+      await new Promise<void>((resolve) => {
+        this.releaseFirstFind = resolve
+      })
+    }
+
+    return super.findByIds(ids)
   }
 }
 
@@ -182,5 +252,95 @@ describe('User Store', () => {
     )
     const result = await store.getState().softDeleteVirtualUser('missing-book', 'vu-1')
     expect(result).toBe(false)
+  })
+
+  it('createRegisteredUser persists a new RegisteredUser via the injected repo and returns it', async () => {
+    const repo = new InMemoryUserRepo()
+    const store = createUserStore(new InMemoryAccountBookRepo(), repo)
+
+    const created = await store.getState().createRegisteredUser('Alice', 'alice@example.com')
+
+    expect(created).not.toBeNull()
+    expect(created).toMatchObject({ name: 'Alice', email: 'alice@example.com' })
+    expect(created!.id).toBeTruthy()
+    expect(created!.avatarUrl).toContain('Alice')
+    expect(repo.users).toHaveLength(1)
+    expect(repo.users[0]!.id).toBe(created!.id)
+    expect(store.getState().error).toBeNull()
+  })
+
+  it('createRegisteredUser returns null and sets error state when the repo create fails', async () => {
+    const repo = new InMemoryUserRepo()
+    repo.shouldFailCreate = true
+    const store = createUserStore(new InMemoryAccountBookRepo(), repo)
+
+    const created = await store.getState().createRegisteredUser('Bob', 'bob@example.com')
+
+    expect(created).toBeNull()
+    expect(repo.users).toHaveLength(0)
+    expect(store.getState().error).toBe('simulated create failure')
+  })
+
+  it('does not let a stale initialize overwrite a later added virtual user', async () => {
+    const accountBook = createAccountBookFixture({ userIds: [userList[0]!.id] })
+    const accountBookRepo = new InMemoryAccountBookRepo([accountBook])
+    const userRepo = new DeferredFirstFindUserRepo(userList)
+    const store = createUserStore(accountBookRepo, userRepo)
+
+    const initializePromise = store.getState().initialize(accountBook)
+    await userRepo.waitForFirstFind()
+
+    const createdVirtualUser = await store.getState().addVirtualUser('book-1', 'Bob')
+
+    expect(createdVirtualUser).not.toBeNull()
+    expect(store.getState().activeUsers.map((user) => user.name)).toEqual([
+      'Roy',
+      'Bob',
+    ])
+
+    userRepo.unblockFirstFind()
+    await initializePromise
+
+    expect(store.getState().activeUsers.map((user) => user.name)).toEqual([
+      'Roy',
+      'Bob',
+    ])
+  })
+
+  it('preserves concurrent virtual-user add and rename mutations', async () => {
+    const existingVirtualUser = createVirtualUserFixture({ id: 'vu-1', name: 'Alice' })
+    const accountBook = createAccountBookFixture({
+      userIds: [userList[0]!.id],
+      virtualUsers: [existingVirtualUser],
+    })
+    const accountBookRepo = new InMemoryAccountBookRepo([accountBook])
+    const userRepo = new DeferredFirstFindUserRepo(userList, 2)
+    const store = createUserStore(accountBookRepo, userRepo)
+
+    await store.getState().initialize(accountBook)
+
+    const addPromise = store.getState().addVirtualUser('book-1', 'Bob')
+    await userRepo.waitForFirstFind()
+
+    const renamePromise = store
+      .getState()
+      .renameVirtualUser('book-1', 'vu-1', 'Alice updated')
+
+    userRepo.unblockFirstFind()
+
+    const [createdVirtualUser, renamed] = await Promise.all([
+      addPromise,
+      renamePromise,
+    ])
+
+    expect(createdVirtualUser).not.toBeNull()
+    expect(renamed).toBe(true)
+    expect(
+      store
+        .getState()
+        .allUsers.filter((user) => user.type === 'virtual')
+        .map((user) => user.name)
+        .sort()
+    ).toEqual(['Alice updated', 'Bob'])
   })
 })

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useSettingsStore } from '@/stores/settings'
+import { useUserStore } from '@/stores/user'
 import {
   AccountBookFormValues,
   buildAccountBookPayload,
@@ -19,6 +20,9 @@ export default function AccountBookCreatePage() {
   const t = useTranslations()
   const isLoading = useAccountBookStore((s) => s.isLoading)
   const createAccountBook = useAccountBookStore((s) => s.createAccountBook)
+  const registeredUser = useUserStore((s) =>
+    s.allUsers.find((u) => u.type === 'registered')
+  )
   const seedDefaultCategories = useCategoryStore((s) => s.seedDefaultCategories)
   const language = useSettingsStore((s) => s.language)
 
@@ -34,8 +38,19 @@ export default function AccountBookCreatePage() {
       return
     }
 
+    if (!registeredUser) {
+      addToast({
+        title: t('accountBook.toast.createFailTitle'),
+        color: 'danger',
+        description: t('accountBook.toast.createUnknownError'),
+      })
+      return
+    }
+
     try {
-      const created = await createAccountBook(buildAccountBookPayload(formValues))
+      const created = await createAccountBook(
+        buildAccountBookPayload(formValues, registeredUser.id)
+      )
       let seededCategories = true
       try {
         await seedDefaultCategories(created.id, language)

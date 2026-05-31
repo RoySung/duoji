@@ -131,12 +131,13 @@ export default function NavBar() {
   const t = useTranslations()
   const isSettlement = router.pathname.includes('/settlement')
   const isReport = router.pathname === '/account-books/[id]/report'
+  const isAccountBookSettings =
+    router.pathname === '/account-books/[id]/settings' ||
+    router.pathname === '/account-books/new'
   const isHome =
-    router.pathname === '/' ||
-    (router.pathname.startsWith('/account-books') &&
-      !isSettlement &&
-      !isReport)
-  const isSettings = router.pathname.startsWith('/settings')
+    router.pathname === '/' || router.pathname === '/account-books/[id]'
+  const isSettings =
+    router.pathname.startsWith('/settings') || isAccountBookSettings
 
   const currentAccountBookId = useAccountBookStore(
     (state) => state.currentAccountBookId
@@ -145,6 +146,11 @@ export default function NavBar() {
     (typeof router.query.id === 'string' ? router.query.id : null) ??
     currentAccountBookId
   const isAggregateView = !accountBookId || accountBookId === 'all'
+
+  function handleHomeNavigation() {
+    const homeTarget = accountBookId ? `/account-books/${accountBookId}` : '/'
+    void router.push(homeTarget)
+  }
 
   function handleAddTransaction() {
     if (isAggregateView) {
@@ -170,7 +176,7 @@ export default function NavBar() {
               name="page"
               type="radio"
               checked={isHome}
-              onChange={() => router.push('/')}
+              onChange={handleHomeNavigation}
             />
             <PiHouseFill></PiHouseFill>
           </label>

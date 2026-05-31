@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { VirtualUserSchema } from './user'
+import { VirtualUser, VirtualUserSchema } from './user'
 
 export const CurrencySchema = z.enum(['USD', 'JPY', 'TWD'])
 export type Currency = z.infer<typeof CurrencySchema>
@@ -21,6 +21,10 @@ export interface AccountBookRepo {
   create(accountBook: AccountBook): Promise<AccountBook>
   findById(id: string): Promise<AccountBook | null>
   findAll(): Promise<AccountBook[]>
+  mutateVirtualUsers(
+    id: string,
+    mutate: (virtualUsers: VirtualUser[]) => VirtualUser[]
+  ): Promise<AccountBook | null>
   update(
     id: string,
     accountBook: Partial<AccountBook>

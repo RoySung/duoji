@@ -55,23 +55,31 @@
       "description": "選擇你想在 DuoJi 中使用的語言，之後可在「設定」中變更。"
     },
     "step2": {
-      "title": "建立你的第一個帳本",
-      "description": "帳本用來歸納你的交易。第 2 步無法略過，先建立一個帳本以繼續。",
-      "cannotSkip": "請先建立帳本才能繼續。"
+      "title": "建立你的個人資料",
+      "description": "輸入你的姓名與 Email，讓帳本和分帳知道這是誰。",
+      "namePlaceholder": "你的姓名",
+      "emailPlaceholder": "你的 Email",
+      "cannotSkip": "請輸入有效的姓名與 Email 才能繼續。",
+      "createFailed": "個人資料儲存失敗，請再試一次。"
     },
     "step3": {
+      "title": "建立你的第一個帳本",
+      "description": "帳本用來歸納你的交易。這一步無法略過，先建立一個帳本以繼續。",
+      "cannotSkip": "請先建立帳本才能繼續。"
+    },
+    "step4": {
       "title": "編輯帳本",
       "description": "想改帳本名稱或幣別嗎？在這裡可以隨時更新基本資訊。"
     },
-    "step4": {
+    "step5": {
       "title": "新增成員",
       "description": "把一起花錢的人加進來，之後就能順利分帳與結算。"
     },
-    "step5": {
+    "step6": {
       "title": "管理分類",
       "description": "預設分類已經為你準備好，你可以新增、編輯、排序或刪除，讓記帳更貼近自己。"
     },
-    "step6": {
+    "step7": {
       "title": "記錄一筆交易",
       "description": "點擊高亮的按鈕，記錄你的第一筆交易。",
       "sub1": {
@@ -99,11 +107,11 @@
         "description": "點擊「建立」按鈕，把這筆交易存起來。"
       }
     },
-    "step7": {
+    "step8": {
       "title": "與朋友分帳",
       "description": "在結算頁查看誰欠誰多少，輕鬆完成結算。"
     },
-    "step8": {
+    "step9": {
       "title": "查看報表",
       "description": "依時間範圍篩選，看看各分類的金錢流向。"
     },

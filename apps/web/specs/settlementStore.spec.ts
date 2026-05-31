@@ -1,7 +1,7 @@
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { Transaction, UNSETTLED_SETTLEMENT_RECORD_ID } from '../src/entities/transaction'
 import { SettlementRecord, SettlementRepo } from '../src/entities/settlement'
-import { userList } from '../src/mocks'
+import { userList } from './fixtures'
 import { useSettlement } from '../src/hooks/useSettlement'
 
 jest.mock('../src/utils/genUuid', () => {

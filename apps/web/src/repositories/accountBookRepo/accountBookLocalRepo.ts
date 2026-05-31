@@ -1,4 +1,5 @@
 import { AccountBookRepo, AccountBook } from '@/entities/accountBook'
+import { VirtualUser } from '@/entities/user'
 import { db } from '@/lib/dexie'
 
 /**
@@ -59,6 +60,31 @@ class AccountBookLocalRepo implements AccountBookRepo {
     } catch (error) {
       console.error('Failed to find accountBooks by memberId:', error)
       return []
+    }
+  }
+
+  async mutateVirtualUsers(
+    id: string,
+    mutate: (virtualUsers: VirtualUser[]) => VirtualUser[]
+  ): Promise<AccountBook | null> {
+    try {
+      return await db.transaction('rw', db.accountBooks, async () => {
+        const accountBook = await db.accountBooks.get(id)
+        if (!accountBook) {
+          return null
+        }
+
+        const updatedAccountBook = {
+          ...accountBook,
+          virtualUsers: mutate(accountBook.virtualUsers ?? []),
+        }
+
+        await db.accountBooks.put(updatedAccountBook)
+        return updatedAccountBook
+      })
+    } catch (error) {
+      console.error('Failed to mutate accountBook virtual users:', error)
+      return null
     }
   }
 

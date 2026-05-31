@@ -14,7 +14,7 @@ import {
 } from '../src/entities/category'
 import { SettlementRecord, SettlementRepo } from '../src/entities/settlement'
 import { Transaction, TransactionRepo } from '../src/entities/transaction'
-import { userList } from '../src/mocks/user'
+import { userList } from './fixtures'
 import {
   AccountBookStoreProvider,
   createAccountBookStore,

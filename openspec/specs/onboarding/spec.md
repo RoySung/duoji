@@ -72,7 +72,7 @@ tests:
 ---
 ### Requirement: Onboarding flow consists of eight sequential steps
 
-The system SHALL present the onboarding flow as eight steps in this order: (1) language selection, (2) create the first account book, (3) tutorial for editing the account book, (4) tutorial for adding members, (5) tutorial for managing categories, (6) tutorial for creating a transaction, (7) tutorial for splitting transactions (settlement), (8) tutorial for viewing reports. Steps SHALL be advanced explicitly by the user.
+The system SHALL present the onboarding flow as nine steps in this order: (1) language selection, (2) user profile setup (name and email), (3) create the first account book, (4) tutorial for editing the account book, (5) tutorial for adding members, (6) tutorial for managing categories, (7) tutorial for creating a transaction, (8) tutorial for splitting transactions (settlement), (9) tutorial for viewing reports. Steps SHALL be advanced explicitly by the user.
 
 #### Scenario: Advance through steps in order
 
@@ -84,63 +84,61 @@ The system SHALL present the onboarding flow as eight steps in this order: (1) l
 - **WHEN** a user picks a language in step 1 and confirms
 - **THEN** the system SHALL persist the chosen language to `Settings` and proceed to step 2
 
-#### Scenario: Step 2 creates the first account book
+#### Scenario: Step 2 collects the user profile
 
-- **WHEN** a user submits a valid account book name and currency in step 2
-- **THEN** the system SHALL create the account book, seed default categories localized to the active language, and proceed to step 3
+- **WHEN** a user submits a valid name and email in step 2
+- **THEN** the system SHALL create a `RegisteredUser` record in local storage and proceed to step 3
 
-#### Scenario: Steps 3 through 5 introduce account book management
+#### Scenario: Step 3 creates the first account book
 
-- **WHEN** a user reaches step 3 after creating an account book
-- **THEN** the system SHALL present, in order, the edit-account-book tutorial (step 3), the add-members tutorial (step 4), and the manage-categories tutorial (step 5) before entering the transaction tutorial (step 6)
+- **WHEN** a user submits a valid account book name and currency in step 3
+- **THEN** the system SHALL create the account book owned by the step-2 user, seed default categories localized to the active language, and proceed to step 4
+
+#### Scenario: Steps 4 through 6 introduce account book management
+
+- **WHEN** a user reaches step 4 after creating an account book
+- **THEN** the system SHALL present, in order, the edit-account-book tutorial (step 4), the add-members tutorial (step 5), and the manage-categories tutorial (step 6) before entering the transaction tutorial (step 7)
 
 
 <!-- @trace
-source: add-i18n-and-onboarding
-updated: 2026-05-11
+source: remove-mock-users-add-profile-step
+updated: 2026-05-31
 code:
-  - apps/web/src/components/onboarding/TransactionTutorial.tsx
-  - apps/web/src/components/onboarding/LanguageStep.tsx
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/components/onboarding/StepShell.tsx
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/repositories/settingsRepo/index.ts
-  - apps/web/src/constants/defaultCategories.ts
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/package.json
-  - apps/web/src/components/layout/navbar.tsx
-  - apps/web/src/components/onboarding/SplitTutorial.tsx
-  - apps/web/src/pages/account-books/[id]/report.tsx
-  - apps/web/src/i18n/__mocks__/next-intl.ts
-  - apps/web/src/repositories/settingsRepo/settingsLocalRepo.ts
-  - apps/web/jest.config.ts
-  - apps/web/src/stores/settings/settingsStore.ts
-  - apps/web/src/i18n/messages/zh-TW.json
-  - apps/web/src/entities/settings.ts
-  - apps/web/src/stores/settings/index.ts
-  - apps/web/test-setup.ts
-  - apps/web/src/i18n/config.ts
-  - apps/web/src/components/onboarding/OnboardingTutorial.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - apps/web/src/stores/category/categoryStore.ts
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - apps/web/src/components/onboarding/ReportTutorial.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
-  - apps/web/src/stores/settings/settingsStoreProvider.tsx
-  - apps/web/tsconfig.json
-  - apps/web/src/components/onboarding/LedgerStep.tsx
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/pages/onboarding/index.tsx
+  - apps/web/src/components/onboarding/ManageCategoriesTutorial.tsx
   - apps/web/src/i18n/messages/en-US.json
-  - apps/web/src/pages/_app.tsx
-  - apps/web/next.config.js
+  - apps/web/src/components/onboarding/ReportTutorial.tsx
+  - apps/web/src/components/onboarding/LanguageStep.tsx
+  - apps/web/src/components/onboarding/TransactionTutorial.tsx
+  - apps/web/src/i18n/messages/zh-TW.json
+  - apps/web/src/components/onboarding/LedgerStep.tsx
+  - apps/web/src/components/onboarding/SplitTutorial.tsx
+  - apps/web/src/lib/dexie.ts
+  - apps/web/src/entities/user.ts
+  - apps/web/specs/fixtures/index.ts
+  - apps/web/src/stores/user/userStore.ts
+  - apps/web/src/pages/onboarding/index.tsx
+  - apps/web/src/utils/accountBookUtils.ts
+  - apps/web/src/components/onboarding/AddMemberTutorial.tsx
+  - apps/web/src/components/onboarding/EditAccountBookTutorial.tsx
+  - apps/web/src/repositories/userRepo/userLocalRepo.ts
+  - apps/web/src/components/onboarding/OnboardingTutorial.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/components/onboarding/ProfileStep.tsx
+  - apps/web/src/mocks/user.ts
 tests:
-  - apps/web-e2e/src/onboarding.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/settlement.spec.ts
+  - apps/web/specs/transaction.spec.ts
   - apps/web/specs/settlementPage.spec.tsx
-  - apps/web/src/stores/settings/settingsStore.test.ts
-  - apps/web/src/constants/defaultCategories.test.ts
   - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/settlementStore.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/userStore.spec.ts
+  - apps/web-e2e/src/onboarding.spec.ts
+  - apps/web/specs/transactionStore.spec.ts
+  - apps/web/specs/accountBookStore.spec.ts
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
 -->
 
 ---

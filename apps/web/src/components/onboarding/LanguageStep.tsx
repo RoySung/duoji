@@ -29,7 +29,7 @@ export default function LanguageStep({ onAdvance }: LanguageStepProps) {
   return (
     <StepShell
       currentStep={1}
-      totalSteps={5}
+      totalSteps={3}
       title={t('onboarding.step1.title')}
       description={t('onboarding.step1.description')}
       canSkip={false}

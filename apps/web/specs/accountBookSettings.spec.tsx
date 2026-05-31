@@ -51,6 +51,7 @@ import {
   CategoryBulkUpdateResult,
   CategoryRepo,
 } from '../src/entities/category'
+import { VirtualUser } from '../src/entities/user'
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
@@ -256,6 +257,7 @@ function createAccountBookFixture(
     updatedAt: 1710000000000,
     ownerId: '1',
     userIds: ['1'],
+    virtualUsers: [],
     ...overrides,
   }
 }
@@ -280,6 +282,27 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 
   async findAll(): Promise<AccountBook[]> {
     return [...this.accountBooks]
+  }
+
+  async mutateVirtualUsers(
+    id: string,
+    mutate: (virtualUsers: VirtualUser[]) => VirtualUser[]
+  ): Promise<AccountBook | null> {
+    const index = this.accountBooks.findIndex(
+      (accountBook) => accountBook.id === id
+    )
+
+    if (index === -1) {
+      return null
+    }
+
+    const updatedAccountBook = {
+      ...this.accountBooks[index],
+      virtualUsers: mutate(this.accountBooks[index]?.virtualUsers ?? []),
+    }
+
+    this.accountBooks[index] = updatedAccountBook
+    return updatedAccountBook
   }
 
   async update(
@@ -467,7 +490,19 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
   }
 
   const categoryStore = createCategoryStore(new InMemoryCategoryRepo())
-  const userStore = createUserStore()
+  const seededRegisteredUser = {
+    id: 'test-registered-user',
+    name: 'Test User',
+    email: 'test@example.com',
+    avatarUrl: 'https://ui-avatars.com/api/?name=Test',
+    createdAt: 0,
+    updatedAt: 0,
+    type: 'registered' as const,
+  }
+  const userStore = createUserStore(undefined, undefined, {
+    allUsers: [seededRegisteredUser],
+    activeUsers: [seededRegisteredUser],
+  })
   const settingsStore = createSettingsStore(FAKE_SETTINGS_REPO, {
     initialized: true,
     onboardingCompleted: true,
@@ -532,6 +567,19 @@ describe('Account book settings pages', () => {
 
   it('keeps the settings navigation active for settings descendant routes', async () => {
     const { container } = await renderWithProviders(<NavBar />, {
+      pathname: '/settings/account-books/[id]/categories',
+      query: { id: '2' },
+    })
+
+    const settingsInput = container.querySelector<HTMLInputElement>('#settings')
+    const homeInput = container.querySelector<HTMLInputElement>('#home')
+
+    expect(settingsInput?.checked).toBe(true)
+    expect(homeInput?.checked).toBe(false)
+  })
+
+  it('navigates home back to the current account book from account-book settings', async () => {
+    const { container, push } = await renderWithProviders(<NavBar />, {
       pathname: '/account-books/[id]/settings',
       query: { id: '2' },
     })
@@ -539,8 +587,12 @@ describe('Account book settings pages', () => {
     const settingsInput = container.querySelector<HTMLInputElement>('#settings')
     const homeInput = container.querySelector<HTMLInputElement>('#home')
 
-    expect(settingsInput?.checked).toBe(false)
-    expect(homeInput?.checked).toBe(true)
+    expect(settingsInput?.checked).toBe(true)
+    expect(homeInput?.checked).toBe(false)
+
+    fireEvent.click(homeInput!)
+
+    expect(push).toHaveBeenCalledWith('/account-books/2')
   })
 
   it('renders the new account book page and creates a new account book', async () => {

@@ -4,7 +4,7 @@ import {
 } from '../src/entities/transaction'
 import { SettlementRecord } from '../src/entities/settlement'
 import { db } from '../src/lib/dexie'
-import { userList } from '../src/mocks/user'
+import { userList } from './fixtures'
 import SettlementLocalRepo from '../src/repositories/settlementRepo/settlementLocalRepo'
 import TransactionLocalRepo from '../src/repositories/transactionRepo/transactionLocalRepo'
 

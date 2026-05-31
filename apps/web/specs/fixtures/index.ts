@@ -1,4 +1,11 @@
-import { RegisteredUser } from '@/entities/user'
+import { RegisteredUser } from '../../src/entities/user'
+
+export { accountBookList, accountBookOptions } from '../../src/mocks'
+export {
+  DEFAULT_CATEGORY_LIST as categoryList,
+  DEFAULT_EXPENSE_CATEGORIES as expenseCategoryList,
+  DEFAULT_INCOME_CATEGORIES as incomeCategoryList,
+} from '../../src/mocks/category'
 
 export const userList: RegisteredUser[] = [
   {

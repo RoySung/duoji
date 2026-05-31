@@ -2,7 +2,7 @@ import {
   categoryList,
   expenseCategoryList,
   incomeCategoryList,
-} from '../src/mocks'
+} from './fixtures'
 import { CategorySchema } from '../src/entities/category'
 import CategoryLocalRepo from '../src/repositories/categoryRepo/categoryLocalRepo'
 import { db } from '../src/lib/dexie'

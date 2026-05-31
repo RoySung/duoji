@@ -1,6 +1,7 @@
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
+import { VirtualUser } from '../src/entities/user'
 import { createAccountBookStore } from '../src/stores/accountBook/index'
-import { accountBookList } from '../src/mocks'
+import { accountBookList } from './fixtures'
 import { db, initializeDB } from '../src/lib/dexie'
 
 function createAccountBookFixture(
@@ -15,6 +16,7 @@ function createAccountBookFixture(
     updatedAt: 1710000000000,
     ownerId: '1',
     userIds: ['1', '2'],
+    virtualUsers: [],
     ...overrides,
   }
 }
@@ -39,6 +41,27 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 
   async findAll(): Promise<AccountBook[]> {
     return [...this.accountBooks]
+  }
+
+  async mutateVirtualUsers(
+    id: string,
+    mutate: (virtualUsers: VirtualUser[]) => VirtualUser[]
+  ): Promise<AccountBook | null> {
+    const index = this.accountBooks.findIndex(
+      (existingAccountBook) => existingAccountBook.id === id
+    )
+
+    if (index === -1) {
+      return null
+    }
+
+    const updatedAccountBook = {
+      ...this.accountBooks[index],
+      virtualUsers: mutate(this.accountBooks[index]?.virtualUsers ?? []),
+    }
+
+    this.accountBooks[index] = updatedAccountBook
+    return updatedAccountBook
   }
 
   async update(

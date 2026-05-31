@@ -6,6 +6,10 @@ class UserLocalRepo implements UserRepo {
     if (ids.length === 0) return []
     return db.users.where('id').anyOf(ids).toArray()
   }
+
+  async create(user: RegisteredUser): Promise<void> {
+    await db.users.put(user)
+  }
 }
 
 export default UserLocalRepo

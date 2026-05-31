@@ -10,8 +10,8 @@ export default function EditAccountBookTutorial({
     <OnboardingTutorial
       step={3}
       selector='[data-onboarding-anchor="edit-account-book"]'
-      titleKey="onboarding.step3.title"
-      descriptionKey="onboarding.step3.description"
+      titleKey="onboarding.step4.title"
+      descriptionKey="onboarding.step4.description"
     >
       {children}
     </OnboardingTutorial>

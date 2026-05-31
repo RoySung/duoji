@@ -10,8 +10,8 @@ export default function ReportTutorial({
     <OnboardingTutorial
       step={8}
       selector='[data-onboarding-anchor="report-filters"]'
-      titleKey="onboarding.step8.title"
-      descriptionKey="onboarding.step8.description"
+      titleKey="onboarding.step9.title"
+      descriptionKey="onboarding.step9.description"
     >
       {children}
     </OnboardingTutorial>

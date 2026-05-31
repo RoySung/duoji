@@ -17,7 +17,7 @@ import {
   UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '../src/entities/transaction'
 import { db } from '../src/lib/dexie'
-import { userList } from '../src/mocks/user'
+import { userList } from './fixtures'
 import TransactionLocalRepo from '../src/repositories/transactionRepo/transactionLocalRepo'
 import {
   AccountBookStoreProvider,

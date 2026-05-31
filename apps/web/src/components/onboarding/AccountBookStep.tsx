@@ -13,11 +13,15 @@ import {
   isAccountBookFormValid,
 } from '@/utils/accountBookUtils'
 
-type LedgerStepProps = {
+type AccountBookStepProps = {
+  ownerId: string
   onCreated: (accountBookId: string) => void
 }
 
-export default function LedgerStep({ onCreated }: LedgerStepProps) {
+export default function AccountBookStep({
+  ownerId,
+  onCreated,
+}: AccountBookStepProps) {
   const t = useTranslations()
   const isLoading = useAccountBookStore((s) => s.isLoading)
   const createAccountBook = useAccountBookStore((s) => s.createAccountBook)
@@ -30,13 +34,13 @@ export default function LedgerStep({ onCreated }: LedgerStepProps) {
   async function handleSubmit() {
     if (!isAccountBookFormValid(values)) {
       addToast({
-        title: t('onboarding.step2.cannotSkip'),
+        title: t('onboarding.step3.cannotSkip'),
         color: 'warning',
       })
       return
     }
     try {
-      const created = await createAccountBook(buildAccountBookPayload(values))
+      const created = await createAccountBook(buildAccountBookPayload(values, ownerId))
       await seedDefaultCategories(created.id, language)
       onCreated(created.id)
     } catch (err) {
@@ -51,10 +55,10 @@ export default function LedgerStep({ onCreated }: LedgerStepProps) {
 
   return (
     <StepShell
-      currentStep={2}
-      totalSteps={5}
-      title={t('onboarding.step2.title')}
-      description={t('onboarding.step2.description')}
+      currentStep={3}
+      totalSteps={3}
+      title={t('onboarding.step3.title')}
+      description={t('onboarding.step3.description')}
       canSkip={false}
     >
       <AccountBookForm

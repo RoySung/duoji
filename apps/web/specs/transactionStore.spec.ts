@@ -12,7 +12,7 @@ import {
 } from '../src/entities/transaction'
 import { useAccountBookTransactions } from '../src/hooks/useAccountBookTransactions'
 import { TransactionCalendarVisibleRange } from '../src/hooks/transactionQueryUtils'
-import { userList } from '../src/mocks'
+import { userList } from './fixtures'
 
 const baseTimestamp = 1710000000000
 

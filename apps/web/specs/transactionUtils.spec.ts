@@ -7,8 +7,8 @@ import {
 } from '../src/utils/transactionUtils'
 import { UNSETTLED_SETTLEMENT_RECORD_ID } from '../src/entities/transaction'
 import { accountBookList } from '../src/mocks/accountBook'
-import { userList } from '../src/mocks/user'
-import { expenseCategoryList, incomeCategoryList } from '../src/mocks'
+import { userList } from './fixtures'
+import { expenseCategoryList, incomeCategoryList } from './fixtures'
 import { User, VirtualUser } from '../src/entities/user'
 
 const mockUsers: User[] = userList.map((user) => ({

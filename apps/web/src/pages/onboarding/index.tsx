@@ -1,18 +1,16 @@
 import { useRouter } from 'next/router'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import LanguageStep from '@/components/onboarding/LanguageStep'
-import LedgerStep from '@/components/onboarding/LedgerStep'
+import ProfileStep from '@/components/onboarding/ProfileStep'
+import AccountBookStep from '@/components/onboarding/AccountBookStep'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useSettingsStore } from '@/stores/settings'
 
-const VALID_STEPS = [1, 2, 3, 4, 5, 6, 7, 8] as const
+const VALID_STEPS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const
 type OnboardingStep = (typeof VALID_STEPS)[number]
-type TutorialStep = 3 | 4 | 5 | 6 | 7 | 8
+type TutorialStep = 4 | 5 | 6 | 7 | 8 | 9
 
-function parseStep(
-  value: unknown,
-  fallback: OnboardingStep
-): OnboardingStep {
+function parseStep(value: unknown, fallback: OnboardingStep): OnboardingStep {
   const n = typeof value === 'string' ? Number(value) : NaN
   return (VALID_STEPS as readonly number[]).includes(n)
     ? (n as OnboardingStep)
@@ -21,12 +19,12 @@ function parseStep(
 
 function tutorialPath(step: TutorialStep, accountBookId: string) {
   const base = `/account-books/${accountBookId}`
-  if (step === 3) return `${base}/settings?onboarding=3`
-  if (step === 4) return `${base}/settings?onboarding=4`
-  if (step === 5) return `${base}/settings?onboarding=5`
-  if (step === 6) return `${base}?onboarding=6`
-  if (step === 7) return `${base}/settlement?onboarding=7`
-  return `${base}/report?onboarding=8`
+  const param = step - 1
+  if (step === 4 || step === 5 || step === 6)
+    return `${base}/settings?onboarding=${param}`
+  if (step === 7) return `${base}?onboarding=${param}`
+  if (step === 8) return `${base}/settlement?onboarding=${param}`
+  return `${base}/report?onboarding=${param}`
 }
 
 export default function OnboardingPage() {
@@ -37,7 +35,9 @@ export default function OnboardingPage() {
   const accountBookInitialized = useAccountBookStore((s) => s.initialized)
 
   const firstAccountBookId = accountBooks[0]?.id ?? null
-  const fallbackStep: OnboardingStep = firstAccountBookId ? 3 : 1
+  const fallbackStep: OnboardingStep = firstAccountBookId ? 4 : 1
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const currentStep = useMemo(
     () => parseStep(router.query.step, fallbackStep),
@@ -59,10 +59,10 @@ export default function OnboardingPage() {
     router,
   ])
 
-  // Redirect tutorial steps (3-8) to the real pages with ?onboarding=N
+  // Redirect tutorial steps (4-9) to the real pages with ?onboarding=(step-1)
   useEffect(() => {
     if (!initialized || !accountBookInitialized) return
-    if (currentStep < 3) return
+    if (currentStep < 4) return
 
     if (!firstAccountBookId) {
       void router.replace('/onboarding?step=2')
@@ -79,6 +79,16 @@ export default function OnboardingPage() {
     router,
   ])
 
+  // Step 3 needs an ownerId from step 2. If the user reloads the tab and React
+  // state is lost, fall back to step 2 instead of creating an account book with
+  // an empty ownerId.
+  useEffect(() => {
+    if (!initialized || !accountBookInitialized) return
+    if (currentStep === 3 && !currentUserId) {
+      void router.replace('/onboarding?step=2')
+    }
+  }, [currentStep, currentUserId, initialized, accountBookInitialized, router])
+
   function goToStep(step: OnboardingStep) {
     void router.replace(`/onboarding?step=${step}`)
   }
@@ -93,9 +103,22 @@ export default function OnboardingPage() {
 
   if (currentStep === 2) {
     return (
-      <LedgerStep
+      <ProfileStep
+        onCreated={(userId) => {
+          setCurrentUserId(userId)
+          goToStep(3)
+        }}
+      />
+    )
+  }
+
+  if (currentStep === 3) {
+    if (!currentUserId) return null
+    return (
+      <AccountBookStep
+        ownerId={currentUserId}
         onCreated={(id) => {
-          void router.replace(tutorialPath(3, id))
+          void router.replace(tutorialPath(4, id))
         }}
       />
     )

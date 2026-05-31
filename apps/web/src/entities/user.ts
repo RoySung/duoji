@@ -37,4 +37,5 @@ export function isDeletedUser(user: User): boolean {
 
 export interface UserRepo {
   findByIds(ids: string[]): Promise<RegisteredUser[]>
+  create(user: RegisteredUser): Promise<void>
 }

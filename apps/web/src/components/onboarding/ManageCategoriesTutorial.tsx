@@ -10,8 +10,8 @@ export default function ManageCategoriesTutorial({
     <OnboardingTutorial
       step={5}
       selector='[data-onboarding-anchor="manage-categories"]'
-      titleKey="onboarding.step5.title"
-      descriptionKey="onboarding.step5.description"
+      titleKey="onboarding.step6.title"
+      descriptionKey="onboarding.step6.description"
     >
       {children}
     </OnboardingTutorial>

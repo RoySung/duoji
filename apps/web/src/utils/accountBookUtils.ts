@@ -1,13 +1,10 @@
 import { AccountBook, Currency } from '@/entities/accountBook'
-import { userList } from '@/mocks/user'
 
 export type AccountBookFormValues = {
   name: string
   currency: Currency
   description: string
 }
-
-const defaultOwner = userList[0]
 
 export const defaultAccountBookFormValues: AccountBookFormValues = {
   name: '',
@@ -34,10 +31,10 @@ export function toAccountBookFormValues(
 }
 
 export function buildAccountBookPayload(
-  values: AccountBookFormValues
+  values: AccountBookFormValues,
+  ownerId: string
 ): AccountBook {
   const timestamp = Date.now()
-  const ownerId = defaultOwner?.id ?? 'local-owner'
 
   return {
     id: generateAccountBookId(),

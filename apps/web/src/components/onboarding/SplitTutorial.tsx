@@ -10,8 +10,8 @@ export default function SplitTutorial({
     <OnboardingTutorial
       step={7}
       selector='[data-onboarding-anchor="settlement-tabs"]'
-      titleKey="onboarding.step7.title"
-      descriptionKey="onboarding.step7.description"
+      titleKey="onboarding.step8.title"
+      descriptionKey="onboarding.step8.description"
     >
       {children}
     </OnboardingTutorial>

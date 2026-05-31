@@ -11,6 +11,7 @@ import {
 } from '@testing-library/react'
 import { useRouter } from 'next/router'
 import AccountBookPage from '../src/pages/account-books/[id]/index'
+import AccountBookSettingsRoute from '../src/pages/account-books/[id]/settings'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import {
@@ -43,8 +44,13 @@ import {
   CategoryBulkUpdateResult,
   CategoryRepo,
 } from '../src/entities/category'
-import { userList } from '../src/mocks'
-import { User, VirtualUser } from '../src/entities/user'
+import { userList } from './fixtures'
+import {
+  RegisteredUser,
+  User,
+  UserRepo,
+  VirtualUser,
+} from '../src/entities/user'
 
 jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
@@ -234,6 +240,12 @@ jest.mock('../src/components/TransactionModal/ExpenseForm', () => ({
     onChange: (nextValue: Transaction) => void
   }) {
     const { PaymentMethodValues } = require('../src/entities/transaction')
+    const { useUserStore } = require('../src/stores/user')
+    const allUsers = useUserStore(
+      (state: { allUsers: User[] }) => state.allUsers
+    )
+    const resolveName = (userId: string) =>
+      allUsers.find((user: User) => user.id === userId)?.name ?? userId
 
     return (
       <div>
@@ -270,6 +282,14 @@ jest.mock('../src/components/TransactionModal/ExpenseForm', () => ({
             ))}
           </select>
         </label>
+        <div data-testid="paid-by-summary">
+          {value.paidByDetail
+            .map((item) => resolveName(item.userId))
+            .join(', ')}
+        </div>
+        <div data-testid="split-summary">
+          {value.splitDetail.map((item) => resolveName(item.userId)).join(', ')}
+        </div>
       </div>
     )
   },
@@ -285,7 +305,7 @@ jest.mock('../src/components/TransactionModal/IncomeForm', () => ({
     onChange: (nextValue: Transaction) => void
   }) {
     const { PaymentMethodValues } = require('../src/entities/transaction')
-    const { userList } = require('../src/mocks')
+    const { userList } = require('./fixtures')
     const {
       applyIncomeRecipient,
       distributeTransactionAmount,
@@ -448,6 +468,27 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
     return [...this.accountBooks]
   }
 
+  async mutateVirtualUsers(
+    id: string,
+    mutate: (virtualUsers: VirtualUser[]) => VirtualUser[]
+  ): Promise<AccountBook | null> {
+    const index = this.accountBooks.findIndex(
+      (accountBook) => accountBook.id === id
+    )
+
+    if (index === -1) {
+      return null
+    }
+
+    const updatedAccountBook = {
+      ...this.accountBooks[index],
+      virtualUsers: mutate(this.accountBooks[index]?.virtualUsers ?? []),
+    }
+
+    this.accountBooks[index] = updatedAccountBook
+    return updatedAccountBook
+  }
+
   async update(
     id: string,
     updates: Partial<AccountBook>
@@ -479,6 +520,31 @@ class InMemoryAccountBookRepo implements AccountBookRepo {
 
   async clear(): Promise<void> {
     this.accountBooks = []
+  }
+}
+
+class InMemoryUserRepo implements UserRepo {
+  private users: RegisteredUser[]
+
+  constructor(users: RegisteredUser[] = []) {
+    this.users = [...users]
+  }
+
+  async findByIds(ids: string[]): Promise<RegisteredUser[]> {
+    return this.users.filter((user) => ids.includes(user.id))
+  }
+
+  async create(user: RegisteredUser): Promise<void> {
+    const index = this.users.findIndex(
+      (currentUser) => currentUser.id === user.id
+    )
+
+    if (index === -1) {
+      this.users.push(user)
+      return
+    }
+
+    this.users[index] = user
   }
 }
 
@@ -709,6 +775,7 @@ class InMemoryCategoryRepo implements CategoryRepo {
 type RenderOptions = {
   accountBooks?: AccountBook[]
   currentAccountBookId?: string | null
+  pathname?: string
   routeAccountBookId?: string | null
   routeQuery?: Record<string, string | undefined>
   transactions?: Transaction[]
@@ -759,6 +826,17 @@ function resolveMockRouterTarget(
   )
 
   if (pathWithoutQuery.startsWith('/account-books/')) {
+    const settingsMatch = pathWithoutQuery.match(
+      /^\/account-books\/([^/]+)\/settings$/
+    )
+
+    if (settingsMatch) {
+      return {
+        pathname: '/account-books/[id]/settings',
+        query: { id: settingsMatch[1]!, ...nextQuery },
+      }
+    }
+
     const settlementMatch = pathWithoutQuery.match(
       /^\/account-books\/([^/]+)\/settlement$/
     )
@@ -791,19 +869,18 @@ function resolveMockRouterTarget(
 async function renderWithProviders(options: RenderOptions = {}) {
   const routeAccountBookId =
     options.routeAccountBookId ?? options.currentAccountBookId ?? 'book-1'
-
-  const accountBookStore = createAccountBookStore(
-    new InMemoryAccountBookRepo(
-      options.accountBooks ?? [
-        createAccountBookFixture({ id: 'book-1', name: 'Daily Life' }),
-        createAccountBookFixture({
-          id: 'book-2',
-          name: 'Travel Fund',
-          currency: 'JPY',
-        }),
-      ]
-    )
+  const accountBookRepo = new InMemoryAccountBookRepo(
+    options.accountBooks ?? [
+      createAccountBookFixture({ id: 'book-1', name: 'Daily Life' }),
+      createAccountBookFixture({
+        id: 'book-2',
+        name: 'Travel Fund',
+        currency: 'JPY',
+      }),
+    ]
   )
+
+  const accountBookStore = createAccountBookStore(accountBookRepo)
 
   await accountBookStore.getState().initialize()
 
@@ -987,10 +1064,18 @@ async function renderWithProviders(options: RenderOptions = {}) {
   const activeUsers = allUsers.filter(
     (u) => !(u.type === 'virtual' && (u as VirtualUser).deletedAt)
   )
-  const userStore = createUserStore(undefined, undefined, {
-    allUsers,
-    activeUsers,
-  })
+  const registeredUsers = allUsers.filter(
+    (user): user is RegisteredUser & { type: 'registered' } =>
+      user.type === 'registered'
+  )
+  const userStore = createUserStore(
+    accountBookRepo,
+    new InMemoryUserRepo(registeredUsers),
+    {
+      allUsers,
+      activeUsers,
+    }
+  )
   const settingsStore = createSettingsStore(
     {
       async getSettings() {
@@ -1019,13 +1104,18 @@ async function renderWithProviders(options: RenderOptions = {}) {
     },
   })
 
-  let routerPathname = '/account-books/[id]'
+  let routerPathname = options.pathname ?? '/account-books/[id]'
   let routerQuery = {
     ...(routeAccountBookId ? { id: routeAccountBookId } : {}),
     ...(options.routeQuery ?? {}),
   }
 
   function renderApp() {
+    const RouteComponent =
+      routerPathname === '/account-books/[id]/settings'
+        ? AccountBookSettingsRoute
+        : AccountBookPage
+
     return (
       <QueryClientProvider client={queryClient}>
         <ThemeProvider
@@ -1041,7 +1131,7 @@ async function renderWithProviders(options: RenderOptions = {}) {
                 <UserStoreProvider store={userStore}>
                   <SettingsStoreProvider store={settingsStore}>
                     <div>
-                      <AccountBookPage />
+                      <RouteComponent />
                       <NavBar />
                     </div>
                   </SettingsStoreProvider>
@@ -1405,6 +1495,56 @@ describe('Home transaction history', () => {
     expect(
       (screen.getByLabelText('Payment Method') as HTMLSelectElement).value
     ).toBe(DefaultPaymentMethod)
+  })
+
+  it('keeps newly added members in the create transaction draft after navigating from settings', async () => {
+    await renderWithProviders({
+      accountBooks: [
+        createAccountBookFixture({
+          id: 'book-1',
+          name: 'Fresh Account Book',
+          ownerId: '1',
+          userIds: ['1'],
+          virtualUsers: [],
+        }),
+      ],
+      currentAccountBookId: 'book-1',
+      pathname: '/account-books/[id]/settings',
+      routeAccountBookId: 'book-1',
+      transactions: [],
+      users: [
+        {
+          ...userList[0]!,
+          type: 'registered' as const,
+        },
+      ],
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Users')).toBeTruthy()
+    })
+
+    fireEvent.change(
+      screen.getByLabelText('Add a virtual person (e.g. Dad, Roommate)'),
+      {
+        target: { value: 'Alex' },
+      }
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Alex')).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeTruthy()
+    })
+
+    expect(screen.getByTestId('paid-by-summary').textContent).toContain('Roy')
+    expect(screen.getByTestId('split-summary').textContent).toContain('Roy')
+    expect(screen.getByTestId('split-summary').textContent).toContain('Alex')
   })
 
   it('does not open the create modal from modal query params in all-books view', async () => {

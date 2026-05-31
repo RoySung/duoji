@@ -5,9 +5,7 @@ import { RegisteredUser } from '@/entities/user'
 import { AccountBook } from '@/entities/accountBook'
 import { SettlementRecord } from '@/entities/settlement'
 import { Settings } from '@/entities/settings'
-import { userList } from '@/mocks'
 
-// TODO: remove mocks data
 /**
  * Duoji App 本地資料庫
  * 使用 Dexie 管理 IndexedDB
@@ -55,26 +53,7 @@ export async function initializeDB(): Promise<void> {
   try {
     await db.open()
     console.log('Database initialized successfully')
-
-    // 初始化預設資料
-    await initializeMockData()
   } catch (error) {
     console.error('Failed to initialize database:', error)
-  }
-}
-
-/**
- * 初始化 Mock 資料
- */
-async function initializeMockData(): Promise<void> {
-  try {
-    // 初始化用戶資料
-    const userCount = await db.users.count()
-    if (userCount === 0) {
-      await db.users.bulkPut(userList)
-      console.log('Mock user data initialized')
-    }
-  } catch (error) {
-    console.error('Failed to initialize mock data:', error)
   }
 }

@@ -55,23 +55,31 @@
       "description": "Pick the language you'd like to use in DuoJi. You can change it later in Settings."
     },
     "step2": {
-      "title": "Create your first account book",
-      "description": "An account book groups your transactions. Step 2 cannot be skipped — let's create one to continue.",
-      "cannotSkip": "Create an account book to continue."
+      "title": "Set up your profile",
+      "description": "Tell us your name and email so account books and splits know who you are.",
+      "namePlaceholder": "Your name",
+      "emailPlaceholder": "Your email",
+      "cannotSkip": "A valid name and email are required to continue.",
+      "createFailed": "Couldn't save your profile. Please try again."
     },
     "step3": {
+      "title": "Create your first account book",
+      "description": "An account book groups your transactions. This step cannot be skipped — let's create one to continue.",
+      "cannotSkip": "Create an account book to continue."
+    },
+    "step4": {
       "title": "Edit your account book",
       "description": "Need to change the name or currency later? Open the highlighted area to update the basics anytime."
     },
-    "step4": {
+    "step5": {
       "title": "Add members",
       "description": "Bring in the people you share expenses with so splits and settlements work seamlessly."
     },
-    "step5": {
+    "step6": {
       "title": "Manage categories",
       "description": "Default categories are ready to go. Tap here to add, rename, reorder, or remove them to fit your habits."
     },
-    "step6": {
+    "step7": {
       "title": "Record a transaction",
       "description": "Tap the highlighted button to record your first transaction.",
       "sub1": {
@@ -99,11 +107,11 @@
         "description": "Tap Create to save your first transaction."
       }
     },
-    "step7": {
+    "step8": {
       "title": "Split with friends",
       "description": "Settle balances and view who owes whom on the settlement page."
     },
-    "step8": {
+    "step9": {
       "title": "View reports",
       "description": "Filter by time range to see how money moves across categories."
     },
