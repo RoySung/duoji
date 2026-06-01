@@ -151,6 +151,7 @@ export default function SplitDetailModal({
                     size="sm"
                     label="Amount"
                     type="number"
+                    inputMode="decimal"
                     isClearable
                     onClear={() => handleAmountChange(user, 0)}
                     placeholder="0"

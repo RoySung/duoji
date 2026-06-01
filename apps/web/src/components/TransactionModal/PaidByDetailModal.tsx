@@ -159,6 +159,7 @@ export default function PaidByDetailModal({
                     size="sm"
                     label="Amount"
                     type="number"
+                    inputMode="decimal"
                     isClearable
                     onClear={() => updateAmountByUser(user, 0)}
                     placeholder="0"

@@ -7,7 +7,6 @@ import {
   Button,
   Tabs,
   Tab,
-  ScrollShadow,
   addToast,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
@@ -225,8 +224,12 @@ export default function TransactionModal({
         isDismissable={!isOnboardingActive}
         isKeyboardDismissDisabled={isOnboardingActive}
         hideCloseButton={isOnboardingActive}
+        classNames={{
+          base: 'mx-0 mt-auto mb-0 w-full max-w-none rounded-t-[28px] sm:mx-4 sm:my-16 sm:max-w-[calc(100%-2rem)]',
+          wrapper: 'items-end sm:items-center',
+        }}
       >
-        <ModalContent>
+        <ModalContent className="max-h-[90svh] sm:max-h-[calc(100vh-4rem)]">
           <ModalHeader>
             <div className="flex flex-col gap-2 items-center w-full">
               <h2>
@@ -260,13 +263,11 @@ export default function TransactionModal({
           </ModalHeader>
           <ModalBody>
             <div className="flex flex-col gap-4">
-              <ScrollShadow size={50}>
-                <Form
-                  value={draft}
-                  onChange={modalMode === 'view' ? () => {} : setDraft} // eslint-disable-line @typescript-eslint/no-empty-function
-                  isEditMode={isEditMode}
-                />
-              </ScrollShadow>
+              <Form
+                value={draft}
+                onChange={modalMode === 'view' ? () => {} : setDraft} // eslint-disable-line @typescript-eslint/no-empty-function
+                isEditMode={isEditMode}
+              />
               {modalMode === 'edit' ? (
                 <div className="rounded-large border border-danger-200 bg-danger-50 px-4 py-3">
                   <div className="flex flex-col gap-3">

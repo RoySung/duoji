@@ -139,6 +139,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             isRequired
             label={t('transactionForm.amount')}
             type="number"
+            inputMode="decimal"
             isClearable
             onClear={() => {
               onChange(distributeTransactionAmount(value, 0))

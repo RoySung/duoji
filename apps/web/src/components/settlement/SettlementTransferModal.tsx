@@ -64,6 +64,7 @@ export default function SettlementTransferModal({
               isRequired
               label={`Actual amount${currency ? ` (${currency})` : ''}`}
               type="number"
+              inputMode="decimal"
               value={actualAmount}
               onValueChange={setActualAmount}
             />
