@@ -26,6 +26,11 @@ import { useUserStore } from '@/stores/user'
 import SplitDetailModal from './SplitDetailModal'
 import CategorySelector from './CategorySelector'
 import {
+  amountInputClassNames,
+  amountInputCurrencyClassName,
+} from './amountInputStyles'
+import { useAmountInputValue } from './useAmountInputValue'
+import {
   formatTransactionDateValue,
   parseTransactionDateValue,
   buildUserAmountDetails,
@@ -129,34 +134,36 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
     })
   }
   const [isOpenSplitDetail, setIsOpenSplitDetail] = useState(false)
+  const amountInput = useAmountInputValue({
+    amount: value.amount,
+    onAmountChange: (nextAmount) => {
+      onChange(distributeTransactionAmount(value, nextAmount))
+    },
+  })
 
   return (
     <div className="expense-form">
       <Form className="flex flex-col gap-4">
         <div data-onboarding-anchor="transaction-form-amount" className="w-full">
           <Input
-            size="sm"
+            size="lg"
             isRequired
             label={t('transactionForm.amount')}
-            type="number"
+            type="text"
             inputMode="decimal"
+            classNames={amountInputClassNames}
             isClearable
-            onClear={() => {
-              onChange(distributeTransactionAmount(value, 0))
-            }}
-            value={value.amount.toString()}
+            onClear={amountInput.handleClear}
+            onFocus={amountInput.handleFocus}
+            onBlur={amountInput.handleBlur}
+            value={amountInput.inputValue}
             startContent={
               <div className="pointer-events-none flex items-center">
-                <span className="text-default-400 text-small">$</span>
+                <span className={amountInputCurrencyClassName}>$</span>
               </div>
             }
             onChange={(e) => {
-              const nextAmount = parseFloat(e.target.value)
-              if (!isNaN(nextAmount)) {
-                onChange(distributeTransactionAmount(value, nextAmount))
-              } else {
-                onChange(distributeTransactionAmount(value, 0))
-              }
+              amountInput.handleChange(e.target.value)
             }}
           />
         </div>

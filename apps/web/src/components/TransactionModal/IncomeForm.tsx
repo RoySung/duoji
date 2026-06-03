@@ -14,6 +14,11 @@ import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import {
+  amountInputClassNames,
+  amountInputCurrencyClassName,
+} from './amountInputStyles'
+import { useAmountInputValue } from './useAmountInputValue'
+import {
   applyIncomeRecipient,
   distributeTransactionAmount,
   formatTransactionDateValue,
@@ -94,34 +99,35 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
   }, [accountBooks, currentAccountBookId, usersForLookup, onChange, value])
 
   const date = parseTransactionDateValue(value.date)
+  const amountInput = useAmountInputValue({
+    amount: value.amount,
+    onAmountChange: (nextAmount) => {
+      onChange(distributeTransactionAmount(value, nextAmount))
+    },
+  })
 
   return (
     <div className="income-form">
       <Form className="flex flex-col gap-4">
         <Input
-          size="sm"
+          size="lg"
           isRequired
           label={t('transactionForm.amount')}
-          type="number"
+          type="text"
           inputMode="decimal"
+          classNames={amountInputClassNames}
           isClearable
-          onClear={() => {
-            onChange(distributeTransactionAmount(value, 0))
-          }}
-          value={value.amount.toString()}
+          onClear={amountInput.handleClear}
+          onFocus={amountInput.handleFocus}
+          onBlur={amountInput.handleBlur}
+          value={amountInput.inputValue}
           startContent={
             <div className="pointer-events-none flex items-center">
-              <span className="text-default-400 text-small">$</span>
+              <span className={amountInputCurrencyClassName}>$</span>
             </div>
           }
           onChange={(event) => {
-            const nextAmount = parseFloat(event.target.value)
-            if (!isNaN(nextAmount)) {
-              onChange(distributeTransactionAmount(value, nextAmount))
-              return
-            }
-
-            onChange(distributeTransactionAmount(value, 0))
+            amountInput.handleChange(event.target.value)
           }}
         />
         <CategorySelector
