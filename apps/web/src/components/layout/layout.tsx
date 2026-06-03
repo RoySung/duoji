@@ -16,9 +16,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Providers>
-        <Header />
-        <main className="h-[calc(100svh-128px)]">{children}</main>
-        <NavBar />
+        <div className="fixed inset-0 flex min-h-0 flex-col overflow-hidden bg-background">
+          <Header />
+          <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+          <NavBar />
+        </div>
       </Providers>
     </>
   )

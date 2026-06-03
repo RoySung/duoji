@@ -14,7 +14,7 @@ export default function Header() {
     accountBooks.find((ab) => ab.id === currentId) ?? null
 
   return (
-    <header className="flex h-[56px] items-center justify-between px-4 border-b border-border bg-background">
+    <header className="flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-border bg-background px-4 pt-[env(safe-area-inset-top)]">
       <span className="text-base font-semibold tracking-tight text-foreground">
         Duoji
       </span>

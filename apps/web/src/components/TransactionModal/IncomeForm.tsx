@@ -158,10 +158,6 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           onChange={(event) => {
             onChange({ ...value, description: event.target.value })
           }}
-          onFocus={(e) => {
-            const target = e.target
-            setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)
-          }}
           placeholder={t('transactionForm.descriptionPlaceholderIncome')}
         />
         <Select

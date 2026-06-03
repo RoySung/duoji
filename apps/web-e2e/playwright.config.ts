@@ -32,17 +32,26 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: ['**/transaction-modal-mobile.spec.ts'],
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
+      testIgnore: ['**/transaction-modal-mobile.spec.ts'],
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
+      testIgnore: ['**/transaction-modal-mobile.spec.ts'],
       use: { ...devices['Desktop Safari'] },
+    },
+
+    {
+      name: 'mobile-webkit',
+      testMatch: ['**/transaction-modal-mobile.spec.ts'],
+      use: { ...devices['iPhone 12'] },
     },
 
     // Uncomment for mobile browsers support

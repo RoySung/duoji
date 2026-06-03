@@ -167,7 +167,7 @@ export default function NavBar() {
   }
 
   return (
-    <div className="navbar h-[72px] flex w-full p-4 justify-center items-center">
+    <div className="navbar flex h-[calc(72px+env(safe-area-inset-bottom))] shrink-0 w-full items-center justify-center px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <StyledWrapper>
         <section>
           <label title={t('navbar.home')} htmlFor="home" className="label">

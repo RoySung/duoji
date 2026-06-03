@@ -82,8 +82,6 @@ async function skipInitialOnboarding(page: Page) {
 }
 
 test.describe('transaction modal mobile layout', () => {
-  test.skip(({ browserName }) => browserName !== 'webkit', 'Focused mobile smoke runs on WebKit only.')
-
   test.beforeEach(async ({ page }) => {
     await clearLocalData(page)
   })

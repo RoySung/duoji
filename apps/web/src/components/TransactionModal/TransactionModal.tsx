@@ -9,7 +9,13 @@ import {
   Tab,
   addToast,
 } from '@heroui/react'
-import { useEffect, useState } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+} from 'react'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import {
@@ -68,6 +74,8 @@ export default function TransactionModal({
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [keyboardInset, setKeyboardInset] = useState(0)
+  const keyboardBaseViewportHeightRef = useRef(0)
   const isEditMode = modalMode === 'edit'
   const [draft, setDraft] = useState(() =>
     createTransactionDraft({
@@ -123,6 +131,82 @@ export default function TransactionModal({
     }
   }, [isOpen, modalMode, selectedTransaction])
 
+  useEffect(() => {
+    if (!isOpen) {
+      setKeyboardInset(0)
+      return
+    }
+
+    const { body, documentElement } = document
+    const previousStyles = {
+      htmlOverflow: documentElement.style.overflow,
+      htmlScrollBehavior: documentElement.style.scrollBehavior,
+      htmlOverscrollBehavior: documentElement.style.overscrollBehavior,
+      bodyOverflow: body.style.overflow,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+    }
+
+    documentElement.style.overflow = 'hidden'
+    documentElement.style.scrollBehavior = 'auto'
+    documentElement.style.overscrollBehavior = 'none'
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+
+    return () => {
+      documentElement.style.overflow = previousStyles.htmlOverflow
+      documentElement.style.scrollBehavior = previousStyles.htmlScrollBehavior
+      documentElement.style.overscrollBehavior =
+        previousStyles.htmlOverscrollBehavior
+      body.style.overflow = previousStyles.bodyOverflow
+      body.style.overscrollBehavior = previousStyles.bodyOverscrollBehavior
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      keyboardBaseViewportHeightRef.current = 0
+      setKeyboardInset(0)
+      return
+    }
+
+    const viewport = window.visualViewport
+
+    if (!viewport) {
+      keyboardBaseViewportHeightRef.current = 0
+      setKeyboardInset(0)
+      return
+    }
+
+    const updateKeyboardInset = () => {
+      const currentViewportHeight = viewport.height
+
+      keyboardBaseViewportHeightRef.current = Math.max(
+        keyboardBaseViewportHeightRef.current,
+        currentViewportHeight
+      )
+
+      const nextInset = Math.max(
+        0,
+        keyboardBaseViewportHeightRef.current -
+          currentViewportHeight -
+          viewport.offsetTop
+      )
+
+      setKeyboardInset(nextInset)
+    }
+
+    updateKeyboardInset()
+
+    viewport.addEventListener('resize', updateKeyboardInset)
+    viewport.addEventListener('scroll', updateKeyboardInset)
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardInset)
+      viewport.removeEventListener('scroll', updateKeyboardInset)
+      keyboardBaseViewportHeightRef.current = 0
+    }
+  }, [isOpen])
+
   const Form = formMap[draft.type]
   const isSaveDisabled =
     isSubmitting ||
@@ -133,10 +217,95 @@ export default function TransactionModal({
   const isDeleteDisabled =
     isSubmitting || modalMode !== 'edit' || !selectedTransaction
 
+  function scrollFocusedFieldIntoView(
+    container: HTMLDivElement,
+    target: HTMLElement
+  ) {
+    if (!container.isConnected || !target.isConnected) {
+      return
+    }
+
+    const targetRect = target.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
+    const visualViewportHeight =
+      window.visualViewport?.height ?? window.innerHeight
+    const padding = 24
+    const visibleTop = containerRect.top + padding
+    const visibleBottom = Math.min(
+      containerRect.bottom - padding,
+      visualViewportHeight - padding
+    )
+
+    if (targetRect.bottom > visibleBottom) {
+      container.scrollTop += targetRect.bottom - visibleBottom
+      return
+    }
+
+    if (targetRect.top < visibleTop) {
+      container.scrollTop -= visibleTop - targetRect.top
+    }
+  }
+
+  function handleModalBodyFocusCapture(event: FocusEvent<HTMLDivElement>) {
+    const container = event.currentTarget
+    const target = event.target
+
+    if (!(target instanceof HTMLElement)) {
+      return
+    }
+
+    const role = target.getAttribute('role')
+    const isFocusableField =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      role === 'combobox'
+
+    if (!isFocusableField) {
+      return
+    }
+
+    const schedule = [0, 150, 300, 450].map((delay) =>
+      window.setTimeout(() => {
+        if (document.activeElement !== target) {
+          return
+        }
+
+        scrollFocusedFieldIntoView(container, target)
+      }, delay)
+    )
+
+    const viewport = window.visualViewport
+
+    if (!viewport) {
+      return
+    }
+
+    const handleViewportResize = () => {
+      if (document.activeElement !== target) {
+        return
+      }
+
+      scrollFocusedFieldIntoView(container, target)
+    }
+
+    const cleanup = () => {
+      viewport.removeEventListener('resize', handleViewportResize)
+      schedule.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    }
+
+    viewport.addEventListener('resize', handleViewportResize)
+    target.addEventListener('blur', cleanup, { once: true })
+    window.setTimeout(cleanup, 800)
+  }
+
   function handleClose() {
     setIsDeleteConfirmOpen(false)
     onOpenChange(false)
   }
+
+  const modalViewportStyle = {
+    '--transaction-modal-keyboard-inset': `${keyboardInset}px`,
+  } as CSSProperties
 
   async function handleSave() {
     const timestamp = Date.now()
@@ -180,7 +349,9 @@ export default function TransactionModal({
             : t('transactionModal.toast.createFailTitle'),
         color: 'danger',
         description:
-          error instanceof Error ? error.message : t('transactionModal.toast.unknownError'),
+          error instanceof Error
+            ? error.message
+            : t('transactionModal.toast.unknownError'),
       })
     }
   }
@@ -221,6 +392,7 @@ export default function TransactionModal({
         onOpenChange={onOpenChange}
         placement="bottom"
         scrollBehavior="inside"
+        disableAnimation
         isDismissable={!isOnboardingActive}
         isKeyboardDismissDisabled={isOnboardingActive}
         hideCloseButton={isOnboardingActive}
@@ -229,8 +401,11 @@ export default function TransactionModal({
           wrapper: 'items-end sm:items-center',
         }}
       >
-        <ModalContent className="max-h-[90svh] sm:max-h-[calc(100vh-4rem)]">
-          <ModalHeader>
+        <ModalContent
+          style={modalViewportStyle}
+          className="flex min-h-0 max-h-[calc(100svh-env(safe-area-inset-top)-var(--transaction-modal-keyboard-inset))] flex-col overflow-hidden overscroll-contain sm:max-h-[calc(100vh-4rem)]"
+        >
+          <ModalHeader className="shrink-0">
             <div className="flex flex-col gap-2 items-center w-full">
               <h2>
                 {modalMode === 'edit'
@@ -261,7 +436,10 @@ export default function TransactionModal({
               </Tabs>
             </div>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pb-[calc(1rem+env(safe-area-inset-bottom)+var(--transaction-modal-keyboard-inset))] [-webkit-overflow-scrolling:touch]"
+            onFocusCapture={handleModalBodyFocusCapture}
+          >
             <div className="flex flex-col gap-4">
               <Form
                 value={draft}
@@ -293,7 +471,7 @@ export default function TransactionModal({
               ) : null}
             </div>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter className="shrink-0">
             {modalMode === 'view' ? (
               <Button onPress={handleClose}>{t('common.close')}</Button>
             ) : (
