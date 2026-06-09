@@ -242,7 +242,16 @@
     "refreshing": "Refreshing...",
     "refreshAria": "Refresh transactions",
     "records": "{count} records",
-    "emptyOnDate": "No transactions on this date"
+    "emptyOnDate": "No transactions on this date",
+    "list": {
+      "loading": "Loading transactions...",
+      "emptyTitle": "No transactions yet",
+      "emptyDescription": "Add your first transaction from the navbar button to populate this history.",
+      "uncategorized": "Uncategorized",
+      "equalSplit": "Equal Split",
+      "settled": "Settled",
+      "noDescription": "No description"
+    }
   },
   "transactionModal": {
     "titleEdit": "Edit Transaction",

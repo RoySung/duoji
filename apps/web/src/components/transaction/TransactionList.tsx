@@ -1,5 +1,6 @@
 import React from 'react'
 import { Avatar, Chip } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import {
   PiBookBold,
   PiCreditCardBold,
@@ -117,6 +118,7 @@ export default function TransactionList({
   showAccountBook = false,
   onEditTransaction,
 }: Props) {
+  const t = useTranslations()
   const categories = useCategoryStore((state) => state.categories)
   const categoryMap = new Map(
     categories.map((category) => [category.id, category])
@@ -136,7 +138,7 @@ export default function TransactionList({
 
       {isLoading ? (
         <div className="mt-6 rounded-3xl border border-dashed border-border bg-background px-5 py-10 text-center text-sm text-muted-foreground">
-          Loading transactions...
+          {t('transactions.list.loading')}
         </div>
       ) : null}
 
@@ -149,12 +151,11 @@ export default function TransactionList({
             <PiReceiptBold size={22} />
           </div>
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            {emptyMessage ?? 'No transactions yet'}
+            {emptyMessage ?? t('transactions.list.emptyTitle')}
           </h3>
           {!emptyMessage ? (
             <p className="mt-2 text-sm text-muted-foreground">
-              Add your first transaction from the navbar button to populate this
-              history.
+              {t('transactions.list.emptyDescription')}
             </p>
           ) : null}
         </div>
@@ -175,10 +176,10 @@ export default function TransactionList({
             const amountClassName =
               transaction.type === 'expense' ? 'text-danger' : 'text-success'
             const accountBook = showAccountBook
-              ? (accountBookMap.get(transaction.accountBookId) ?? null)
+              ? accountBookMap.get(transaction.accountBookId) ?? null
               : null
             const effectiveCurrency = showAccountBook
-              ? (accountBook?.currency ?? null)
+              ? accountBook?.currency ?? null
               : currency
 
             return (
@@ -207,7 +208,8 @@ export default function TransactionList({
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-semibold text-foreground">
-                              {category?.name ?? 'Uncategorized'}
+                              {category?.name ??
+                                t('transactions.list.uncategorized')}
                             </h3>
                             <Chip
                               className="bg-orange-100 text-orange-700"
@@ -255,7 +257,7 @@ export default function TransactionList({
                                   />
                                 }
                               >
-                                Equal Split
+                                {t('transactions.list.equalSplit')}
                               </Chip>
                             ) : null}
                             {hasLinkedSettlementRecordId(
@@ -266,12 +268,13 @@ export default function TransactionList({
                                 size="sm"
                                 variant="flat"
                               >
-                                Settled
+                                {t('transactions.list.settled')}
                               </Chip>
                             ) : null}
                           </div>
                           <p className="truncate text-sm text-muted-foreground">
-                            {transaction.description || 'No description'}
+                            {transaction.description ||
+                              t('transactions.list.noDescription')}
                           </p>
                         </div>
 

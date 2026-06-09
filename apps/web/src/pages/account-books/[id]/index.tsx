@@ -1,6 +1,6 @@
 import { Button, Chip } from '@heroui/react'
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import { PiArrowsClockwiseBold, PiBooksBold } from 'react-icons/pi'
@@ -16,13 +16,24 @@ import TransactionTutorial from '@/components/onboarding/TransactionTutorial'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useAccountBookTransactions } from '@/hooks/useAccountBookTransactions'
 import { TransactionModalMode } from '@/entities/transaction'
-import { TransactionCalendarVisibleRange } from '@/hooks/transactionQueryUtils'
+import {
+  sortTransactions,
+  TransactionCalendarVisibleRange,
+} from '@/hooks/transactionQueryUtils'
 
 export default function AccountBookPage() {
   const router = useRouter()
   const t = useTranslations()
   const { id } = router.query
   const accountBookId = typeof id === 'string' ? id : null
+
+  const buildMonthRange = useCallback(
+    (anchorDate: dayjs.Dayjs): TransactionCalendarVisibleRange => ({
+      startDate: formatCalendarDate(anchorDate.startOf('month')),
+      endDate: formatCalendarDate(anchorDate.endOf('month')),
+    }),
+    []
+  )
 
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const isAccountBooksInitialized = useAccountBookStore(
@@ -35,6 +46,8 @@ export default function AccountBookPage() {
   const [queryRange, setQueryRange] = useState<TransactionCalendarVisibleRange>(
     () => getMonthGridVisibleRange(dayjs())
   )
+  const [displayMonthRange, setDisplayMonthRange] =
+    useState<TransactionCalendarVisibleRange>(() => buildMonthRange(dayjs()))
   const [calendarViewMode, setCalendarViewMode] = useState<'week' | 'month'>(
     'week'
   )
@@ -113,8 +126,7 @@ export default function AccountBookPage() {
   const {
     summariesByDate,
     transactionsByDate,
-    allTransactions,
-    totalCount,
+    rangeTransactions,
     isLoading,
     error,
     refetch,
@@ -124,9 +136,21 @@ export default function AccountBookPage() {
     deleteTransaction,
   } = useAccountBookTransactions(accountBookId, queryRange)
 
+  const monthTransactions = useMemo(
+    () =>
+      sortTransactions(
+        rangeTransactions.filter(
+          (transaction) =>
+            transaction.date >= displayMonthRange.startDate &&
+            transaction.date <= displayMonthRange.endDate
+        )
+      ),
+    [displayMonthRange.endDate, displayMonthRange.startDate, rangeTransactions]
+  )
+
   const transactions = selectedDate
     ? transactionsByDate[selectedDate] ?? []
-    : allTransactions
+    : monthTransactions
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<TransactionModalMode>('create')
@@ -166,6 +190,24 @@ export default function AccountBookPage() {
       })
     },
     []
+  )
+
+  const handleDisplayMonthChange = useCallback(
+    (month: string) => {
+      const nextRange = buildMonthRange(parseCalendarDate(month))
+
+      setDisplayMonthRange((currentRange) => {
+        if (
+          currentRange.startDate === nextRange.startDate &&
+          currentRange.endDate === nextRange.endDate
+        ) {
+          return currentRange
+        }
+
+        return nextRange
+      })
+    },
+    [buildMonthRange]
   )
 
   useEffect(() => {
@@ -316,7 +358,7 @@ export default function AccountBookPage() {
                   variant="flat"
                 >
                   {t('transactions.records', {
-                    count: selectedDate ? transactions.length : totalCount,
+                    count: transactions.length,
                   })}
                 </Chip>
               </div>
@@ -326,6 +368,7 @@ export default function AccountBookPage() {
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               calendarSummaries={summariesByDate}
+              onDisplayMonthChange={handleDisplayMonthChange}
               onQueryRangeChange={handleQueryRangeChange}
               viewMode={calendarViewMode}
               onViewModeChange={setCalendarViewMode}

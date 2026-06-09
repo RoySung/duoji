@@ -58,6 +58,10 @@ export function useAmountInputValue({
 
   function handleFocus() {
     isFocusedRef.current = true
+
+    if (amount === 0) {
+      setInputValue('')
+    }
   }
 
   function handleBlur() {

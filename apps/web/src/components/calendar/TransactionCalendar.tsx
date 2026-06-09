@@ -13,6 +13,7 @@ import { TransactionCalendarVisibleRange } from '@/hooks/transactionQueryUtils'
 import WeekStrip from './WeekStrip'
 import MonthGrid from './MonthGrid'
 import {
+  formatCalendarDate,
   getMonthGridVisibleRange,
   getWeekVisibleRange,
   parseCalendarDate,
@@ -26,6 +27,7 @@ type Props = {
   calendarSummaries: Record<string, TransactionCalendarSummary>
   onVisibleRangeChange?: (range: TransactionCalendarVisibleRange) => void
   onQueryRangeChange?: (range: TransactionCalendarVisibleRange) => void
+  onDisplayMonthChange?: (month: string) => void
   viewMode?: 'week' | 'month'
   onViewModeChange?: (mode: 'week' | 'month') => void
 }
@@ -36,6 +38,7 @@ export default function TransactionCalendar({
   calendarSummaries,
   onVisibleRangeChange,
   onQueryRangeChange,
+  onDisplayMonthChange,
   viewMode: controlledViewMode,
   onViewModeChange,
 }: Props) {
@@ -79,6 +82,10 @@ export default function TransactionCalendar({
   useEffect(() => {
     onQueryRangeChange?.(getMonthGridVisibleRange(displayMonth))
   }, [displayMonth, onQueryRangeChange])
+
+  useEffect(() => {
+    onDisplayMonthChange?.(formatCalendarDate(displayMonth.startOf('month')))
+  }, [displayMonth, onDisplayMonthChange])
 
   function handleChangeWeek(weekDate: dayjs.Dayjs) {
     setDisplayMonth(weekDate)

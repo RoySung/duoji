@@ -242,7 +242,16 @@
     "refreshing": "重新整理中…",
     "refreshAria": "重新整理交易",
     "records": "{count} 筆紀錄",
-    "emptyOnDate": "這一天沒有交易紀錄"
+    "emptyOnDate": "這一天沒有交易紀錄",
+    "list": {
+      "loading": "載入交易中…",
+      "emptyTitle": "還沒有交易紀錄",
+      "emptyDescription": "從導覽列按鈕新增第一筆交易，這裡就會顯示歷史紀錄。",
+      "uncategorized": "未分類",
+      "equalSplit": "平均分攤",
+      "settled": "已結算",
+      "noDescription": "無描述"
+    }
   },
   "transactionModal": {
     "titleEdit": "編輯交易",

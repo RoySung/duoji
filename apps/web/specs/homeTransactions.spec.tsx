@@ -1267,6 +1267,45 @@ describe('Home transaction history', () => {
     expect(screen.queryByText('Bonus')).toBeNull()
   })
 
+  it('keeps the list scoped to the current month when no date is selected', async () => {
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+      selectedDate: null,
+      transactions: [
+        createTransactionFixture({
+          id: 'tx-current-month',
+          accountBookId: 'book-1',
+          date: '2026/03/19',
+          description: 'Current month lunch',
+        }),
+        createTransactionFixture({
+          id: 'tx-previous-month',
+          accountBookId: 'book-1',
+          date: '2026/02/27',
+          description: 'Previous month dinner',
+        }),
+        createTransactionFixture({
+          id: 'tx-next-month',
+          accountBookId: 'book-1',
+          date: '2026/04/02',
+          description: 'Next month coffee',
+        }),
+      ],
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('transaction-row-tx-current-month')
+      ).toBeTruthy()
+    })
+
+    expect(screen.getByText('1 records')).toBeTruthy()
+    expect(screen.getByText('Current month lunch')).toBeTruthy()
+    expect(screen.queryByText('Previous month dinner')).toBeNull()
+    expect(screen.queryByText('Next month coffee')).toBeNull()
+  })
+
   it('renders a different account-book route with its scoped transactions only', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-2',
