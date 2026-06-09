@@ -90,11 +90,29 @@ export default function AddCategoryModal({
     if (isEditMode) return t('categorySettings.editTitle')
 
     if (parentType) return t('categorySettings.addSubTitle')
-    return sectionType === 'income' ? t('categorySettings.addIncomeGroup') : t('categorySettings.addExpenseGroup')
+    return sectionType === 'income'
+      ? t('categorySettings.addIncomeGroup')
+      : t('categorySettings.addExpenseGroup')
   }
 
   function typeDisplay(type: TransactionType) {
-    return type === 'income' ? t('categorySettings.income') : t('categorySettings.expense')
+    return type === 'income'
+      ? t('categorySettings.income')
+      : t('categorySettings.expense')
+  }
+
+  function renderIconLabel(key: CategoryIconKey) {
+    return (
+      <div className="flex items-center gap-2">
+        <img
+          alt=""
+          aria-hidden="true"
+          className="size-4 shrink-0"
+          src={CATEGORY_ICONS[key]}
+        />
+        <span>{t(`categorySettings.iconOptions.${key}`)}</span>
+      </div>
+    )
   }
 
   return (
@@ -118,6 +136,13 @@ export default function AddCategoryModal({
 
           <Select
             label={t('categorySettings.icon')}
+            renderValue={(items) => {
+              const selectedKey = items[0]?.key
+
+              if (typeof selectedKey !== 'string') return null
+
+              return renderIconLabel(selectedKey as CategoryIconKey)
+            }}
             selectedKeys={[iconKey]}
             onSelectionChange={(keys) => {
               const key = Array.from(keys)[0] as CategoryIconKey
@@ -127,16 +152,9 @@ export default function AddCategoryModal({
             {ICON_KEYS.map((key) => (
               <SelectItem
                 key={key}
-                startContent={
-                  <img
-                    alt={key}
-                    className="h-4 w-4"
-                    src={CATEGORY_ICONS[key]}
-                  />
-                }
-                textValue={key}
+                textValue={t(`categorySettings.iconOptions.${key}`)}
               >
-                {key}
+                {renderIconLabel(key)}
               </SelectItem>
             ))}
           </Select>
@@ -163,10 +181,16 @@ export default function AddCategoryModal({
                   if (val) setType(val)
                 }}
               >
-                <SelectItem key="expense" textValue={t('categorySettings.expense')}>
+                <SelectItem
+                  key="expense"
+                  textValue={t('categorySettings.expense')}
+                >
                   {t('categorySettings.expense')}
                 </SelectItem>
-                <SelectItem key="income" textValue={t('categorySettings.income')}>
+                <SelectItem
+                  key="income"
+                  textValue={t('categorySettings.income')}
+                >
                   {t('categorySettings.income')}
                 </SelectItem>
               </Select>

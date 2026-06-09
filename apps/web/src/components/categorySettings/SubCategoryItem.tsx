@@ -1,4 +1,5 @@
 import { DragControls } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import {
   PiDotsSixVerticalBold,
   PiPencilSimpleDuotone,
@@ -19,6 +20,8 @@ export default function SubCategoryItem({
   onEdit,
   onDelete,
 }: SubCategoryItemProps) {
+  const t = useTranslations()
+
   return (
     <div className="flex items-center gap-2 px-3 py-2">
       {/* Drag handle */}
@@ -35,6 +38,7 @@ export default function SubCategoryItem({
 
       {/* Action buttons */}
       <button
+        aria-label={t('common.edit')}
         className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-foreground"
         type="button"
         onClick={onEdit}
@@ -42,6 +46,7 @@ export default function SubCategoryItem({
         <PiPencilSimpleDuotone size={16} />
       </button>
       <button
+        aria-label={t('common.delete')}
         className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-danger"
         type="button"
         onClick={onDelete}

@@ -1,4 +1,5 @@
 import { Modal, ModalBody, ModalContent, ModalHeader } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { useAccountBookStore } from '@/stores/accountBook'
 import CategorySettingsPage from './CategorySettingsPage'
 
@@ -8,20 +9,37 @@ type Props = {
   accountBookId: string
 }
 
-export default function CategorySettingsModal({ isOpen, onOpenChange, accountBookId }: Props) {
+export default function CategorySettingsModal({
+  isOpen,
+  onOpenChange,
+  accountBookId,
+}: Props) {
+  const t = useTranslations()
   const accountBooks = useAccountBookStore((s) => s.accountBooks)
   const accountBook = accountBooks.find((ab) => ab.id === accountBookId) ?? null
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl" scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      size="3xl"
+      scrollBehavior="inside"
+    >
       <ModalContent>
         {(onClose) => (
           <>
             <ModalHeader>
-              {accountBook ? `${accountBook.name} — Categories` : 'Categories'}
+              {accountBook
+                ? t('categorySettings.titleWithAccountBook', {
+                    accountBookName: accountBook.name,
+                  })
+                : t('categorySettings.title')}
             </ModalHeader>
             <ModalBody className="px-4 pb-4">
-              <CategorySettingsPage accountBookId={accountBookId} onClose={onClose} />
+              <CategorySettingsPage
+                accountBookId={accountBookId}
+                onClose={onClose}
+              />
             </ModalBody>
           </>
         )}

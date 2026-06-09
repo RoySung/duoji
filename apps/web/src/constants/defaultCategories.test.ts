@@ -9,7 +9,9 @@ describe('defaultCategories', () => {
     const food = cats.find((c) => c.parentId === null && c.imageUrl)
     expect(food).toBeDefined()
     expect(cats.some((c) => c.name === '餐飲')).toBe(true)
-    expect(cats.some((c) => c.name === '早餐')).toBe(true)
+    expect(cats.some((c) => c.name === '食材費')).toBe(true)
+    expect(cats.some((c) => c.name === '居家帳單')).toBe(true)
+    expect(cats.some((c) => c.name === '其他')).toBe(true)
     expect(cats.every((c) => c.accountBookId === 'ab-1')).toBe(true)
     expect(cats.every((c) => c.type === 'expense')).toBe(true)
   })
@@ -18,12 +20,24 @@ describe('defaultCategories', () => {
     const cats = getDefaultExpenseCategories('ab-1', 'en-US')
     expect(cats.some((c) => c.name === 'Food & Dining')).toBe(true)
     expect(cats.some((c) => c.name === 'Breakfast')).toBe(true)
+    expect(cats.some((c) => c.name === 'Groceries')).toBe(true)
+    expect(cats.some((c) => c.name === 'Household Bills')).toBe(true)
+    expect(cats.some((c) => c.name === 'Other')).toBe(true)
+  })
+
+  it('seeds income categories with English names when locale is en-US', () => {
+    const cats = getDefaultIncomeCategories('ab-1', 'en-US')
+    expect(cats.some((c) => c.name === 'Salary')).toBe(true)
+    expect(cats.some((c) => c.name === 'Part-time Work')).toBe(true)
+    expect(cats.some((c) => c.name === 'Gifts / Allowances')).toBe(true)
+    expect(cats.every((c) => c.type === 'income')).toBe(true)
   })
 
   it('seeds income categories with Chinese names when locale is zh-TW', () => {
     const cats = getDefaultIncomeCategories('ab-1', 'zh-TW')
     expect(cats.some((c) => c.name === '薪資')).toBe(true)
-    expect(cats.some((c) => c.name === '底薪')).toBe(true)
+    expect(cats.some((c) => c.name === '兼職')).toBe(true)
+    expect(cats.some((c) => c.name === '禮金/補助')).toBe(true)
     expect(cats.every((c) => c.type === 'income')).toBe(true)
   })
 

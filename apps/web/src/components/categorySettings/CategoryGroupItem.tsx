@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { DragControls, Reorder, useDragControls } from 'framer-motion'
+import { useTranslations } from 'next-intl'
 import {
   PiCaretDownBold,
   PiDotsSixVerticalBold,
@@ -55,6 +56,7 @@ export default function CategoryGroupItem({
   onDeleteSub,
   onReorderSubs,
 }: CategoryGroupItemProps) {
+  const t = useTranslations()
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
@@ -81,7 +83,9 @@ export default function CategoryGroupItem({
           <div className="flex flex-1 flex-col">
             <span className="font-semibold text-foreground">{root.name}</span>
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              {subCategories.length} sub-category
+              {t('categorySettings.subCategoryCount', {
+                count: subCategories.length,
+              })}
             </span>
           </div>
           <PiCaretDownBold
@@ -94,6 +98,7 @@ export default function CategoryGroupItem({
 
         {/* Root action buttons */}
         <button
+          aria-label={t('common.edit')}
           className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-foreground"
           type="button"
           onClick={() => onEditRoot?.(root)}
@@ -101,6 +106,7 @@ export default function CategoryGroupItem({
           <PiPencilSimpleDuotone size={16} />
         </button>
         <button
+          aria-label={t('common.delete')}
           className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-danger"
           type="button"
           onClick={() => onDeleteRoot?.(root)}
@@ -134,7 +140,8 @@ export default function CategoryGroupItem({
             type="button"
             onClick={() => onAddSubCategory(root)}
           >
-            <PiPlusCircleDuotone className="text-base" /> ADD SUB-CATEGORY
+            <PiPlusCircleDuotone className="text-base" />{' '}
+            {t('categorySettings.addSubTitle')}
           </button>
         </div>
       ) : null}

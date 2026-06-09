@@ -2,7 +2,11 @@ import { Button, Tab, Tabs, addToast } from '@heroui/react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Reorder, useDragControls } from 'framer-motion'
-import { CATEGORY_ICONS, CategoryIconKey } from '@/constants/categoryIcons'
+import {
+  CATEGORY_ICONS,
+  CategoryIconKey,
+  DEFAULT_CATEGORY_ICON_KEY,
+} from '@/constants/categoryIcons'
 import { Category } from '@/entities/category'
 import { TransactionType } from '@/entities/transaction'
 import { useAccountBookStore } from '@/stores/accountBook'
@@ -269,7 +273,10 @@ export default function CategorySettingsPage({
       setIsDirty(false)
       addToast({ title: t('categorySettings.toast.saved'), color: 'success' })
     } catch {
-      addToast({ title: t('categorySettings.toast.saveFailed'), color: 'danger' })
+      addToast({
+        title: t('categorySettings.toast.saveFailed'),
+        color: 'danger',
+      })
     } finally {
       setIsSaving(false)
     }
@@ -328,11 +335,12 @@ export default function CategorySettingsPage({
     setDeleteTarget(null)
   }
 
-  function renderRoots(
-    roots: Category[],
-    type: TransactionType,
-    addLabel: string
-  ) {
+  function renderRoots(roots: Category[], type: TransactionType) {
+    const addLabel =
+      type === 'income'
+        ? t('categorySettings.addIncomeGroup')
+        : t('categorySettings.addExpenseGroup')
+
     return (
       <section className={`flex flex-col gap-3 pt-2 ${isDirty ? 'pb-20' : ''}`}>
         <Reorder.Group
@@ -385,7 +393,7 @@ export default function CategorySettingsPage({
         name: editTarget.name,
         iconKey: (Object.entries(CATEGORY_ICONS).find(
           ([, url]) => url === editTarget.imageUrl
-        )?.[0] ?? 'default') as CategoryIconKey,
+        )?.[0] ?? DEFAULT_CATEGORY_ICON_KEY) as CategoryIconKey,
       }
     : undefined
 
@@ -394,7 +402,7 @@ export default function CategorySettingsPage({
       {!isModalMode && (
         <AccountBookNavHeader
           backHref="/settings/account-books"
-          title="Category Settings"
+          title={t('categorySettings.pageTitle')}
         />
       )}
 
@@ -404,28 +412,30 @@ export default function CategorySettingsPage({
             {accountBook.name}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Organize categories in this account book
+            {t('categorySettings.pageDescription')}
           </p>
         </div>
       ) : null}
 
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center py-12">
-          <p className="text-sm text-muted-foreground">Loading categories…</p>
+          <p className="text-sm text-muted-foreground">
+            {t('categorySettings.loading')}
+          </p>
         </div>
       ) : (
         <Tabs
-          aria-label="Category type"
+          aria-label={t('categorySettings.tabsAriaLabel')}
           color="primary"
           selectedKey={activeTab}
           variant="underlined"
           onSelectionChange={(key) => setActiveTab(key as TransactionType)}
         >
-          <Tab key="expense" title="Expense">
-            {renderRoots(expenseRoots, 'expense', 'ADD EXPENSE GROUP')}
+          <Tab key="expense" title={t('categorySettings.expense')}>
+            {renderRoots(expenseRoots, 'expense')}
           </Tab>
-          <Tab key="income" title="Income">
-            {renderRoots(incomeRoots, 'income', 'ADD INCOME GROUP')}
+          <Tab key="income" title={t('categorySettings.income')}>
+            {renderRoots(incomeRoots, 'income')}
           </Tab>
         </Tabs>
       )}
@@ -441,7 +451,7 @@ export default function CategorySettingsPage({
         >
           <Button disableRipple variant="flat" onPress={handleDiscard}>
             <PiXBold size={14} />
-            Discard
+            {t('common.discard')}
           </Button>
           <Button
             color="primary"
@@ -450,7 +460,7 @@ export default function CategorySettingsPage({
             startContent={isSaving ? null : <PiFloppyDiskDuotone size={16} />}
             onPress={handleSave}
           >
-            Save
+            {t('common.save')}
           </Button>
         </div>
       )}
