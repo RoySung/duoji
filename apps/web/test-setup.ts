@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto'
 import { webcrypto } from 'crypto'
+import { db } from '@/lib/dexie'
 
 // Polyfill for structuredClone in Node.js test environment
 if (typeof globalThis.structuredClone === 'undefined') {
@@ -29,3 +30,12 @@ if (typeof window !== 'undefined' && typeof window.matchMedia === 'undefined') {
     removeListener: jest.fn(),
   })
 }
+
+afterEach(async () => {
+  try {
+    db.close()
+  } catch (e) {
+    // Ignore
+  }
+})
+

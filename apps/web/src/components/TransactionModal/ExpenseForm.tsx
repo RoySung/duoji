@@ -25,6 +25,7 @@ import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import SplitDetailModal from './SplitDetailModal'
 import CategorySelector from './CategorySelector'
+import { useAccountBookTagSuggestions } from '@/hooks/useAccountBookTagSuggestions'
 import {
   amountInputClassNames,
   amountInputCurrencyClassName,
@@ -140,6 +141,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
       onChange(distributeTransactionAmount(value, nextAmount))
     },
   })
+  const { suggestions: tagSuggestions } = useAccountBookTagSuggestions(
+    value.accountBookId,
+    value.tags
+  )
 
   return (
     <div className="expense-form">
@@ -260,6 +265,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           data={{
             keywords: value.tags,
           }}
+          suggestions={tagSuggestions}
           onTagsChange={(tags) => {
             onChange({ ...value, tags })
           }}

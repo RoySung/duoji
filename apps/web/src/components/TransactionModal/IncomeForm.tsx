@@ -13,6 +13,7 @@ import TagsInput from '../ui/TagInput'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
+import { useAccountBookTagSuggestions } from '@/hooks/useAccountBookTagSuggestions'
 import {
   amountInputClassNames,
   amountInputCurrencyClassName,
@@ -105,6 +106,10 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
       onChange(distributeTransactionAmount(value, nextAmount))
     },
   })
+  const { suggestions: tagSuggestions } = useAccountBookTagSuggestions(
+    value.accountBookId,
+    value.tags
+  )
 
   return (
     <div className="income-form">
@@ -266,6 +271,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           data={{
             keywords: value.tags,
           }}
+          suggestions={tagSuggestions}
           onTagsChange={(tags) => {
             onChange({ ...value, tags })
           }}

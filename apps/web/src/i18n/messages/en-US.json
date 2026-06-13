@@ -413,6 +413,15 @@
     "exported": "Exported!",
     "loading": "Loading report...",
     "updating": "Updating...",
+    "tagFilter": {
+      "trigger": "Filter tags",
+      "title": "Filter tags",
+      "description": "Select tags to focus the report. Untagged transactions stay visible.",
+      "selectAll": "Select all",
+      "clearSelection": "Clear selection",
+      "empty": "No tags in the current report scope.",
+      "done": "Done"
+    },
     "dateRangeAria": "Report date range",
     "presets": {
       "thisWeek": "This Week",

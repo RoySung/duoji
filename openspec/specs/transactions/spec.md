@@ -1086,3 +1086,54 @@ tests:
   - apps/web/specs/transactionStore.spec.ts
   - apps/web/specs/settlement.spec.ts
 -->
+
+---
+### Requirement: Transaction forms support tag suggestions without removing manual tag entry
+
+The transaction form SHALL allow users to add tags either by typing manually or by selecting from the available suggestions for the form's selected account book. This behavior SHALL apply to both expense and income transaction forms in create and edit flows.
+
+#### Scenario: Create a transaction with a suggested tag
+
+- **WHEN** a user selects one or more available tag suggestions in a new transaction form and saves a valid transaction
+- **THEN** the system SHALL persist the selected tags together with any manually entered tags on the saved transaction
+
+#### Scenario: Edit a transaction with suggested and manual tags
+
+- **WHEN** a user opens an existing transaction form, keeps some existing tags, adds another tag from the available suggestions, and saves the form
+- **THEN** the system SHALL persist the updated combined tag list on that transaction
+
+#### Scenario: Manual tag entry remains available without suggestions
+
+- **WHEN** no tag suggestions are available for the selected account book
+- **THEN** the transaction form SHALL still allow the user to enter and save tags manually
+
+<!-- @trace
+source: add-transaction-tag-suggestions
+updated: 2026-06-13
+code:
+  - apps/web/src/hooks/transactionQueryUtils.ts
+  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/src/components/ui/TagInput.tsx
+  - apps/web/src/components/report/ReportSection.tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/src/hooks/useAccountBookTagSuggestions.ts
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/entities/transaction.ts
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web/src/i18n/messages/zh-TW.json
+  - apps/web/test-setup.ts
+  - apps/web/src/components/report/TagFilterSelector.tsx
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/transaction/TransactionList.tsx
+tests:
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/reportTagFilterSelector.spec.tsx
+  - apps/web/specs/transactionFormTags.spec.tsx
+  - apps/web/specs/useAccountBookTagSuggestions.spec.ts
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
+  - apps/web/specs/reportSection.spec.tsx
+-->

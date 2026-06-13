@@ -130,7 +130,6 @@ export default function AccountBookPage() {
     isLoading,
     error,
     refetch,
-    refreshTransactions,
     createTransaction,
     updateTransaction,
     deleteTransaction,
@@ -170,11 +169,11 @@ export default function AccountBookPage() {
     setIsRefreshing(true)
 
     try {
-      await Promise.all([refetch(), refreshTransactions()])
+      await refetch()
     } finally {
       setIsRefreshing(false)
     }
-  }, [refetch, refreshTransactions])
+  }, [refetch])
 
   const handleQueryRangeChange = useCallback(
     (range: TransactionCalendarVisibleRange) => {

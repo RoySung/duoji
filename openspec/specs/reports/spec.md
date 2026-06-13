@@ -303,3 +303,51 @@ tests:
   - apps/web/specs/reportSection.spec.tsx
   - apps/web/specs/reportCategoryBreakdown.spec.tsx
 -->
+
+---
+### Requirement: Report outputs reflect the active tag filter
+
+When the report page has an active tag filter selection, the report's derived outputs SHALL be recalculated from the tag-filtered transaction dataset for the current page scope.
+
+#### Scenario: Summary values reflect the active tag filter
+
+- **WHEN** one or more report tags are selected
+- **THEN** the income, expense, and net summary values SHALL be calculated from only the transactions that remain in scope after tag filtering
+
+#### Scenario: Category breakdown reflects the active tag filter
+
+- **WHEN** one or more report tags are selected
+- **THEN** the category breakdown chart and ranking list SHALL use only the transactions that remain in scope after tag filtering
+
+#### Scenario: Monthly trend reflects the active tag filter
+
+- **WHEN** one or more report tags are selected
+- **THEN** the monthly trend chart SHALL use only the transactions that remain in scope after tag filtering
+
+<!-- @trace
+source: add-report-tag-filter
+updated: 2026-06-12
+code:
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/hooks/useAccountBookTransactions.ts
+  - apps/web/src/components/ui/TagInput.tsx
+  - apps/web/src/components/report/ReportSection.tsx
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/test-setup.ts
+  - apps/web/src/components/report/TagFilterSelector.tsx
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/src/hooks/useAccountBookTagSuggestions.ts
+  - apps/web/src/i18n/messages/zh-TW.json
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web/src/hooks/transactionQueryUtils.ts
+tests:
+  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/reportTagFilterSelector.spec.tsx
+  - apps/web/specs/useAccountBookTagSuggestions.spec.ts
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
+  - apps/web/specs/transactionFormTags.spec.tsx
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/reportSection.spec.tsx
+-->

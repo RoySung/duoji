@@ -413,6 +413,15 @@
     "exported": "已匯出！",
     "loading": "載入報表中…",
     "updating": "更新中…",
+    "tagFilter": {
+      "trigger": "篩選標籤",
+      "title": "篩選標籤",
+      "description": "選擇要聚焦的標籤。未標記交易會保留在報表中。",
+      "selectAll": "全選",
+      "clearSelection": "清除選擇",
+      "empty": "目前報表範圍內沒有可用標籤。",
+      "done": "完成"
+    },
     "dateRangeAria": "報表日期範圍",
     "presets": {
       "thisWeek": "本週",

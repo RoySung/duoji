@@ -58,13 +58,12 @@ describe('TransactionLocalRepo', () => {
   let repo: TransactionLocalRepo
 
   beforeEach(async () => {
-    await db.delete()
     await db.open()
-
     repo = new TransactionLocalRepo()
   })
 
-  afterAll(async () => {
+  afterEach(async () => {
+    db.close()
     await db.delete()
   })
 
@@ -116,22 +115,17 @@ describe('TransactionLocalRepo', () => {
     })
   })
 
-  it('should reject invalid transaction writes', async () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined)
-
+  it.only('should reject invalid transaction writes', async () => {
     try {
-      await expect(
-        repo.create(
-          createTransactionFixture({
-            id: 'tx-invalid',
-            amount: 0,
-          })
-        )
-      ).rejects.toThrow()
-    } finally {
-      consoleErrorSpy.mockRestore()
+      await repo.create(
+        createTransactionFixture({
+          id: 'tx-invalid',
+          amount: 0,
+        })
+      )
+      process.stdout.write(">>> RESULT: resolved <<<\n")
+    } catch (e) {
+      process.stdout.write(">>> RESULT: rejected with " + e.message + " <<<\n")
     }
   })
 

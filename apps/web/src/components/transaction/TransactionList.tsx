@@ -273,8 +273,7 @@ export default function TransactionList({
                             ) : null}
                           </div>
                           <p className="truncate text-sm text-muted-foreground">
-                            {transaction.description ||
-                              t('transactions.list.noDescription')}
+                            {transaction.description || '-'}
                           </p>
                         </div>
 

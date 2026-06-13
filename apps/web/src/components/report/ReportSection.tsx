@@ -21,6 +21,7 @@ type ReportSectionProps = {
   categories: Category[]
   mergeByName: boolean
   currency: Currency
+  selectedTags: Set<string>
   label?: string
   showCurrencyHeading?: boolean
   accountBook?: AccountBook | null
@@ -33,6 +34,7 @@ export default function ReportSection({
   categories,
   mergeByName,
   currency,
+  selectedTags,
   label,
   showCurrencyHeading = false,
   accountBook,
@@ -46,12 +48,19 @@ export default function ReportSection({
     [categories]
   )
 
-  // Category-filtered transactions: used for summary cards and monthly trend only.
-  // The breakdown list always uses the full `transactions` so excluded rows stay visible.
-  const activeTransactions = useMemo(() => {
-    if (excludedKeys.size === 0) return transactions
+  const tagFilteredTransactions = useMemo(() => {
+    if (!selectedTags || selectedTags.size === 0) return transactions
+    return transactions.filter(
+      (tx) => tx.tags && (tx.tags.length === 0 || tx.tags.some((tag) => selectedTags.has(tag)))
+    )
+  }, [transactions, selectedTags])
 
-    return transactions.filter((tx) => {
+  // Category-filtered transactions: used for summary cards and monthly trend only.
+  // The breakdown list always uses the full `tagFilteredTransactions` so excluded rows stay visible.
+  const activeTransactions = useMemo(() => {
+    if (excludedKeys.size === 0) return tagFilteredTransactions
+
+    return tagFilteredTransactions.filter((tx) => {
       const category = categoryById.get(tx.categoryId) ?? null
       const currentKey = getCategoryBucketIdentity(
         tx,
@@ -78,19 +87,19 @@ export default function ReportSection({
 
       return true
     })
-  }, [transactions, excludedKeys, categoryById, mergeByName])
+  }, [tagFilteredTransactions, excludedKeys, categoryById, mergeByName])
 
   const totals = useMemo(
     () => summarize(activeTransactions),
     [activeTransactions]
   )
   const expenseCategories = useMemo(
-    () => groupByCategory(transactions, categories, 'expense', { mergeByName }),
-    [transactions, categories, mergeByName]
+    () => groupByCategory(tagFilteredTransactions, categories, 'expense', { mergeByName }),
+    [tagFilteredTransactions, categories, mergeByName]
   )
   const incomeCategories = useMemo(
-    () => groupByCategory(transactions, categories, 'income', { mergeByName }),
-    [transactions, categories, mergeByName]
+    () => groupByCategory(tagFilteredTransactions, categories, 'income', { mergeByName }),
+    [tagFilteredTransactions, categories, mergeByName]
   )
   const monthlyTrend = useMemo(
     () => groupByMonth(activeTransactions),
@@ -103,7 +112,7 @@ export default function ReportSection({
     ? `report-section-${currency}`
     : undefined
 
-  if (transactions.length === 0) {
+  if (tagFilteredTransactions.length === 0) {
     return (
       <section
         className="rounded-3xl border border-border bg-card p-6 shadow-lg shadow-black/5"
@@ -161,7 +170,7 @@ export default function ReportSection({
             variant="flat"
             className="bg-accent text-muted-foreground"
           >
-            {t('report.section.recordsCount', { count: transactions.length })}
+            {t('report.section.recordsCount', { count: tagFilteredTransactions.length })}
           </Chip>
         </div>
       ) : (

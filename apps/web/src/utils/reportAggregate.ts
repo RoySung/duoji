@@ -14,6 +14,23 @@ export function formatAmount(amount: number): string {
   return Math.round(amount).toLocaleString()
 }
 
+export function extractReportTags(transactions: Transaction[]): string[] {
+  const tags = new Set<string>()
+
+  for (const transaction of transactions) {
+    for (const tag of transaction.tags) {
+      const trimmed = tag.trim()
+      if (!trimmed) continue
+      tags.add(trimmed)
+    }
+  }
+
+  return Array.from(tags.values()).sort((left, right) =>
+    left.localeCompare(right, undefined, { sensitivity: 'base' }) ||
+    left.localeCompare(right)
+  )
+}
+
 const UNCATEGORIZED_DISPLAY_NAME = 'Uncategorized'
 
 export function groupByCurrency(

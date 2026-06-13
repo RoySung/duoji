@@ -64,4 +64,41 @@ describe('ReportCategoryBreakdown', () => {
     expect(screen.queryByText('Food')).not.toBeNull()
     expect(screen.queryByTestId('apex-chart')).toBeNull()
   })
+
+  it('renders only the summaries passed from the tag-scoped report dataset', () => {
+    const expense: CategorySummary[] = [
+      {
+        key: 'name::expense::Food',
+        displayName: 'Food',
+        imageUrl: null,
+        totalAmount: 300,
+        transactionCount: 2,
+        percentage: 75,
+        transactions: [],
+      },
+      {
+        key: 'name::expense::Utilities',
+        displayName: 'Utilities',
+        imageUrl: null,
+        totalAmount: 100,
+        transactionCount: 1,
+        percentage: 25,
+        transactions: [],
+      },
+    ]
+
+    render(
+      <ReportCategoryBreakdown
+        expense={expense}
+        income={[]}
+        currency="TWD"
+        excludedKeys={new Set()}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    expect(screen.queryByText('Food')).not.toBeNull()
+    expect(screen.queryByText('Utilities')).not.toBeNull()
+    expect(screen.queryByText('Transport')).toBeNull()
+  })
 })

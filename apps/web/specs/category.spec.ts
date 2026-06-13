@@ -47,20 +47,15 @@ describe('Category System', () => {
     let repo: CategoryLocalRepo
 
     beforeEach(async () => {
-      // Clear IndexedDB before each test
-      await db.delete()
       await db.open()
-
       repo = new CategoryLocalRepo()
-
-      // Manually initialize test data since the automatic initialization
-      // might not run in test environment
       for (const category of categoryList) {
         await db.categories.put(category)
       }
     })
 
-    afterAll(async () => {
+    afterEach(async () => {
+      db.close()
       await db.delete()
     })
 

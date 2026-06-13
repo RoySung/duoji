@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import dayjs from 'dayjs'
@@ -6,12 +6,13 @@ import { Button } from '@heroui/react'
 import { PiBooksBold, PiCheckBold, PiDownloadSimpleBold } from 'react-icons/pi'
 import BookFilterSelector from '@/components/report/BookFilterSelector'
 import ReportSection from '@/components/report/ReportSection'
+import TagFilterSelector from '@/components/report/TagFilterSelector'
 import TimeRangeSelector from '@/components/report/TimeRangeSelector'
 import { useExportTransactionsCsv } from '@/hooks/useExportTransactionsCsv'
 import { useReportTransactions } from '@/hooks/useReportTransactions'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
-import { groupByCurrency } from '@/utils/reportAggregate'
+import { extractReportTags, groupByCurrency } from '@/utils/reportAggregate'
 import { Currency } from '@/entities/accountBook'
 import ReportTutorial from '@/components/onboarding/ReportTutorial'
 
@@ -44,6 +45,7 @@ export default function AccountBookReportPage() {
     () => new Set()
   )
   const [excludedKeys, setExcludedKeys] = useState<Set<string>>(() => new Set())
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(() => new Set())
 
   const { transactions, isLoading, isFetching, error } = useReportTransactions(
     accountBookId,
@@ -64,6 +66,27 @@ export default function AccountBookReportPage() {
     if (!isAllBooksView) return []
     return groupByCurrency(bookFilteredTransactions, accountBooks)
   }, [isAllBooksView, bookFilteredTransactions, accountBooks])
+
+  const availableTags = useMemo(
+    () => extractReportTags(bookFilteredTransactions),
+    [bookFilteredTransactions]
+  )
+
+  useEffect(() => {
+    const availableTagSet = new Set(availableTags)
+
+    setSelectedTags((prev) => {
+      const next = new Set(
+        Array.from(prev).filter((tag) => availableTagSet.has(tag))
+      )
+
+      if (next.size === prev.size) {
+        return prev
+      }
+
+      return next
+    })
+  }, [availableTags])
 
   const { exportCsv } = useExportTransactionsCsv(
     bookFilteredTransactions,
@@ -151,7 +174,7 @@ export default function AccountBookReportPage() {
                 {justExported ? t('report.exported') : t('report.exportCsv')}
               </Button>
               <div
-                className="flex flex-wrap items-center gap-2"
+                className="flex flex-wrap items-start gap-2"
                 data-onboarding-anchor="report-filters"
               >
                 {isAllBooksView ? (
@@ -161,6 +184,11 @@ export default function AccountBookReportPage() {
                     onChange={setExcludedBookIds}
                   />
                 ) : null}
+                <TagFilterSelector
+                  allTags={availableTags}
+                  selectedTags={selectedTags}
+                  onChange={setSelectedTags}
+                />
                 <TimeRangeSelector value={dateRange} onChange={setDateRange} />
               </div>
             </div>
@@ -211,6 +239,7 @@ export default function AccountBookReportPage() {
                       categories={categories}
                       mergeByName
                       currency="TWD"
+                      selectedTags={selectedTags}
                       excludedKeys={excludedKeys}
                       onToggleKey={toggleKey}
                     />
@@ -222,6 +251,7 @@ export default function AccountBookReportPage() {
                         categories={categories}
                         mergeByName
                         currency={group.currency}
+                        selectedTags={selectedTags}
                         showCurrencyHeading
                         label={group.currency}
                         excludedKeys={excludedKeys}
@@ -235,6 +265,7 @@ export default function AccountBookReportPage() {
                     categories={categories}
                     mergeByName={false}
                     currency={singleCurrency}
+                    selectedTags={selectedTags}
                     accountBook={currentAccountBook}
                     excludedKeys={excludedKeys}
                     onToggleKey={toggleKey}
