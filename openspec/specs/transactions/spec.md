@@ -180,6 +180,7 @@ The system SHALL present transactions for the current account book on the home p
 
 - **WHEN** a transaction row is rendered in the home-page list
 - **THEN** the system SHALL display enough summary information to distinguish the transaction, including its date, category, description or note, expense payer information for expense transactions, income recipient information for income transactions, tags when present, payment method when present, an equal-split indicator when the split detail is even, and the transaction amount with a `+` prefix for income and no sign prefix for expense
+- **AND** the expense payer or income recipient information SHALL be displayed with a LuDollarSign prefix icon and their user avatar(s)
 
 #### Scenario: Edit a transaction from the visible list
 
@@ -193,52 +194,12 @@ The system SHALL present transactions for the current account book on the home p
 
 
 <!-- @trace
-source: account-book-calendar
-updated: 2026-05-05
+source: add-payer-prefix-icon-and-avatar
+updated: 2026-06-13
 code:
-  - apps/web/src/components/accountBook/AccountBookMenu.tsx
-  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
-  - apps/web/src/components/report/TimeRangeSelector.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/hooks/useReportTransactions.ts
-  - apps/web/src/stores/category/categoryStore.ts
-  - apps/web/src/hooks/transactionQueryUtils.ts
-  - apps/web/src/pages/account-books/[id]/report.tsx
-  - apps/web/src/components/report/ReportSummaryCards.tsx
-  - apps/web/src/components/report/ReportSection.tsx
-  - apps/web/tsconfig.spec.json
   - apps/web/src/components/transaction/TransactionList.tsx
-  - apps/web/src/components/calendar/MonthGrid.tsx
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/report/ReportEmptyState.tsx
-  - apps/web/src/components/calendar/calendarUtils.ts
-  - apps/web/src/components/report/CategoryTransactionsModal.tsx
-  - apps/web/src/components/report/ReportApexChart.tsx
-  - apps/web/package.json
-  - apps/web/src/components/report/BookFilterSelector.tsx
-  - apps/web/src/stores/user/userStore.ts
-  - apps/web/src/hooks/useAppQueryClient.ts
-  - apps/web/src/utils/reportAggregate.ts
-  - apps/web/src/components/calendar/WeekStrip.tsx
-  - apps/web/src/pages/styles.css
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - apps/web/src/components/report/ReportMonthlyTrend.tsx
-  - apps/web/src/components/calendar/TransactionCalendar.tsx
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/eslint.config.mjs
-  - apps/web/src/components/report/reportTypes.ts
-  - apps/web/src/components/layout/navbar.tsx
-  - apps/web/src/pages/_app.tsx
 tests:
-  - apps/web/specs/reportCategoryBreakdown.spec.tsx
-  - apps/web/specs/transactionStore.spec.ts
   - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/reportAggregate.spec.ts
-  - apps/web/specs/timeRangeSelector.spec.tsx
-  - apps/web/specs/reportSection.spec.tsx
-  - apps/web/specs/transaction.spec.ts
 -->
 
 ---

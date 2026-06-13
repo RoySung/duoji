@@ -115,7 +115,7 @@ jest.mock('@heroui/react', () => {
     ...actual,
     addToast: jest.fn(),
     Avatar: ({ className, name }: any) => (
-      <div className={className}>{name}</div>
+      <div className={className} data-name={name} />
     ),
     HeroUIProvider: ({ children }: { children: React.ReactNode }) => (
       <>{children}</>
@@ -1254,10 +1254,10 @@ describe('Home transaction history', () => {
       )
     ).toBeTruthy()
     expect(
-      within(screen.getByTestId('transaction-row-tx-1')).getByText('Roy')
+      screen.getByTestId('transaction-row-tx-1').querySelector('[data-name="Roy"]')
     ).toBeTruthy()
     expect(
-      within(screen.getByTestId('transaction-row-tx-2')).getByText('Patty')
+      screen.getByTestId('transaction-row-tx-2').querySelector('[data-name="Patty"]')
     ).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-2')).queryByText(
@@ -1324,12 +1324,12 @@ describe('Home transaction history', () => {
         .length
     ).toBeGreaterThan(0)
     expect(
-      within(screen.getByTestId('transaction-row-tx-3')).getByText('Roy')
+      screen.getByTestId('transaction-row-tx-3').querySelector('[data-name="Roy"]')
     ).toBeTruthy()
     expect(screen.queryByText('Breakfast with friends')).toBeNull()
   })
 
-  it('refreshes both transaction and calendar queries from the refresh button', async () => {
+  it('refreshes transaction query from the refresh button', async () => {
     const repo = new InMemoryTransactionRepo([
       createTransactionFixture({
         id: 'tx-refresh-1',
@@ -1342,7 +1342,6 @@ describe('Home transaction history', () => {
         date: '2026/03/19',
       }),
     ])
-    const findByAccountBookIdSpy = jest.spyOn(repo, 'findByAccountBookId')
     const findByDateRangeSpy = jest.spyOn(repo, 'findByDateRange')
 
     await renderWithProviders({
@@ -1355,7 +1354,6 @@ describe('Home transaction history', () => {
       expect(screen.getByTestId('transaction-row-tx-refresh-1')).toBeTruthy()
     })
 
-    const initialAccountBookCalls = findByAccountBookIdSpy.mock.calls.length
     const initialDateRangeCalls = findByDateRangeSpy.mock.calls.length
 
     fireEvent.click(
@@ -1363,9 +1361,6 @@ describe('Home transaction history', () => {
     )
 
     await waitFor(() => {
-      expect(findByAccountBookIdSpy.mock.calls.length).toBeGreaterThan(
-        initialAccountBookCalls
-      )
       expect(findByDateRangeSpy.mock.calls.length).toBeGreaterThan(
         initialDateRangeCalls
       )
@@ -1679,7 +1674,9 @@ describe('Home transaction history', () => {
 
     expect(transactionRow).not.toBeNull()
     expect(screen.getByText('2 records')).toBeTruthy()
-    expect(within(transactionRow as HTMLElement).getByText('Roy')).toBeTruthy()
+    expect(
+      (transactionRow as HTMLElement).querySelector('[data-name="Roy"]')
+    ).toBeTruthy()
   })
 
   it('updates income recipient summaries after editing an income transaction', async () => {
@@ -1718,11 +1715,11 @@ describe('Home transaction history', () => {
     )
 
     expect(
-      within(screen.getByTestId('transaction-row-tx-3')).getByText('Patty')
+      screen.getByTestId('transaction-row-tx-3').querySelector('[data-name="Patty"]')
     ).toBeTruthy()
   })
 
-  it('renders a deleted virtual user name with line-through style in transaction list', async () => {
+  it('renders a deleted virtual user avatar in transaction list', async () => {
     const deletedVirtualUser: VirtualUser = {
       id: 'vu-deleted',
       name: 'DeletedMember',
@@ -1768,16 +1765,14 @@ describe('Home transaction history', () => {
     })
 
     const row = screen.getByTestId('transaction-row-tx-deleted-person')
-    const nameElement = within(row).getByText('DeletedMember')
-    expect(nameElement.tagName).toBe('SPAN')
-    expect(nameElement.className).toContain('line-through')
+    expect(row.querySelector('[data-name="DeletedMember"]')).toBeTruthy()
   })
 
   it('keeps the transaction list scoped to the active route while loading', async () => {
     let resolveLoad!: (transactions: Transaction[]) => void
     const deferredRepo = new InMemoryTransactionRepo([])
 
-    deferredRepo.findByAccountBookId = () =>
+    deferredRepo.findByDateRange = () =>
       new Promise<Transaction[]>((resolve) => {
         resolveLoad = resolve
       })

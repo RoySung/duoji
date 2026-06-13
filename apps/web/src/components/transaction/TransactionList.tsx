@@ -1,6 +1,7 @@
 import React from 'react'
 import { Avatar, Chip } from '@heroui/react'
 import { useTranslations } from 'next-intl'
+import { LuDollarSign } from 'react-icons/lu'
 import {
   PiBookBold,
   PiCreditCardBold,
@@ -12,7 +13,7 @@ import {
   hasLinkedSettlementRecordId,
   Transaction,
 } from '@/entities/transaction'
-import { User, isDeletedUser } from '@/entities/user'
+import { User } from '@/entities/user'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
@@ -70,43 +71,6 @@ function formatParticipantSummary(
       (item) => userMap.get(item.userId)?.name ?? item.userId
     )
   )
-}
-
-function renderParticipantSummary(
-  transaction: Transaction,
-  userMap: Map<string, User>
-): React.ReactNode {
-  if (transaction.type === 'income') {
-    if (!transaction.receivedByUserId) return null
-    const person = userMap.get(transaction.receivedByUserId)
-    const name = person?.name ?? transaction.receivedByUserId
-    return person && isDeletedUser(person) ? (
-      <span className="line-through">{name}</span>
-    ) : (
-      name
-    )
-  }
-
-  const parts = transaction.paidByDetail
-    .map((item) => {
-      const person = userMap.get(item.userId)
-      const name = (person?.name ?? item.userId).trim()
-      if (!name) return null
-      return person && isDeletedUser(person) ? (
-        <span key={item.userId} className="line-through">
-          {name}
-        </span>
-      ) : (
-        <span key={item.userId}>{name}</span>
-      )
-    })
-    .filter(Boolean)
-
-  return parts.reduce<React.ReactNode[]>((acc, part, i) => {
-    if (i > 0) acc.push('、')
-    acc.push(part)
-    return acc
-  }, [])
 }
 
 export default function TransactionList({
@@ -181,6 +145,13 @@ export default function TransactionList({
             const effectiveCurrency = showAccountBook
               ? accountBook?.currency ?? null
               : currency
+            const primaryUserId =
+              transaction.type === 'income'
+                ? transaction.receivedByUserId
+                : transaction.paidByDetail[0]?.userId
+            const primaryUser = primaryUserId
+              ? userMap.get(primaryUserId)
+              : null
 
             return (
               <article key={transaction.id}>
@@ -293,9 +264,22 @@ export default function TransactionList({
                             className="bg-content2 text-muted-foreground"
                             size="sm"
                             variant="flat"
-                          >
-                            {renderParticipantSummary(transaction, userMap)}
-                          </Chip>
+                            startContent={
+                              <div className="flex items-center gap-1 pl-1">
+                                <LuDollarSign
+                                  className="text-muted-foreground"
+                                  size={12}
+                                />
+                                {primaryUser ? (
+                                  <Avatar
+                                    src={primaryUser.avatarUrl}
+                                    name={primaryUser.name}
+                                    className="w-4 h-4 text-[8px]"
+                                  />
+                                ) : null}
+                              </div>
+                            }
+                          />
                         </div>
                       ) : null}
 
