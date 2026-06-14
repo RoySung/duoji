@@ -403,7 +403,7 @@ export default function TransactionModal({
       >
         <ModalContent
           style={modalViewportStyle}
-          className="flex min-h-0 max-h-[calc(100svh-env(safe-area-inset-top)-var(--transaction-modal-keyboard-inset))] flex-col overflow-hidden overscroll-contain sm:max-h-[calc(100vh-4rem)]"
+          className="flex min-h-0 max-h-[calc(100vh-env(safe-area-inset-top))] flex-col overflow-hidden overscroll-contain sm:max-h-[calc(100vh-4rem)] pb-[calc(100vh-100dvh+env(safe-area-inset-bottom)+var(--transaction-modal-keyboard-inset))] sm:pb-0"
         >
           <ModalHeader className="shrink-0">
             <div className="flex flex-col gap-2 items-center w-full">
@@ -437,7 +437,7 @@ export default function TransactionModal({
             </div>
           </ModalHeader>
           <ModalBody
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pb-[calc(1rem+env(safe-area-inset-bottom)+var(--transaction-modal-keyboard-inset))] [-webkit-overflow-scrolling:touch]"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pb-4 [-webkit-overflow-scrolling:touch]"
             onFocusCapture={handleModalBodyFocusCapture}
           >
             <div className="flex flex-col gap-4">
