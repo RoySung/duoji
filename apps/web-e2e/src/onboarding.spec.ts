@@ -51,7 +51,7 @@ async function completeProfileStep(
 async function createFirstAccountBook(page: Page, accountBookName: string) {
   await page
     .getByLabel(/name|名稱/i)
-    .first()
+    .last()
     .fill(accountBookName)
   await page.getByRole('button', { name: /建立|Create/ }).click()
 }

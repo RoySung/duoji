@@ -171,7 +171,7 @@ export default function OnboardingTutorial({
                 {t(sub.descriptionKey)}
               </p>
               <div className="mt-2 flex items-center justify-end gap-2">
-                <Button size="sm" variant="light" onPress={goNext}>
+                <Button size="sm" variant="light" onPress={advance}>
                   {t('common.skip')}
                 </Button>
                 {sub.showNextButton || isLast ? (

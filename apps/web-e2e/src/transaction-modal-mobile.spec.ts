@@ -67,7 +67,7 @@ async function createAccountBook(page: Page) {
     email: 'mobile-modal@example.com',
   })
 
-  await page.getByLabel(/name/i).first().fill('Mobile Modal Book')
+  await page.getByLabel(/name/i).last().fill('Mobile Modal Book')
   await page.getByRole('button', { name: /Create/ }).click()
   await expect(page).toHaveURL(/account-books\/.+\/settings\?onboarding=3/)
 }
