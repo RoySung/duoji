@@ -7,11 +7,13 @@ import { PiBooksBold, PiCheckBold, PiDownloadSimpleBold } from 'react-icons/pi'
 import BookFilterSelector from '@/components/report/BookFilterSelector'
 import ReportSection from '@/components/report/ReportSection'
 import TagFilterSelector from '@/components/report/TagFilterSelector'
+import MemberFilterSelector from '@/components/report/MemberFilterSelector'
 import TimeRangeSelector from '@/components/report/TimeRangeSelector'
 import { useExportTransactionsCsv } from '@/hooks/useExportTransactionsCsv'
 import { useReportTransactions } from '@/hooks/useReportTransactions'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
+import { useUserStore } from '@/stores/user'
 import { extractReportTags, groupByCurrency } from '@/utils/reportAggregate'
 import { Currency } from '@/entities/accountBook'
 import ReportTutorial from '@/components/onboarding/ReportTutorial'
@@ -46,6 +48,7 @@ export default function AccountBookReportPage() {
   )
   const [excludedKeys, setExcludedKeys] = useState<Set<string>>(() => new Set())
   const [selectedTags, setSelectedTags] = useState<Set<string>>(() => new Set())
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
 
   const { transactions, isLoading, isFetching, error } = useReportTransactions(
     accountBookId,
@@ -62,10 +65,67 @@ export default function AccountBookReportPage() {
     return transactions.filter((tx) => !excludedBookIds.has(tx.accountBookId))
   }, [isAllBooksView, transactions, excludedBookIds])
 
+  const allUsers = useUserStore((state) => state.allUsers)
+
+  const availableMembers = useMemo(() => {
+    const memberIds = new Set<string>()
+    for (const tx of bookFilteredTransactions) {
+      if (tx.type === 'expense') {
+        for (const item of tx.splitDetail) {
+          memberIds.add(item.userId)
+        }
+      } else if (tx.type === 'income' && tx.receivedByUserId) {
+        memberIds.add(tx.receivedByUserId)
+      }
+    }
+
+    return Array.from(memberIds)
+      .map((id) => {
+        const found = allUsers.find((u) => u.id === id)
+        if (found) return found
+        return {
+          id,
+          name: `Member (${id.substring(0, 4)})`,
+          type: 'virtual' as const,
+          accountBookId: accountBookId ?? '',
+          createdAt: 0,
+          updatedAt: 0,
+        }
+      })
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [bookFilteredTransactions, allUsers])
+
+  useEffect(() => {
+    if (selectedMemberId && !availableMembers.some((m) => m.id === selectedMemberId)) {
+      setSelectedMemberId(null)
+    }
+  }, [availableMembers, selectedMemberId])
+
+  const memberFilteredTransactions = useMemo(() => {
+    if (!selectedMemberId) return bookFilteredTransactions
+
+    return bookFilteredTransactions
+      .map((tx) => {
+        if (tx.type === 'expense') {
+          const splitItem = tx.splitDetail.find((item) => item.userId === selectedMemberId)
+          if (!splitItem) return null
+          return {
+            ...tx,
+            amount: splitItem.amount,
+          }
+        } else if (tx.type === 'income') {
+          if (tx.receivedByUserId !== selectedMemberId) return null
+          return tx
+        }
+        return null
+      })
+      .filter((tx): tx is typeof bookFilteredTransactions[number] => tx !== null)
+  }, [bookFilteredTransactions, selectedMemberId])
+
   const currencyGroups = useMemo(() => {
     if (!isAllBooksView) return []
-    return groupByCurrency(bookFilteredTransactions, accountBooks)
-  }, [isAllBooksView, bookFilteredTransactions, accountBooks])
+    return groupByCurrency(memberFilteredTransactions, accountBooks)
+  }, [isAllBooksView, memberFilteredTransactions, accountBooks])
 
   const availableTags = useMemo(
     () => extractReportTags(bookFilteredTransactions),
@@ -189,6 +249,11 @@ export default function AccountBookReportPage() {
                   selectedTags={selectedTags}
                   onChange={setSelectedTags}
                 />
+                <MemberFilterSelector
+                  availableMembers={availableMembers}
+                  selectedMemberId={selectedMemberId}
+                  onChange={setSelectedMemberId}
+                />
                 <TimeRangeSelector value={dateRange} onChange={setDateRange} />
               </div>
             </div>
@@ -261,7 +326,7 @@ export default function AccountBookReportPage() {
                   )
                 ) : (
                   <ReportSection
-                    transactions={bookFilteredTransactions}
+                    transactions={memberFilteredTransactions}
                     categories={categories}
                     mergeByName={false}
                     currency={singleCurrency}

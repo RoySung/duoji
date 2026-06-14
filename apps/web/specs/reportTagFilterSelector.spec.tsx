@@ -10,6 +10,7 @@ const mockUseRouter = jest.fn()
 const mockUseTranslations = jest.fn()
 const mockUseAccountBookStore = jest.fn()
 const mockUseCategoryStore = jest.fn()
+const mockUseUserStore = jest.fn()
 const mockUseReportTransactions = jest.fn()
 const mockUseExportTransactionsCsv = jest.fn()
 
@@ -70,6 +71,10 @@ jest.mock('../src/stores/accountBook', () => ({
 
 jest.mock('../src/stores/category', () => ({
   useCategoryStore: (selector: any) => mockUseCategoryStore(selector),
+}))
+
+jest.mock('../src/stores/user', () => ({
+  useUserStore: (selector: any) => mockUseUserStore(selector),
 }))
 
 jest.mock('../src/hooks/useReportTransactions', () => ({
@@ -177,6 +182,15 @@ function setupCommonMocks() {
 
   mockUseCategoryStore.mockImplementation((selector: any) =>
     selector({ categories: [] })
+  )
+
+  mockUseUserStore.mockImplementation((selector: any) =>
+    selector({
+      allUsers: [],
+      activeUsers: [],
+      isLoading: false,
+      error: null,
+    })
   )
 
   mockUseExportTransactionsCsv.mockReturnValue({ exportCsv: jest.fn() })

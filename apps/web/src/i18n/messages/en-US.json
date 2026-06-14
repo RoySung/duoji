@@ -422,6 +422,13 @@
       "empty": "No tags in the current report scope.",
       "done": "Done"
     },
+    "memberFilter": {
+      "trigger": "Filter members",
+      "triggerSelected": "Member: {name}",
+      "title": "Filter members",
+      "allMembers": "All members",
+      "empty": "No members in the current report scope."
+    },
     "dateRangeAria": "Report date range",
     "presets": {
       "thisWeek": "This Week",

@@ -422,6 +422,13 @@
       "empty": "目前報表範圍內沒有可用標籤。",
       "done": "完成"
     },
+    "memberFilter": {
+      "trigger": "篩選成員",
+      "triggerSelected": "成員：{name}",
+      "title": "篩選成員",
+      "allMembers": "所有成員",
+      "empty": "目前報表範圍內沒有可用成員。"
+    },
     "dateRangeAria": "報表日期範圍",
     "presets": {
       "thisWeek": "本週",
