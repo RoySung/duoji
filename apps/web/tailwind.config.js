@@ -1,4 +1,5 @@
 import {heroui} from "@heroui/react";
+import defaultTheme from 'tailwindcss/defaultTheme';
 
 // const { createGlobPatternsForDependencies } = require('@nx/next/tailwind');
 
@@ -23,6 +24,9 @@ module.exports = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['jf-openhuninn', ...defaultTheme.fontFamily.sans],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
