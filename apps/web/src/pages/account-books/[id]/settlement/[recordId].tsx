@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { Button, addToast } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { PiArrowLeftBold } from 'react-icons/pi'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
@@ -12,6 +13,7 @@ import { useSettlementRecordTransactions } from '@/hooks/useSettlementRecordTran
 
 export default function SettlementRecordDetailPage() {
   const router = useRouter()
+  const t = useTranslations()
   const { id, recordId } = router.query
   const accountBookId = typeof id === 'string' ? id : null
   const settlementRecordId = typeof recordId === 'string' ? recordId : null
@@ -66,13 +68,13 @@ export default function SettlementRecordDetailPage() {
     return (
       <div className="h-full overflow-y-auto bg-background text-foreground">
         <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col items-center justify-center gap-8 px-4 py-8">
-          <p className="text-muted-foreground">Settlement record not found.</p>
+          <p className="text-muted-foreground">{t('settlement.recordPage.notFound')}</p>
           <Button
             onPress={() =>
               void router.push(`/account-books/${accountBookId}/settlement`)
             }
           >
-            Back to settlements
+            {t('settlement.recordPage.back')}
           </Button>
         </div>
       </div>
@@ -92,14 +94,14 @@ export default function SettlementRecordDetailPage() {
         note
       )
       addToast({
-        title: 'Transfer marked as done',
+        title: t('settlement.recordPage.toastSuccess'),
         color: 'success',
       })
     } catch {
       addToast({
-        title: 'Unable to update transfer',
+        title: t('settlement.recordPage.toastErrorTitle'),
         color: 'danger',
-        description: 'Please try again.',
+        description: t('settlement.toast.failureDescription'),
       })
     }
   }
@@ -116,7 +118,7 @@ export default function SettlementRecordDetailPage() {
             void router.push(`/account-books/${accountBookId}/settlement`)
           }
         >
-          Back to settlements
+          {t('settlement.recordPage.back')}
         </Button>
 
         <SettlementRecordDetail

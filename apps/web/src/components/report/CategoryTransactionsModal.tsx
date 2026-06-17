@@ -7,6 +7,7 @@ import {
 } from '@heroui/react'
 import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
 import { useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { useCategoryStore } from '@/stores/category'
 import { formatAmount } from '@/utils/reportAggregate'
 import { CategorySummary } from './reportTypes'
@@ -24,6 +25,7 @@ export default function CategoryTransactionsModal({
   isOpen,
   onClose,
 }: Props) {
+  const t = useTranslations()
   const categories = useCategoryStore((state) => state.categories)
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
@@ -64,7 +66,7 @@ export default function CategoryTransactionsModal({
                 {summary?.displayName ?? ''}
               </span>
               <span className="text-xs font-normal text-muted-foreground">
-                {summary?.transactionCount ?? 0} records ·{' '}
+                {t('report.categoryModal.recordsCount', { count: summary?.transactionCount ?? 0 })} ·{' '}
                 {summary ? formatAmount(summary.totalAmount) : '0'} {currency}
               </span>
             </div>
@@ -74,7 +76,7 @@ export default function CategoryTransactionsModal({
         <DrawerBody className="px-3 py-4">
           {transactions.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-8 text-center text-sm text-muted-foreground">
-              No transactions
+              {t('report.categoryModal.empty')}
             </div>
           ) : (
             <ul className="space-y-2">
@@ -102,7 +104,7 @@ export default function CategoryTransactionsModal({
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-3">
                         <span className="truncate text-sm font-medium text-foreground">
-                          {category?.name ?? 'Uncategorized'}
+                          {category?.name ?? t('transactions.list.uncategorized')}
                         </span>
                         <span
                           className={`shrink-0 text-sm font-semibold ${amountClass}`}
@@ -116,7 +118,7 @@ export default function CategoryTransactionsModal({
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <p className="truncate text-xs text-muted-foreground">
-                          {tx.description || 'No description'}
+                          {tx.description || t('transactions.list.noDescription')}
                         </p>
                         <span className="shrink-0 text-xs text-muted-foreground">
                           {tx.date}

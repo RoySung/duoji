@@ -404,7 +404,62 @@
       "copiedAria": "Markdown copied to clipboard",
       "copiedToast": "Copied to clipboard",
       "copyFailedTitle": "Copy failed",
-      "copyFailedDesc": "Please select and copy the text manually."
+      "copyFailedDesc": "Please select and copy the text manually.",
+      "content": {
+        "title": "# Settlement #{sequenceNumber}\n\nDate: {date}",
+        "deleted": "(deleted)",
+        "memberBalances": "## Member Balances",
+        "noMemberData": "_No member data._",
+        "tableHeaderMember": "Member",
+        "tableHeaderSplit": "Split",
+        "tableHeaderPaid": "Paid",
+        "tableHeaderBalance": "Balance",
+        "settled": "(settled)",
+        "toReceive": "(to receive)",
+        "toPay": "(to pay)",
+        "transfers": "## Transfers",
+        "noTransfers": "_No transfers._",
+        "actual": "(actual: {amount}{note})",
+        "coveredTransactions": "## Covered Transactions ({count})",
+        "noCoveredTransactions": "_No covered transactions._",
+        "noDescription": "No description",
+        "category": "Category: {category}",
+        "paidBy": "Paid by: {paidBy}",
+        "splitWith": "Split with: {splitWith}"
+      }
+    },
+    "detail": {
+      "title": "Settlement #{sequenceNumber}",
+      "exportMarkdown": "Export Markdown",
+      "settled": "Settled",
+      "pending": "Pending",
+      "split": "Split",
+      "paid": "Paid",
+      "toReceive": "To receive",
+      "toPay": "To pay",
+      "transfers": "Transfers",
+      "suggested": "Suggested: {amount}",
+      "actual": "Actual: {amount}",
+      "done": "Done",
+      "markDone": "Mark done",
+      "coveredTransactions": "Covered transactions ({count})"
+    },
+    "list": {
+      "emptyTitle": "No settlement records yet",
+      "emptyDescription": "Records will appear here after you create your first settlement.",
+      "transfersDone": "{completedCount}/{totalCount} transfers done"
+    },
+    "transferModal": {
+      "title": "Mark transfer done",
+      "actualAmount": "Actual amount",
+      "noteOptional": "Note (optional)",
+      "confirm": "Confirm"
+    },
+    "recordPage": {
+      "notFound": "Settlement record not found.",
+      "back": "Back to settlements",
+      "toastSuccess": "Transfer marked as done",
+      "toastErrorTitle": "Unable to update transfer"
     }
   },
   "report": {
@@ -442,6 +497,38 @@
       "recordsCount": "{count} records",
       "emptyTitle": "No data in range",
       "emptyDescription": "Try a different time range or add some transactions."
+    },
+    "bookFilter": {
+      "trigger": "Filter books",
+      "title": "Filter account books",
+      "description": "Uncheck to exclude books from the report.",
+      "includeAll": "Include all",
+      "excludeAll": "Exclude all"
+    },
+    "categoryModal": {
+      "recordsCount": "{count} records",
+      "empty": "No transactions"
+    },
+    "breakdown": {
+      "total": "Total",
+      "title": "Category breakdown",
+      "description": "Click a row to include or exclude",
+      "ariaLabel": "Category breakdown type",
+      "clickToInclude": "Click to include",
+      "clickToExclude": "Click to exclude",
+      "emptyExpense": "No expense categories in range",
+      "emptyIncome": "No income categories in range",
+      "viewTransactionsFor": "View transactions for {name}",
+      "viewTransactions": "View transactions"
+    },
+    "trend": {
+      "title": "Monthly trend",
+      "empty": "No transactions in range",
+      "tableAria": "Monthly income and expense data",
+      "month": "Month"
+    },
+    "summary": {
+      "net": "Net"
     }
   }
 }

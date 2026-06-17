@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Avatar, Tab, Tabs } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import {
   PiChartPieFill,
   PiEye,
@@ -40,6 +41,7 @@ function buildDonutOptions(
   summaries: CategorySummary[],
   colorMap: Map<string, string>,
   currency: string,
+  totalLabel: string,
   onSliceClick: (index: number) => void
 ): ApexOptions {
   return {
@@ -68,7 +70,7 @@ function buildDonutOptions(
             show: true,
             total: {
               show: true,
-              label: 'Total',
+              label: totalLabel,
               formatter: (w) => {
                 const total = w.globals.seriesTotals.reduce(
                   (sum: number, value: number) => sum + value,
@@ -104,6 +106,7 @@ function BreakdownList({
   onToggle: (key: string) => void
   onSelect: (summary: CategorySummary) => void
 }) {
+  const t = useTranslations()
   return (
     <ul className="space-y-2">
       {summaries.map((summary) => {
@@ -115,7 +118,7 @@ function BreakdownList({
               type="button"
               onClick={() => onToggle(summary.key)}
               aria-pressed={!isExcluded}
-              title={isExcluded ? 'Click to include' : 'Click to exclude'}
+              title={isExcluded ? t('report.breakdown.clickToInclude') : t('report.breakdown.clickToExclude')}
               className={`relative flex flex-1 items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 isExcluded
                   ? 'border-border bg-card/50 opacity-40'
@@ -167,7 +170,7 @@ function BreakdownList({
                   {summary.displayName}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {summary.transactionCount} records ·{' '}
+                  {t('report.categoryModal.recordsCount', { count: summary.transactionCount })} ·{' '}
                   {summary.percentage.toFixed(1)}%
                 </span>
               </div>
@@ -183,8 +186,8 @@ function BreakdownList({
             <button
               type="button"
               onClick={() => onSelect(summary)}
-              aria-label={`View transactions for ${summary.displayName}`}
-              title="View transactions"
+              aria-label={t('report.breakdown.viewTransactionsFor', { name: summary.displayName })}
+              title={t('report.breakdown.viewTransactions')}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70"
             >
               <PiReceiptBold size={15} />
@@ -211,6 +214,7 @@ function BreakdownPanel({
   onToggle: (key: string) => void
   onSelect: (summary: CategorySummary) => void
 }) {
+  const t = useTranslations()
   const colorMap = useMemo(() => buildColorMap(summaries), [summaries])
 
   const activeSummaries = useMemo(
@@ -219,10 +223,14 @@ function BreakdownPanel({
   )
   const donutOptions = useMemo(
     () =>
-      buildDonutOptions(activeSummaries, colorMap, currency, (index) =>
-        onSelect(activeSummaries[index])
+      buildDonutOptions(
+        activeSummaries,
+        colorMap,
+        currency,
+        t('report.breakdown.total'),
+        (index) => onSelect(activeSummaries[index])
       ),
-    [activeSummaries, colorMap, currency, onSelect]
+    [activeSummaries, colorMap, currency, onSelect, t]
   )
   const series = useMemo(
     () => activeSummaries.map((s) => s.totalAmount),
@@ -277,6 +285,7 @@ export default function ReportCategoryBreakdown({
   excludedKeys,
   onToggleKey,
 }: ReportCategoryBreakdownProps) {
+  const t = useTranslations()
   const [activeTab, setActiveTab] = useState<TransactionType>('expense')
   const [selected, setSelected] = useState<CategorySummary | null>(null)
 
@@ -285,22 +294,22 @@ export default function ReportCategoryBreakdown({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            Category breakdown
+            {t('report.breakdown.title')}
           </h3>
           <p className="text-xs text-muted-foreground">
-            Click a row to include or exclude
+            {t('report.breakdown.description')}
           </p>
         </div>
         <Tabs
-          aria-label="Category breakdown type"
+          aria-label={t('report.breakdown.ariaLabel')}
           color="primary"
           selectedKey={activeTab}
           size="sm"
           variant="solid"
           onSelectionChange={(key) => setActiveTab(key as TransactionType)}
         >
-          <Tab key="expense" title="Expense" />
-          <Tab key="income" title="Income" />
+          <Tab key="expense" title={t('categorySettings.expense')} />
+          <Tab key="income" title={t('categorySettings.income')} />
         </Tabs>
       </div>
 
@@ -308,7 +317,7 @@ export default function ReportCategoryBreakdown({
         <BreakdownPanel
           summaries={expense}
           currency={currency}
-          emptyLabel="No expense categories in range"
+          emptyLabel={t('report.breakdown.emptyExpense')}
           excludedKeys={excludedKeys}
           onToggle={onToggleKey}
           onSelect={setSelected}
@@ -317,7 +326,7 @@ export default function ReportCategoryBreakdown({
         <BreakdownPanel
           summaries={income}
           currency={currency}
-          emptyLabel="No income categories in range"
+          emptyLabel={t('report.breakdown.emptyIncome')}
           excludedKeys={excludedKeys}
           onToggle={onToggleKey}
           onSelect={setSelected}

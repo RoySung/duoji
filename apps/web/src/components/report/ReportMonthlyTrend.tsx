@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { PiChartBarFill } from 'react-icons/pi'
+import { useTranslations } from 'next-intl'
 import type { ApexOptions } from 'apexcharts'
 import { formatAmount } from '@/utils/reportAggregate'
 import ReportApexChart from './ReportApexChart'
@@ -66,27 +67,28 @@ export default function ReportMonthlyTrend({
   points,
   currency,
 }: ReportMonthlyTrendProps) {
+  const t = useTranslations()
   const trendOptions = useMemo(
     () => buildTrendOptions(points, currency),
     [points, currency]
   )
   const series = useMemo(
     () => [
-      { name: 'Income', data: points.map((p) => p.income) },
-      { name: 'Expense', data: points.map((p) => p.expense) },
+      { name: t('categorySettings.income'), data: points.map((p) => p.income) },
+      { name: t('categorySettings.expense'), data: points.map((p) => p.expense) },
     ],
-    [points]
+    [points, t]
   )
 
   if (points.length === 0) {
     return (
       <div className="space-y-4">
         <h3 className="text-base font-semibold text-foreground">
-          Monthly trend
+          {t('report.trend.title')}
         </h3>
         <ReportEmptyState
           icon={<PiChartBarFill size={22} />}
-          description="No transactions in range"
+          description={t('report.trend.empty')}
         />
       </div>
     )
@@ -94,15 +96,15 @@ export default function ReportMonthlyTrend({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-base font-semibold text-foreground">Monthly trend</h3>
+      <h3 className="text-base font-semibold text-foreground">{t('report.trend.title')}</h3>
 
       {/* Accessible text alternative for screen readers (C1) */}
-      <table className="sr-only" aria-label="Monthly income and expense data">
+      <table className="sr-only" aria-label={t('report.trend.tableAria')}>
         <thead>
           <tr>
-            <th scope="col">Month</th>
-            <th scope="col">Income ({currency})</th>
-            <th scope="col">Expense ({currency})</th>
+            <th scope="col">{t('report.trend.month')}</th>
+            <th scope="col">{t('categorySettings.income')} ({currency})</th>
+            <th scope="col">{t('categorySettings.expense')} ({currency})</th>
           </tr>
         </thead>
         <tbody>

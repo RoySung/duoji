@@ -1,7 +1,58 @@
-import { generateSettlementMarkdown } from './settlementMarkdown'
+import { generateSettlementMarkdown as originalGenerate } from './settlementMarkdown'
 import { SettlementRecord } from '@/entities/settlement'
 import { Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
+
+const mockT = (key: string, values?: any): string => {
+  switch (key) {
+    case 'settlement.markdown.content.title':
+      return `# Settlement #${values.sequenceNumber}\n\nDate: ${values.date}`
+    case 'settlement.markdown.content.deleted':
+      return '(deleted)'
+    case 'settlement.markdown.content.memberBalances':
+      return '## Member Balances'
+    case 'settlement.markdown.content.noMemberData':
+      return '_No member data._'
+    case 'settlement.markdown.content.tableHeaderMember':
+      return 'Member'
+    case 'settlement.markdown.content.tableHeaderSplit':
+      return 'Split'
+    case 'settlement.markdown.content.tableHeaderPaid':
+      return 'Paid'
+    case 'settlement.markdown.content.tableHeaderBalance':
+      return 'Balance'
+    case 'settlement.markdown.content.settled':
+      return '(settled)'
+    case 'settlement.markdown.content.toReceive':
+      return '(to receive)'
+    case 'settlement.markdown.content.toPay':
+      return '(to pay)'
+    case 'settlement.markdown.content.transfers':
+      return '## Transfers'
+    case 'settlement.markdown.content.noTransfers':
+      return '_No transfers._'
+    case 'settlement.markdown.content.actual':
+      return `(actual: ${values.amount}${values.note})`
+    case 'settlement.markdown.content.coveredTransactions':
+      return `## Covered Transactions (${values.count})`
+    case 'settlement.markdown.content.noCoveredTransactions':
+      return '_No covered transactions._'
+    case 'settlement.markdown.content.noDescription':
+      return 'No description'
+    case 'settlement.markdown.content.category':
+      return `Category: ${values.category}`
+    case 'settlement.markdown.content.paidBy':
+      return `Paid by: ${values.paidBy}`
+    case 'settlement.markdown.content.splitWith':
+      return `Split with: ${values.splitWith}`
+    default:
+      return key
+  }
+}
+
+const generateSettlementMarkdown = (params: Omit<Parameters<typeof originalGenerate>[0], 't'>) =>
+  originalGenerate({ ...params, t: mockT })
+
 
 const alice: User = {
   type: 'registered',

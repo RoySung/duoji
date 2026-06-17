@@ -6,6 +6,7 @@ import {
   ModalFooter,
   Button,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { SettlementMemberStatus, SettlementTransfer } from '@/entities/settlement'
 import { useUserStore } from '@/stores/user'
 
@@ -31,18 +32,19 @@ export default function SettlementConfirmModal({
   onConfirm,
   onClose,
 }: Props) {
+  const t = useTranslations()
   const allUsers = useUserStore((state) => state.allUsers)
   const userMap = new Map(allUsers.map((u) => [u.id, u]))
 
   return (
     <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()} placement="bottom" scrollBehavior="inside">
       <ModalContent>
-        <ModalHeader>Review &amp; settle</ModalHeader>
+        <ModalHeader>{t('settlement.confirm.title')}</ModalHeader>
         <ModalBody>
           <div className="space-y-5">
             <section>
               <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Member balances
+                {t('settlement.confirm.balances')}
               </h3>
               <div className="space-y-2">
                 {memberStatuses.map((ms) => {
@@ -80,7 +82,7 @@ export default function SettlementConfirmModal({
             {transferSuggestions.length > 0 && (
               <section>
                 <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                  Suggested transfers
+                  {t('settlement.confirm.transfers')}
                 </h3>
                 <div className="space-y-2">
                   {transferSuggestions.map((t, i) => {
@@ -111,7 +113,7 @@ export default function SettlementConfirmModal({
         </ModalBody>
         <ModalFooter>
           <Button isDisabled={isSubmitting} onPress={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             color="primary"
@@ -119,7 +121,7 @@ export default function SettlementConfirmModal({
             isLoading={isSubmitting}
             onPress={onConfirm}
           >
-            Create settlement record
+            {t('settlement.confirm.submit')}
           </Button>
         </ModalFooter>
       </ModalContent>

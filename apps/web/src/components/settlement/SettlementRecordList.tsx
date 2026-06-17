@@ -1,4 +1,5 @@
 import { PiArrowRightBold, PiReceiptBold } from 'react-icons/pi'
+import { useTranslations } from 'next-intl'
 import { SettlementRecord } from '@/entities/settlement'
 
 type Props = {
@@ -10,6 +11,7 @@ export default function SettlementRecordList({
   records,
   onSelectRecord,
 }: Props) {
+  const t = useTranslations()
   // Newest first for display; sequence number = position in chronological order
   const sorted = [...records].sort((a, b) => b.createdAt - a.createdAt)
 
@@ -20,10 +22,10 @@ export default function SettlementRecordList({
           <PiReceiptBold size={22} />
         </div>
         <h3 className="mt-4 text-lg font-semibold text-foreground">
-          No settlement records yet
+          {t('settlement.list.emptyTitle')}
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Records will appear here after you create your first settlement.
+          {t('settlement.list.emptyDescription')}
         </p>
       </div>
     )
@@ -52,11 +54,11 @@ export default function SettlementRecordList({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0 space-y-1">
                 <p className="text-base font-semibold text-foreground">
-                  Settlement #{sequenceNumber}
+                  {t('settlement.detail.title', { sequenceNumber })}
                 </p>
                 <p className="text-sm text-muted-foreground">{date}</p>
                 <p className="text-xs text-muted-foreground">
-                  {completedCount}/{record.transfers.length} transfers done
+                  {t('settlement.list.transfersDone', { completedCount, totalCount: record.transfers.length })}
                 </p>
               </div>
               <PiArrowRightBold className="shrink-0 text-muted-foreground" />

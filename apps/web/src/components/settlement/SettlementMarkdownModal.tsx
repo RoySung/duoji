@@ -56,7 +56,7 @@ export default function SettlementMarkdownModal({
           </p>
           <pre
             aria-live="polite"
-            className="whitespace-pre-wrap break-words rounded-xl bg-content2 p-4 font-mono text-sm text-foreground"
+            className="whitespace-pre-wrap break-words rounded-xl bg-content2 p-4 font-mono text-sm text-foreground overflow-y-auto max-h-[50vh]"
           >
             {markdown}
           </pre>

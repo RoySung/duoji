@@ -8,6 +8,7 @@ import {
   Button,
   Input,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { SettlementTransfer } from '@/entities/settlement'
 import { useUserStore } from '@/stores/user'
 
@@ -24,6 +25,7 @@ export default function SettlementTransferModal({
   onConfirm,
   onClose,
 }: Props) {
+  const t = useTranslations()
   const [actualAmount, setActualAmount] = useState(
     transfer.suggestedAmount.toString()
   )
@@ -50,26 +52,25 @@ export default function SettlementTransferModal({
   return (
     <Modal isOpen onOpenChange={(open) => !open && onClose()} placement="bottom">
       <ModalContent>
-        <ModalHeader>Mark transfer done</ModalHeader>
+        <ModalHeader>{t('settlement.transferModal.title')}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {fromName} → {toName}
               <span className="ml-2 font-medium text-foreground">
-                Suggested: {transfer.suggestedAmount.toLocaleString()}
-                {currency ? ` ${currency}` : ''}
+                {t('settlement.detail.suggested', { amount: transfer.suggestedAmount.toLocaleString() + (currency ? ` ${currency}` : '') })}
               </span>
             </p>
             <Input
               isRequired
-              label={`Actual amount${currency ? ` (${currency})` : ''}`}
+              label={`${t('settlement.transferModal.actualAmount')}${currency ? ` (${currency})` : ''}`}
               type="number"
               inputMode="decimal"
               value={actualAmount}
               onValueChange={setActualAmount}
             />
             <Input
-              label="Note (optional)"
+              label={t('settlement.transferModal.noteOptional')}
               value={note}
               onValueChange={setNote}
             />
@@ -77,7 +78,7 @@ export default function SettlementTransferModal({
         </ModalBody>
         <ModalFooter>
           <Button isDisabled={isSubmitting} onPress={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             color="primary"
@@ -85,7 +86,7 @@ export default function SettlementTransferModal({
             isLoading={isSubmitting}
             onPress={handleConfirm}
           >
-            Confirm
+            {t('settlement.transferModal.confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>

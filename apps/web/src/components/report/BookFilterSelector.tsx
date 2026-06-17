@@ -9,6 +9,7 @@ import {
   DrawerFooter,
   DrawerHeader,
 } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import { PiFunnelBold } from 'react-icons/pi'
 import { AccountBook } from '@/entities/accountBook'
 
@@ -23,6 +24,7 @@ export default function BookFilterSelector({
   excludedBookIds,
   onChange,
 }: Props) {
+  const t = useTranslations()
   const [isOpen, setIsOpen] = useState(false)
   const excludedCount = excludedBookIds.size
 
@@ -60,25 +62,25 @@ export default function BookFilterSelector({
         className="bg-accent/60 text-foreground"
         onPress={() => setIsOpen(true)}
       >
-        Filter books
+        {t('report.bookFilter.trigger')}
       </Button>
 
       <Drawer isOpen={isOpen} onOpenChange={setIsOpen} placement="right" size="sm">
         <DrawerContent>
           <DrawerHeader className="flex flex-col gap-1">
-            <span>Filter account books</span>
+            <span>{t('report.bookFilter.title')}</span>
             <span className="text-xs font-normal text-muted-foreground">
-              Uncheck to exclude books from the report.
+              {t('report.bookFilter.description')}
             </span>
           </DrawerHeader>
 
           <DrawerBody className="gap-2 px-3 pb-4">
             <div className="flex gap-2 px-1 pb-2">
               <Button size="sm" variant="bordered" onPress={includeAll}>
-                Include all
+                {t('report.bookFilter.includeAll')}
               </Button>
               <Button size="sm" variant="bordered" onPress={excludeAll}>
-                Exclude all
+                {t('report.bookFilter.excludeAll')}
               </Button>
             </div>
             {accountBooks.map((ab) => {
@@ -113,7 +115,7 @@ export default function BookFilterSelector({
 
           <DrawerFooter>
             <Button color="primary" onPress={() => setIsOpen(false)}>
-              Done
+              {t('report.tagFilter.done')}
             </Button>
           </DrawerFooter>
         </DrawerContent>

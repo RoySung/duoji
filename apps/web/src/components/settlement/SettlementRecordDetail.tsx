@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Button, Chip } from '@heroui/react'
+import { useTranslations } from 'next-intl'
 import {
   PiCaretDownBold,
   PiCaretUpBold,
@@ -48,6 +49,7 @@ export default function SettlementRecordDetail({
   onCompleteTransfer,
   onViewTransaction,
 }: Props) {
+  const t = useTranslations()
   const [isTransactionsExpanded, setIsTransactionsExpanded] = useState(false)
   const [selectedTransfer, setSelectedTransfer] =
     useState<SettlementTransfer | null>(null)
@@ -73,8 +75,9 @@ export default function SettlementRecordDetail({
         currency,
         userMap,
         categoryMap,
+        t,
       }),
-    [sequenceNumber, record, transactions, currency, userMap, categoryMap]
+    [sequenceNumber, record, transactions, currency, userMap, categoryMap, t]
   )
 
   const coveredTransactions = transactions
@@ -90,7 +93,7 @@ export default function SettlementRecordDetail({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-foreground">
-            Settlement #{sequenceNumber}
+            {t('settlement.detail.title', { sequenceNumber })}
           </h2>
           <p className="text-sm text-muted-foreground">{date}</p>
         </div>
@@ -100,14 +103,14 @@ export default function SettlementRecordDetail({
           variant="flat"
           onPress={() => setIsMarkdownModalOpen(true)}
         >
-          Export Markdown
+          {t('settlement.detail.exportMarkdown')}
         </Button>
       </div>
 
       {/* Member statuses */}
       <section>
         <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Member balances
+          {t('settlement.confirm.balances')}
         </h3>
         <div className="space-y-2">
           {record.memberStatuses.map((ms) => {
@@ -132,26 +135,26 @@ export default function SettlementRecordDetail({
                     size="sm"
                     variant="flat"
                   >
-                    {isSettled ? 'Settled' : 'Pending'}
+                    {isSettled ? t('settlement.detail.settled') : t('settlement.detail.pending')}
                   </Chip>
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
                   <div className="min-w-0">
-                    <p>Split</p>
+                    <p>{t('settlement.detail.split')}</p>
                     <p className="break-words font-medium tabular-nums text-foreground">
                       {ms.splitAmount.toLocaleString()}
                       {currency ? ` ${currency}` : ''}
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p>Paid</p>
+                    <p>{t('settlement.detail.paid')}</p>
                     <p className="break-words font-medium tabular-nums text-foreground">
                       {ms.paidAmount.toLocaleString()}
                       {currency ? ` ${currency}` : ''}
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p>{isCreditor ? 'To receive' : 'To pay'}</p>
+                    <p>{isCreditor ? t('settlement.detail.toReceive') : t('settlement.detail.toPay')}</p>
                     <p
                       className={`break-words font-semibold tabular-nums ${
                         isCreditor ? 'text-success' : 'text-danger'
@@ -171,7 +174,7 @@ export default function SettlementRecordDetail({
       {/* Transfers */}
       <section>
         <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-          Transfers
+          {t('settlement.detail.transfers')}
         </h3>
         <div className="space-y-2">
           {record.transfers.map((transfer) => {
@@ -187,13 +190,11 @@ export default function SettlementRecordDetail({
                       {renderUserName(transfer.toUserId, userMap)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Suggested: {transfer.suggestedAmount.toLocaleString()}
-                      {currency ? ` ${currency}` : ''}
+                      {t('settlement.detail.suggested', { amount: transfer.suggestedAmount.toLocaleString() + (currency ? ` ${currency}` : '') })}
                     </p>
                     {transfer.status === 'completed' && (
                       <p className="text-xs text-muted-foreground">
-                        Actual: {transfer.actualAmount?.toLocaleString() ?? '-'}
-                        {currency ? ` ${currency}` : ''}
+                        {t('settlement.detail.actual', { amount: (transfer.actualAmount?.toLocaleString() ?? '-') + (currency ? ` ${currency}` : '') })}
                         {transfer.note ? `  ·  ${transfer.note}` : ''}
                       </p>
                     )}
@@ -205,7 +206,7 @@ export default function SettlementRecordDetail({
                       startContent={<PiCheckBold className="ml-1" size={12} />}
                       variant="flat"
                     >
-                      Done
+                      {t('settlement.detail.done')}
                     </Chip>
                   ) : (
                     <Button
@@ -215,7 +216,7 @@ export default function SettlementRecordDetail({
                       variant="flat"
                       onPress={() => setSelectedTransfer(transfer)}
                     >
-                      Mark done
+                      {t('settlement.detail.markDone')}
                     </Button>
                   )}
                 </div>
@@ -235,7 +236,7 @@ export default function SettlementRecordDetail({
           onClick={() => setIsTransactionsExpanded((v) => !v)}
         >
           <p className="text-sm font-medium text-foreground">
-            Covered transactions ({coveredTransactions.length})
+            {t('settlement.detail.coveredTransactions', { count: coveredTransactions.length })}
           </p>
           {isTransactionsExpanded ? (
             <PiCaretUpBold className="text-muted-foreground" />

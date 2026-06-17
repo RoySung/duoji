@@ -404,7 +404,62 @@
       "copiedAria": "Markdown 已複製到剪貼簿",
       "copiedToast": "已複製到剪貼簿",
       "copyFailedTitle": "複製失敗",
-      "copyFailedDesc": "請手動選取並複製文字。"
+      "copyFailedDesc": "請手動選取並複製文字。",
+      "content": {
+        "title": "# 結算 #{sequenceNumber}\n\n日期：{date}",
+        "deleted": "(已刪除)",
+        "memberBalances": "## 成員餘額",
+        "noMemberData": "_無成員資料。_",
+        "tableHeaderMember": "成員",
+        "tableHeaderSplit": "分攤",
+        "tableHeaderPaid": "已付",
+        "tableHeaderBalance": "餘額",
+        "settled": "(已結算)",
+        "toReceive": "(應收)",
+        "toPay": "(應付)",
+        "transfers": "## 建議轉帳",
+        "noTransfers": "_無轉帳。_",
+        "actual": "(實際：{amount}{note})",
+        "coveredTransactions": "## 包含交易 ({count})",
+        "noCoveredTransactions": "_無包含交易。_",
+        "noDescription": "無描述",
+        "category": "分類: {category}",
+        "paidBy": "付款人: {paidBy}",
+        "splitWith": "分攤對象: {splitWith}"
+      }
+    },
+    "detail": {
+      "title": "結算 #{sequenceNumber}",
+      "exportMarkdown": "匯出 Markdown",
+      "settled": "已結算",
+      "pending": "待處理",
+      "split": "分攤",
+      "paid": "已付",
+      "toReceive": "應收",
+      "toPay": "應付",
+      "transfers": "轉帳列表",
+      "suggested": "建議金額：{amount}",
+      "actual": "實際金額：{amount}",
+      "done": "完成",
+      "markDone": "標記完成",
+      "coveredTransactions": "包含交易 ({count})"
+    },
+    "list": {
+      "emptyTitle": "尚無結算紀錄",
+      "emptyDescription": "建立第一個結算後，紀錄將會顯示於此。",
+      "transfersDone": "{completedCount}/{totalCount} 筆轉帳已完成"
+    },
+    "transferModal": {
+      "title": "標記轉帳完成",
+      "actualAmount": "實際金額",
+      "noteOptional": "備註（選填）",
+      "confirm": "確認"
+    },
+    "recordPage": {
+      "notFound": "找不到結算紀錄。",
+      "back": "返回結算",
+      "toastSuccess": "轉帳已標記完成",
+      "toastErrorTitle": "無法更新轉帳"
     }
   },
   "report": {
@@ -442,6 +497,38 @@
       "recordsCount": "{count} 筆紀錄",
       "emptyTitle": "此期間沒有資料",
       "emptyDescription": "試試其他時間範圍或新增一些交易。"
+    },
+    "bookFilter": {
+      "trigger": "篩選帳本",
+      "title": "篩選帳本",
+      "description": "取消勾選以從報表中排除帳本。",
+      "includeAll": "全選",
+      "excludeAll": "全部清除"
+    },
+    "categoryModal": {
+      "recordsCount": "{count} 筆紀錄",
+      "empty": "無交易紀錄"
+    },
+    "breakdown": {
+      "total": "總計",
+      "title": "分類比例",
+      "description": "點擊單列以包含或排除該分類",
+      "ariaLabel": "分類比例類型",
+      "clickToInclude": "點擊以包含",
+      "clickToExclude": "點擊以排除",
+      "emptyExpense": "此期間無支出分類",
+      "emptyIncome": "此期間無收入分類",
+      "viewTransactionsFor": "檢視 {name} 的交易明細",
+      "viewTransactions": "檢視交易明細"
+    },
+    "trend": {
+      "title": "月度趨勢",
+      "empty": "此期間無收支紀錄",
+      "tableAria": "每月收支數據",
+      "month": "月份"
+    },
+    "summary": {
+      "net": "淨額"
     }
   }
 }
