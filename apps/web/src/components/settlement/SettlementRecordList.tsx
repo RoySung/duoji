@@ -1,4 +1,5 @@
 import { PiArrowRightBold, PiReceiptBold } from 'react-icons/pi'
+import { Chip } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { SettlementRecord } from '@/entities/settlement'
 
@@ -43,6 +44,7 @@ export default function SettlementRecordList({
         const completedCount = record.transfers.filter(
           (t) => t.status === 'completed'
         ).length
+        const isCompleted = completedCount === record.transfers.length
 
         return (
           <button
@@ -52,10 +54,25 @@ export default function SettlementRecordList({
             onClick={() => onSelectRecord(record.id)}
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0 space-y-1">
-                <p className="text-base font-semibold text-foreground">
-                  {t('settlement.detail.title', { sequenceNumber })}
-                </p>
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-base font-semibold text-foreground">
+                    {t('settlement.detail.title', { sequenceNumber })}
+                  </p>
+                  <Chip
+                    className={
+                      isCompleted
+                        ? 'bg-success/10 text-success'
+                        : 'bg-warning/10 text-warning'
+                    }
+                    size="sm"
+                    variant="flat"
+                  >
+                    {isCompleted
+                      ? t('settlement.detail.settled')
+                      : t('settlement.detail.pending')}
+                  </Chip>
+                </div>
                 <p className="text-sm text-muted-foreground">{date}</p>
                 <p className="text-xs text-muted-foreground">
                   {t('settlement.list.transfersDone', { completedCount, totalCount: record.transfers.length })}

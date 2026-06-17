@@ -442,104 +442,49 @@ tests:
 
 The system SHALL display all non-deleted settlement records for the current account book, ordered by `createdAt` descending, with the label "第N次結帳 | 日期".
 
-Each record in the list SHALL show the record label and a navigation affordance to the detail page.
+Each record in the list SHALL show the record label, a navigation affordance to the detail page, and a distinct visual status badge indicating whether all transfers associated with the settlement have been completed.
+- If all transfers are completed, a badge showing "Settled" (or "已結算") with a success style SHALL be displayed.
+- If one or more transfers are still pending, a badge showing "Pending" (or "待處理") with a warning/accent style SHALL be displayed.
+
+The tab for viewing history/settled records SHALL be labeled "已結算" (or "Settled").
+When there exists at least one non-deleted settlement record that has one or more pending transfers, a distinct visual indicator/notification badge displaying the count of such records SHALL be displayed on the top-right corner of the "已結算" (Settled) tab label text.
 
 #### Scenario: Multiple settlement records listed
 
 - **WHEN** two settlement records exist with sequenceNumbers 1 and 2
 - **THEN** the record with sequenceNumber 2 SHALL appear first in the list
 
+#### Scenario: Settlement record in history list shows completion status badge
+
+- **WHEN** a settlement record has all its transfers completed
+- **THEN** the record in the list SHALL display a "Settled" status badge
+- **WHEN** a settlement record has one or more pending transfers
+- **THEN** the record in the list SHALL display a "Pending" status badge
+
+#### Scenario: Settled tab shows notification dot when there is a pending record
+
+- **WHEN** a settlement record has one or more pending transfers
+- **THEN** the "已結算" (Settled) tab label SHALL display a visual notification badge displaying the count of pending settlement records at the top-right corner of the text
+- **WHEN** all settlement records have all their transfers completed
+- **THEN** the "已結算" (Settled) tab label SHALL NOT display a visual notification badge
+
 
 <!-- @trace
-source: split-settlement-feature
-updated: 2026-04-11
+source: add-tab-notification-count
+updated: 2026-06-17
 code:
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
-  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - CLAUDE.md
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - apps/web/src/hooks/useSettlement.ts
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/account-books/new.tsx
-  - apps/web/src/utils/settlementUtils.ts
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - .github/skills/spectra-apply/SKILL.md
-  - apps/web/src/components/transaction/TransactionList.tsx
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
-  - apps/web/src/pages/index.tsx
-  - GEMINI.md
-  - apps/web/package.json
-  - apps/web/src/components/accountBook/AccountBookMenu.tsx
-  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/next.config.js
-  - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - .spectra.yaml
-  - AGENTS.md
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/hooks/useUnsettledTransactions.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/src/components/layout/header.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/.babelrc
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/layout/navbar.tsx
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
+  - apps/web/src/i18n/messages/en-US.json
   - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - apps/web/src/stores/accountBook/index.ts
-  - apps/web/src/entities/settlement.ts
-  - .github/skills/spectra-debug/SKILL.md
-  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/utils/transactionUtils.ts
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/stores/transaction/index.ts
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/prompts/spectra-debug.prompt.md
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
-tests:
-  - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
-  - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/transaction.spec.ts
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/settlementPage.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
-  - apps/web/specs/transactionStore.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/settlement.spec.ts
+  - apps/web/src/i18n/messages/zh-TW.json
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/components/settlement/SettlementRecordList.tsx
 -->
 
 ---
 ### Requirement: Users can view settlement record detail
 
 The settlement record detail page SHALL display:
+- The overall settlement completion status badge (Settled/Pending) next to the settlement title
 - Each member's `splitAmount`, `paidAmount`, and `netAmount` (labeled as 分攤金額, 代支費用, and 實收金額/應付金額)
 - Each member's settlement status badge (已結帳 / 未結帳)
 - Each transfer with its status and a control to mark it complete if pending
@@ -555,91 +500,18 @@ The settlement record detail page SHALL display:
 - **WHEN** the user expands the "涵蓋交易" section
 - **THEN** the system SHALL display the title, date, and amount of each transaction whose ID is in `transactionIds`
 
+#### Scenario: Settlement record detail displays overall status badge
+
+- **WHEN** the user views the settlement record detail page
+- **THEN** the overall settlement completion status badge (Settled/Pending) SHALL be displayed next to or near the settlement record title
+
 
 <!-- @trace
-source: split-settlement-feature
-updated: 2026-04-11
+source: distinguish-transfer-completion
+updated: 2026-06-17
 code:
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
-  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - CLAUDE.md
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - apps/web/src/hooks/useSettlement.ts
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/account-books/new.tsx
-  - apps/web/src/utils/settlementUtils.ts
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - .github/skills/spectra-apply/SKILL.md
-  - apps/web/src/components/transaction/TransactionList.tsx
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
-  - apps/web/src/pages/index.tsx
-  - GEMINI.md
-  - apps/web/package.json
-  - apps/web/src/components/accountBook/AccountBookMenu.tsx
-  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/next.config.js
   - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - .spectra.yaml
-  - AGENTS.md
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/hooks/useUnsettledTransactions.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/src/components/layout/header.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/.babelrc
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/layout/navbar.tsx
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - apps/web/src/stores/accountBook/index.ts
-  - apps/web/src/entities/settlement.ts
-  - .github/skills/spectra-debug/SKILL.md
-  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/utils/transactionUtils.ts
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/stores/transaction/index.ts
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/prompts/spectra-debug.prompt.md
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
-tests:
-  - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
-  - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/transaction.spec.ts
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/settlementPage.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
-  - apps/web/specs/transactionStore.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/settlement.spec.ts
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
 -->
 
 ---

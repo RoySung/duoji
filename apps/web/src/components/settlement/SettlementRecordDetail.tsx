@@ -88,13 +88,28 @@ export default function SettlementRecordDetail({
     day: '2-digit',
   })
 
+  const isCompleted = record.transfers.every((t) => t.status === 'completed')
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">
-            {t('settlement.detail.title', { sequenceNumber })}
-          </h2>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-foreground">
+              {t('settlement.detail.title', { sequenceNumber })}
+            </h2>
+            <Chip
+              className={
+                isCompleted
+                  ? 'bg-success/10 text-success'
+                  : 'bg-warning/10 text-warning'
+              }
+              size="sm"
+              variant="flat"
+            >
+              {isCompleted ? t('settlement.detail.settled') : t('settlement.detail.pending')}
+            </Chip>
+          </div>
           <p className="text-sm text-muted-foreground">{date}</p>
         </div>
         <Button

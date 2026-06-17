@@ -47,6 +47,10 @@ export default function SettlementPage() {
     createSettlementRecord,
   } = useSettlement(accountBookId, unsettledTransactions)
 
+  const pendingRecordsCount = records.filter((record) =>
+    record.transfers.some((t) => t.status !== 'completed')
+  ).length
+
   const currentAccountBook =
     accountBooks.find((ab) => ab.id === accountBookId) ?? null
 
@@ -145,7 +149,19 @@ export default function SettlementPage() {
               />
             </div>
           </Tab>
-          <Tab key="records" title={t('settlement.tabs.history')}>
+          <Tab
+            key="records"
+            title={
+              <div className="relative inline-flex items-center">
+                <span>{t('settlement.tabs.history')}</span>
+                {pendingRecordsCount > 0 && (
+                  <span className="absolute -right-3.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-white">
+                    {pendingRecordsCount}
+                  </span>
+                )}
+              </div>
+            }
+          >
             <div className="pt-4">
               <SettlementRecordList
                 records={records}

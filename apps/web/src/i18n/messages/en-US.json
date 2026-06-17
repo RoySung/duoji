@@ -376,7 +376,7 @@
   },
   "settlement": {
     "label": "Settlement",
-    "tabs": { "unsettled": "Unsettled", "history": "History" },
+    "tabs": { "unsettled": "Unsettled", "history": "Settled" },
     "tabsAriaLabel": "Settlement tabs",
     "toast": {
       "created": "Settlement record created",

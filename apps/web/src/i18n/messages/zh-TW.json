@@ -376,7 +376,7 @@
   },
   "settlement": {
     "label": "結算",
-    "tabs": { "unsettled": "未結算", "history": "歷史" },
+    "tabs": { "unsettled": "未結算", "history": "已結算" },
     "tabsAriaLabel": "結算分頁",
     "toast": {
       "created": "結算紀錄已建立",
