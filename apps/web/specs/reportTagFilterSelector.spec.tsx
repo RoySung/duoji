@@ -81,6 +81,15 @@ jest.mock('../src/hooks/useReportTransactions', () => ({
   useReportTransactions: (...args: any[]) => mockUseReportTransactions(...args),
 }))
 
+jest.mock('../src/hooks/useAccountBookTransactions', () => ({
+  useAccountBookTransactions: () => ({
+    createTransaction: jest.fn(),
+    updateTransaction: jest.fn(),
+    deleteTransaction: jest.fn(),
+    isMutating: false,
+  }),
+}))
+
 jest.mock('../src/hooks/useExportTransactionsCsv', () => ({
   useExportTransactionsCsv: (...args: any[]) => mockUseExportTransactionsCsv(...args),
 }))
@@ -120,6 +129,11 @@ jest.mock('../src/components/onboarding/ReportTutorial', () => ({
   __esModule: true,
   default: ({ children }: any) => <>{children}</>,
 }))
+
+jest.mock('../src/components/TransactionModal', () => ({
+  TransactionModal: () => null,
+}))
+
 
 function makeTransaction(overrides: Record<string, unknown> = {}) {
   return {

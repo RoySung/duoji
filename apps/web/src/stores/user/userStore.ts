@@ -22,7 +22,8 @@ type UserStoreActions = {
   ) => Promise<RegisteredUser | null>
   addVirtualUser: (
     accountBookId: string,
-    name: string
+    name: string,
+    options?: { isSharedWallet?: boolean }
   ) => Promise<VirtualUser | null>
   renameVirtualUser: (
     accountBookId: string,
@@ -265,7 +266,7 @@ export function createUserStore(
           }
         },
 
-        addVirtualUser: async (accountBookId, name) => {
+        addVirtualUser: async (accountBookId, name, options) => {
           return enqueueVirtualUserMutation(accountBookId, async () => {
             set({ isLoading: true, error: null })
 
@@ -276,6 +277,7 @@ export function createUserStore(
                 name,
                 accountBookId,
                 avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&bold=true`,
+                ...(options?.isSharedWallet ? { isSharedWallet: true } : {}),
                 createdAt: now,
                 updatedAt: now,
               }
@@ -350,6 +352,7 @@ export function createUserStore(
             }
           })
         },
+
 
         softDeleteVirtualUser: async (accountBookId, virtualUserId) => {
           return enqueueVirtualUserMutation(accountBookId, async () => {

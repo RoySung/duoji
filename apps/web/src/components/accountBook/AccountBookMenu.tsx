@@ -65,7 +65,7 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
                   ? 'border-primary/30 bg-primary/5'
                   : 'cursor-pointer border-border bg-card/80 hover:bg-muted/35'
               }`}
-              onClick={isAllBooksView ? undefined : () => handleSelect('accountBook.menu.all')}
+              onClick={isAllBooksView ? undefined : () => handleSelect('all')}
             >
               <div className="flex items-center gap-2">
                 <span className="flex-1 truncate text-sm font-semibold text-foreground">

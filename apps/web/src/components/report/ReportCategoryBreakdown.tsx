@@ -284,7 +284,8 @@ export default function ReportCategoryBreakdown({
   currency,
   excludedKeys,
   onToggleKey,
-}: ReportCategoryBreakdownProps) {
+  onEditTransaction,
+}: ReportCategoryBreakdownProps & { onEditTransaction?: (id: string) => void }) {
   const t = useTranslations()
   const [activeTab, setActiveTab] = useState<TransactionType>('expense')
   const [selected, setSelected] = useState<CategorySummary | null>(null)
@@ -338,6 +339,7 @@ export default function ReportCategoryBreakdown({
         currency={currency}
         isOpen={selected !== null}
         onClose={() => setSelected(null)}
+        onTransactionClick={onEditTransaction}
       />
     </div>
   )

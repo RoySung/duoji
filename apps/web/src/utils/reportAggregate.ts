@@ -194,3 +194,63 @@ export function groupByMonth(transactions: Transaction[]): MonthlyTrendPoint[] {
     a.month.localeCompare(b.month)
   )
 }
+
+/**
+ * 過濾並計算特定成員的實際收支：
+ * 1. 移除與該成員無關的交易。
+ * 2. 針對留下的交易，將 amount 覆寫為「個人直接負擔/獲得」加上「公積金平攤」的金額總和。
+ * 3. 若 selectedMemberId 為 null，則不進行過濾，回傳原始所有交易。
+ */
+export function filterTransactionsByMember(
+  transactions: Transaction[],
+  selectedMemberId: string | null,
+  realMembersCountMap: Map<string, number>,
+  sharedWalletIds: Set<string>
+): Transaction[] {
+  if (!selectedMemberId) return transactions
+
+  return transactions
+    .map((tx) => {
+      const realMembersCount = realMembersCountMap.get(tx.accountBookId) || 0
+
+      if (tx.type === 'expense') {
+        const directSplit = tx.splitDetail.find(
+          (item) => item.userId === selectedMemberId
+        )
+        const directAmount = directSplit?.amount ?? 0
+
+        const sharedWalletSplit = tx.splitDetail.find((item) =>
+          sharedWalletIds.has(item.userId)
+        )
+        const sharedWalletAmount = sharedWalletSplit?.amount ?? 0
+        const sharedWalletShare =
+          realMembersCount > 0 ? sharedWalletAmount / realMembersCount : 0
+
+        const effectiveAmount = directAmount + sharedWalletShare
+
+        if (effectiveAmount === 0) return null
+
+        return {
+          ...tx,
+          amount: effectiveAmount,
+        }
+      } else if (tx.type === 'income') {
+        let effectiveIncome = 0
+        if (tx.receivedByUserId === selectedMemberId) {
+          effectiveIncome = tx.amount
+        } else if (
+          tx.receivedByUserId &&
+          sharedWalletIds.has(tx.receivedByUserId)
+        ) {
+          effectiveIncome =
+            realMembersCount > 0 ? tx.amount / realMembersCount : 0
+        }
+
+        if (effectiveIncome === 0) return null
+
+        return { ...tx, amount: effectiveIncome }
+      }
+      return null
+    })
+    .filter((tx): tx is Transaction => tx !== null)
+}

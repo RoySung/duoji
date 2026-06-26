@@ -14,6 +14,8 @@ import { useUserStore } from '@/stores/user'
 import { useCategoryStore } from '@/stores/category'
 import TransactionList from '@/components/transaction/TransactionList'
 import { generateSettlementMarkdown } from '@/utils/settlementMarkdown'
+import { computeSharedWalletSummary } from '@/utils/settlementUtils'
+import { isSharedWalletUser } from '@/entities/user'
 import SettlementTransferModal from './SettlementTransferModal'
 import SettlementMarkdownModal from './SettlementMarkdownModal'
 
@@ -66,6 +68,42 @@ export default function SettlementRecordDetail({
     [categories]
   )
 
+  const sharedWalletIds = useMemo(
+    () => new Set(allUsers.filter(isSharedWalletUser).map((u) => u.id)),
+    [allUsers]
+  )
+
+  const realMembersCount = useMemo(
+    () =>
+      allUsers.filter((u) => !isDeletedUser(u) && !isSharedWalletUser(u))
+        .length,
+    [allUsers]
+  )
+
+  const sharedWalletSummary = useMemo(
+    () =>
+      computeSharedWalletSummary(
+        transactions,
+        sharedWalletIds,
+        realMembersCount
+      ),
+    [transactions, sharedWalletIds, realMembersCount]
+  )
+
+  const peerToPeerTransfers = useMemo(
+    () =>
+      record.transfers.filter(
+        (t) =>
+          !sharedWalletIds.has(t.toUserId) && !sharedWalletIds.has(t.fromUserId)
+      ),
+    [record.transfers, sharedWalletIds]
+  )
+
+  const sharedWalletTransfers = useMemo(
+    () => record.transfers.filter((t) => sharedWalletIds.has(t.toUserId)),
+    [record.transfers, sharedWalletIds]
+  )
+
   const markdownText = useMemo(
     () =>
       generateSettlementMarkdown({
@@ -107,7 +145,9 @@ export default function SettlementRecordDetail({
               size="sm"
               variant="flat"
             >
-              {isCompleted ? t('settlement.detail.settled') : t('settlement.detail.pending')}
+              {isCompleted
+                ? t('settlement.detail.settled')
+                : t('settlement.detail.pending')}
             </Chip>
           </div>
           <p className="text-sm text-muted-foreground">{date}</p>
@@ -150,7 +190,9 @@ export default function SettlementRecordDetail({
                     size="sm"
                     variant="flat"
                   >
-                    {isSettled ? t('settlement.detail.settled') : t('settlement.detail.pending')}
+                    {isSettled
+                      ? t('settlement.detail.settled')
+                      : t('settlement.detail.pending')}
                   </Chip>
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
@@ -169,7 +211,11 @@ export default function SettlementRecordDetail({
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p>{isCreditor ? t('settlement.detail.toReceive') : t('settlement.detail.toPay')}</p>
+                    <p>
+                      {isCreditor
+                        ? t('settlement.detail.toReceive')
+                        : t('settlement.detail.toPay')}
+                    </p>
                     <p
                       className={`break-words font-semibold tabular-nums ${
                         isCreditor ? 'text-success' : 'text-danger'
@@ -191,55 +237,164 @@ export default function SettlementRecordDetail({
         <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
           {t('settlement.detail.transfers')}
         </h3>
-        <div className="space-y-2">
-          {record.transfers.map((transfer) => {
-            return (
-              <div
-                key={transfer.id}
-                className="rounded-2xl border border-border bg-background px-4 py-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {renderUserName(transfer.fromUserId, userMap)} →{' '}
-                      {renderUserName(transfer.toUserId, userMap)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t('settlement.detail.suggested', { amount: transfer.suggestedAmount.toLocaleString() + (currency ? ` ${currency}` : '') })}
-                    </p>
-                    {transfer.status === 'completed' && (
-                      <p className="text-xs text-muted-foreground">
-                        {t('settlement.detail.actual', { amount: (transfer.actualAmount?.toLocaleString() ?? '-') + (currency ? ` ${currency}` : '') })}
-                        {transfer.note ? `  ·  ${transfer.note}` : ''}
+        {peerToPeerTransfers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t('settlement.detail.noTransfers')}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {peerToPeerTransfers.map((transfer) => {
+              return (
+                <div
+                  key={transfer.id}
+                  className="rounded-2xl border border-border bg-background px-4 py-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {renderUserName(transfer.fromUserId, userMap)} →{' '}
+                        {renderUserName(transfer.toUserId, userMap)}
                       </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('settlement.detail.suggested', {
+                          amount:
+                            transfer.suggestedAmount.toLocaleString() +
+                            (currency ? ` ${currency}` : ''),
+                        })}
+                      </p>
+                      {transfer.status === 'completed' && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('settlement.detail.actual', {
+                            amount:
+                              (transfer.actualAmount?.toLocaleString() ?? '-') +
+                              (currency ? ` ${currency}` : ''),
+                          })}
+                          {transfer.note ? `  ·  ${transfer.note}` : ''}
+                        </p>
+                      )}
+                    </div>
+                    {transfer.status === 'completed' ? (
+                      <Chip
+                        className="shrink-0 bg-success/10 text-success"
+                        size="sm"
+                        startContent={
+                          <PiCheckBold className="ml-1" size={12} />
+                        }
+                        variant="flat"
+                      >
+                        {t('settlement.detail.done')}
+                      </Chip>
+                    ) : (
+                      <Button
+                        className="shrink-0"
+                        color="primary"
+                        size="sm"
+                        variant="flat"
+                        onPress={() => setSelectedTransfer(transfer)}
+                      >
+                        {t('settlement.detail.markDone')}
+                      </Button>
                     )}
                   </div>
-                  {transfer.status === 'completed' ? (
-                    <Chip
-                      className="shrink-0 bg-success/10 text-success"
-                      size="sm"
-                      startContent={<PiCheckBold className="ml-1" size={12} />}
-                      variant="flat"
-                    >
-                      {t('settlement.detail.done')}
-                    </Chip>
-                  ) : (
-                    <Button
-                      className="shrink-0"
-                      color="primary"
-                      size="sm"
-                      variant="flat"
-                      onPress={() => setSelectedTransfer(transfer)}
-                    >
-                      {t('settlement.detail.markDone')}
-                    </Button>
-                  )}
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
+
+      {/* Shared Wallet Summary */}
+      {sharedWalletSummary && sharedWalletSummary.totalExpense > 0 && (
+        <section>
+          <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+            {t('settlement.sharedWallet.title')}
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
+              <p className="text-sm text-foreground">
+                {t('settlement.sharedWallet.total')}
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {sharedWalletSummary.totalExpense.toLocaleString()}
+                {currency ? ` ${currency}` : ''}
+              </p>
+            </div>
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
+              <p className="text-sm text-foreground">
+                {t('settlement.sharedWallet.average')}
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {sharedWalletSummary.averagePerPerson.toLocaleString()}
+                {currency ? ` ${currency}` : ''}
+              </p>
+            </div>
+
+            {sharedWalletTransfers.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  {t('settlement.sharedWallet.borrowings')}
+                </p>
+                {sharedWalletTransfers.map((transfer) => {
+                  return (
+                    <div
+                      key={transfer.id}
+                      className="rounded-2xl border border-border bg-background px-4 py-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <p className="text-sm font-medium text-foreground">
+                            {renderUserName(transfer.fromUserId, userMap)} →{' '}
+                            {renderUserName(transfer.toUserId, userMap)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t('settlement.detail.suggested', {
+                              amount:
+                                transfer.suggestedAmount.toLocaleString() +
+                                (currency ? ` ${currency}` : ''),
+                            })}
+                          </p>
+                          {transfer.status === 'completed' && (
+                            <p className="text-xs text-muted-foreground">
+                              {t('settlement.detail.actual', {
+                                amount:
+                                  (transfer.actualAmount?.toLocaleString() ??
+                                    '-') + (currency ? ` ${currency}` : ''),
+                              })}
+                              {transfer.note ? `  ·  ${transfer.note}` : ''}
+                            </p>
+                          )}
+                        </div>
+                        {transfer.status === 'completed' ? (
+                          <Chip
+                            className="shrink-0 bg-success/10 text-success"
+                            size="sm"
+                            startContent={
+                              <PiCheckBold className="ml-1" size={12} />
+                            }
+                            variant="flat"
+                          >
+                            {t('settlement.detail.done')}
+                          </Chip>
+                        ) : (
+                          <Button
+                            className="shrink-0"
+                            color="primary"
+                            size="sm"
+                            variant="flat"
+                            onPress={() => setSelectedTransfer(transfer)}
+                          >
+                            {t('settlement.detail.markDone')}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Covered transactions */}
       <section>
@@ -251,7 +406,9 @@ export default function SettlementRecordDetail({
           onClick={() => setIsTransactionsExpanded((v) => !v)}
         >
           <p className="text-sm font-medium text-foreground">
-            {t('settlement.detail.coveredTransactions', { count: coveredTransactions.length })}
+            {t('settlement.detail.coveredTransactions', {
+              count: coveredTransactions.length,
+            })}
           </p>
           {isTransactionsExpanded ? (
             <PiCaretUpBold className="text-muted-foreground" />
@@ -292,7 +449,6 @@ export default function SettlementRecordDetail({
           onClose={() => setIsMarkdownModalOpen(false)}
         />
       )}
-
     </div>
   )
 }

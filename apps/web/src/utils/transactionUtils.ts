@@ -10,7 +10,7 @@ import {
   UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '@/entities/transaction'
 import { Category } from '@/entities/category'
-import { User } from '@/entities/user'
+import { User, isSharedWalletUser } from '@/entities/user'
 
 export const TransactionDateFormat = 'YYYY/MM/DD'
 
@@ -232,7 +232,7 @@ export function createTransactionDraft(options?: {
             )
           : clonedTransaction.splitDetail.length > 0
           ? clonedTransaction.splitDetail
-          : buildUserAmountDetails(users, clonedTransaction.amount),
+          : buildUserAmountDetails(users.filter(u => !isSharedWalletUser(u)), clonedTransaction.amount),
     }
 
     return type === 'income'
@@ -263,7 +263,7 @@ export function createTransactionDraft(options?: {
     tags: [],
     paidByDetail: buildUserAmountDetails(users.slice(0, 1), 0),
     splitDetail: buildUserAmountDetails(
-      type === 'expense' ? users : users.slice(0, 1),
+      type === 'expense' ? users.filter(u => !isSharedWalletUser(u)) : users.slice(0, 1),
       0
     ),
     createdAt: timestamp,

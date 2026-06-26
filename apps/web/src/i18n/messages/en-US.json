@@ -211,7 +211,9 @@
       "nameUpdateFailed": "Could not update name",
       "removed": "{name} removed",
       "removeFailed": "Could not remove person"
-    }
+    },
+    "sharedWallet": "Shared wallet",
+    "createSharedWallet": "Create shared wallet"
   },
   "emptyState": {
     "noAccountBooks": {
@@ -395,6 +397,12 @@
       "total": "Total",
       "reviewAndSettle": "Review & settle"
     },
+    "sharedWallet": {
+      "title": "Shared Wallet Summary",
+      "total": "Total Expenses",
+      "average": "Average per Person",
+      "borrowings": "Extra Borrowings"
+    },
     "markdown": {
       "title": "Export as Markdown — Settlement #{sequenceNumber}",
       "helper": "Paste into Notion, Obsidian, or any markdown-compatible app.",
@@ -438,6 +446,7 @@
       "toReceive": "To receive",
       "toPay": "To pay",
       "transfers": "Transfers",
+      "noTransfers": "No peer-to-peer transfers",
       "suggested": "Suggested: {amount}",
       "actual": "Actual: {amount}",
       "done": "Done",

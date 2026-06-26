@@ -44,6 +44,7 @@ export default function SettlementPage() {
     records,
     memberStatuses,
     transferSuggestions,
+    sharedWalletSummary,
     createSettlementRecord,
   } = useSettlement(accountBookId, unsettledTransactions)
 
@@ -180,6 +181,7 @@ export default function SettlementPage() {
         isOpen={isConfirmOpen}
         memberStatuses={memberStatuses}
         transferSuggestions={transferSuggestions}
+        sharedWalletSummary={sharedWalletSummary}
         currency={currentAccountBook?.currency ?? null}
         isSubmitting={isSubmitting}
         onConfirm={handleCreateRecord}

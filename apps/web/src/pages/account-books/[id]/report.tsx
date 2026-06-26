@@ -11,12 +11,16 @@ import MemberFilterSelector from '@/components/report/MemberFilterSelector'
 import TimeRangeSelector from '@/components/report/TimeRangeSelector'
 import { useExportTransactionsCsv } from '@/hooks/useExportTransactionsCsv'
 import { useReportTransactions } from '@/hooks/useReportTransactions'
+import { useAccountBookTransactions } from '@/hooks/useAccountBookTransactions'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
-import { extractReportTags, groupByCurrency } from '@/utils/reportAggregate'
+import { isSharedWalletUser, isDeletedUser } from '@/entities/user'
+import { extractReportTags, groupByCurrency, filterTransactionsByMember } from '@/utils/reportAggregate'
 import { Currency } from '@/entities/accountBook'
 import ReportTutorial from '@/components/onboarding/ReportTutorial'
+import { TransactionModal } from '@/components/TransactionModal'
+import { TransactionModalMode } from '@/entities/transaction'
 
 type DateRange = { startDate: string; endDate: string }
 
@@ -50,10 +54,42 @@ export default function AccountBookReportPage() {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(() => new Set())
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
 
-  const { transactions, isLoading, isFetching, error } = useReportTransactions(
-    accountBookId,
-    dateRange
-  )
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<TransactionModalMode>('view')
+  const [selectedTransactionId, setSelectedTransactionId] = useState<
+    string | null
+  >(null)
+
+  const {
+    transactions,
+    isLoading,
+    isFetching,
+    error,
+  } = useReportTransactions(accountBookId, dateRange)
+
+  const {
+    updateTransaction,
+    deleteTransaction,
+    createTransaction,
+    isMutating,
+  } = useAccountBookTransactions(accountBookId, null)
+
+  const selectedTransaction =
+    transactions.find((t) => t.id === selectedTransactionId) ?? undefined
+
+  function openEditModal(transactionId: string) {
+    setModalMode('edit')
+    setSelectedTransactionId(transactionId)
+    setIsModalOpen(true)
+  }
+
+  function handleModalOpenChange(open: boolean) {
+    setIsModalOpen(open)
+    if (!open) {
+      setModalMode('view')
+      setSelectedTransactionId(null)
+    }
+  }
 
   const isAllBooksView = accountBookId === 'all'
   const currentAccountBook = isAllBooksView
@@ -66,6 +102,12 @@ export default function AccountBookReportPage() {
   }, [isAllBooksView, transactions, excludedBookIds])
 
   const allUsers = useUserStore((state) => state.allUsers)
+
+  const sharedWalletIds = useMemo(
+    () => new Set(allUsers.filter(isSharedWalletUser).map((u) => u.id)),
+    [allUsers]
+  )
+
 
   const availableMembers = useMemo(() => {
     const memberIds = new Set<string>()
@@ -92,35 +134,54 @@ export default function AccountBookReportPage() {
           updatedAt: 0,
         }
       })
+      .filter((u) => !isSharedWalletUser(u))
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [bookFilteredTransactions, allUsers])
 
   useEffect(() => {
-    if (selectedMemberId && !availableMembers.some((m) => m.id === selectedMemberId)) {
+    if (
+      selectedMemberId &&
+      !availableMembers.some((m) => m.id === selectedMemberId)
+    ) {
       setSelectedMemberId(null)
     }
   }, [availableMembers, selectedMemberId])
 
-  const memberFilteredTransactions = useMemo(() => {
-    if (!selectedMemberId) return bookFilteredTransactions
+  const realMembersCountMap = useMemo(() => {
+    const map = new Map<string, number>()
 
-    return bookFilteredTransactions
-      .map((tx) => {
-        if (tx.type === 'expense') {
-          const splitItem = tx.splitDetail.find((item) => item.userId === selectedMemberId)
-          if (!splitItem) return null
-          return {
-            ...tx,
-            amount: splitItem.amount,
-          }
-        } else if (tx.type === 'income') {
-          if (tx.receivedByUserId !== selectedMemberId) return null
-          return tx
-        }
-        return null
-      })
-      .filter((tx): tx is typeof bookFilteredTransactions[number] => tx !== null)
-  }, [bookFilteredTransactions, selectedMemberId])
+    for (const book of accountBooks) {
+      map.set(book.id, book.userIds?.length ?? 0)
+    }
+
+    for (const user of allUsers) {
+      if (
+        user.type === 'virtual' &&
+        user.accountBookId &&
+        !isDeletedUser(user) &&
+        !isSharedWalletUser(user)
+      ) {
+        const currentCount = map.get(user.accountBookId) || 0
+        map.set(user.accountBookId, currentCount + 1)
+      }
+    }
+
+    return map
+  }, [accountBooks, allUsers])
+
+  const memberFilteredTransactions = useMemo(() => {
+    return filterTransactionsByMember(
+      bookFilteredTransactions,
+      selectedMemberId,
+      realMembersCountMap,
+      sharedWalletIds
+    )
+  }, [
+    bookFilteredTransactions,
+    selectedMemberId,
+    realMembersCountMap,
+    sharedWalletIds,
+  ])
 
   const currencyGroups = useMemo(() => {
     if (!isAllBooksView) return []
@@ -307,6 +368,7 @@ export default function AccountBookReportPage() {
                       selectedTags={selectedTags}
                       excludedKeys={excludedKeys}
                       onToggleKey={toggleKey}
+                      onEditTransaction={openEditModal}
                     />
                   ) : (
                     currencyGroups.map((group) => (
@@ -321,6 +383,7 @@ export default function AccountBookReportPage() {
                         label={group.currency}
                         excludedKeys={excludedKeys}
                         onToggleKey={toggleKey}
+                        onEditTransaction={openEditModal}
                       />
                     ))
                   )
@@ -334,6 +397,7 @@ export default function AccountBookReportPage() {
                     accountBook={currentAccountBook}
                     excludedKeys={excludedKeys}
                     onToggleKey={toggleKey}
+                    onEditTransaction={openEditModal}
                   />
                 )}
               </div>
@@ -341,6 +405,18 @@ export default function AccountBookReportPage() {
           )}
         </div>
       </div>
+
+      <TransactionModal
+        isOpen={isModalOpen}
+        onOpenChange={handleModalOpenChange}
+        modalMode={modalMode}
+        defaultDate={null}
+        selectedTransaction={selectedTransaction}
+        isSubmitting={isMutating}
+        onCreateTransaction={createTransaction}
+        onUpdateTransaction={updateTransaction}
+        onDeleteTransaction={deleteTransaction}
+      />
     </ReportTutorial>
   )
 }

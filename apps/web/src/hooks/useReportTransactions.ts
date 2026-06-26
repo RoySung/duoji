@@ -44,16 +44,17 @@ export function useReportTransactions(
     placeholderData: keepPreviousData,
   })
 
+  const error = query.error
+
   return {
     transactions: query.data ?? [],
     isLoading: query.isPending,
     isFetching: query.isFetching,
-    error: query.error ? toErrorMessage(query.error) : null,
+    error: error ? toErrorMessage(error) : null,
     refetch: query.refetch,
     range: dateRange,
   }
 }
-
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {

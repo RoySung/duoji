@@ -77,6 +77,15 @@ jest.mock('../src/hooks/useReportTransactions', () => ({
   useReportTransactions: (...args: any[]) => mockUseReportTransactions(...args),
 }))
 
+jest.mock('../src/hooks/useAccountBookTransactions', () => ({
+  useAccountBookTransactions: () => ({
+    createTransaction: jest.fn(),
+    updateTransaction: jest.fn(),
+    deleteTransaction: jest.fn(),
+    isMutating: false,
+  }),
+}))
+
 jest.mock('../src/hooks/useExportTransactionsCsv', () => ({
   useExportTransactionsCsv: (...args: any[]) => mockUseExportTransactionsCsv(...args),
 }))
@@ -120,6 +129,10 @@ jest.mock('../src/components/onboarding/ReportTutorial', () => ({
   default: ({ children }: any) => <>{children}</>,
 }))
 
+jest.mock('../src/components/TransactionModal', () => ({
+  TransactionModal: () => null,
+}))
+
 function makeTransaction(overrides: Record<string, unknown> = {}) {
   return {
     id: 'tx-1',
@@ -146,6 +159,7 @@ const mockUsers: User[] = [
   { id: 'user-a', name: 'User A', avatarUrl: 'http://avatar/a', type: 'registered', email: 'a@test.com', createdAt: 0, updatedAt: 0 },
   { id: 'user-b', name: 'User B', avatarUrl: 'http://avatar/b', type: 'registered', email: 'b@test.com', createdAt: 0, updatedAt: 0 },
   { id: 'user-c', name: 'User C', avatarUrl: 'http://avatar/c', type: 'virtual', accountBookId: 'book-1', createdAt: 0, updatedAt: 0 },
+  { id: 'shared-wallet', name: 'Shared Wallet', avatarUrl: 'http://avatar/sw', type: 'virtual', accountBookId: 'book-1', isSharedWallet: true, createdAt: 0, updatedAt: 0 },
 ]
 
 function setupCommonMocks() {
@@ -182,11 +196,13 @@ function setupCommonMocks() {
           id: 'book-1',
           name: 'Book 1',
           currency: 'TWD',
+          userIds: ['user-a', 'user-b'],
         },
         {
           id: 'book-2',
           name: 'Book 2',
           currency: 'JPY',
+          userIds: [],
         },
       ],
       initialized: true,
@@ -409,5 +425,80 @@ describe('AccountBookReportPage member filter integration', () => {
     expect(exportTransactions).toHaveLength(1)
     expect(exportTransactions[0].id).toBe('tx-1')
     expect(exportTransactions[0].amount).toBe(1000) // Amount should NOT be mapped for CSV export
+  })
+
+  describe('Shared Wallet behavior', () => {
+    it('excludes shared wallet from selectable members', () => {
+      mockUseReportTransactions.mockReturnValue({
+        transactions: [
+          makeTransaction({
+            id: 'tx-1',
+            type: 'expense',
+            amount: 1000,
+            splitDetail: [
+              { userId: 'user-a', amount: 400, userType: 'registered' },
+              { userId: 'shared-wallet', amount: 600, userType: 'virtual' },
+            ],
+          }),
+        ],
+        isLoading: false,
+        isFetching: false,
+        error: null,
+      })
+
+      render(<AccountBookReportPage />)
+
+      fireEvent.click(screen.getByText('Filter members'))
+      expect(screen.getByText('User A')).toBeTruthy()
+      expect(screen.queryByText('Shared Wallet')).toBeNull() // Excluded
+    })
+
+    it('distributes shared wallet split proportionally to real members', () => {
+      mockUseReportTransactions.mockReturnValue({
+        transactions: [
+          makeTransaction({
+            id: 'tx-1',
+            type: 'expense',
+            amount: 1500,
+            splitDetail: [
+              { userId: 'user-a', amount: 500, userType: 'registered' },
+              { userId: 'user-b', amount: 400, userType: 'registered' },
+              { userId: 'shared-wallet', amount: 600, userType: 'virtual' },
+            ],
+          }),
+          makeTransaction({
+            id: 'tx-2',
+            type: 'income',
+            amount: 900,
+            receivedByUserId: 'shared-wallet',
+          }),
+        ],
+        isLoading: false,
+        isFetching: false,
+        error: null,
+      })
+
+      render(<AccountBookReportPage />)
+
+      // Filter by User A
+      fireEvent.click(screen.getByText('Filter members'))
+      fireEvent.click(screen.getByText('User A'))
+
+      const filteredCall = mockReportSection.mock.calls.at(-1)[0]
+      expect(filteredCall.transactions).toHaveLength(2)
+
+      const tx1Mapped = filteredCall.transactions.find((t: any) => t.id === 'tx-1')
+      // Real members: User A, User B, User C (from mockUsers). Total 3 real members.
+      // Shared wallet share: 600 / 3 = 200
+      // User A direct: 500
+      // Expected total = 700
+      expect(tx1Mapped.amount).toBe(700)
+
+      const tx2Mapped = filteredCall.transactions.find((t: any) => t.id === 'tx-2')
+      // Income to shared wallet: 900
+      // Shared wallet share: 900 / 3 = 300
+      // Expected total = 300
+      expect(tx2Mapped.amount).toBe(300)
+    })
   })
 })

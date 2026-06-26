@@ -211,7 +211,9 @@
       "nameUpdateFailed": "無法更新名稱",
       "removed": "已移除 {name}",
       "removeFailed": "無法移除成員"
-    }
+    },
+    "sharedWallet": "共同錢包",
+    "createSharedWallet": "建立共同錢包"
   },
   "emptyState": {
     "noAccountBooks": {
@@ -395,6 +397,12 @@
       "total": "總計",
       "reviewAndSettle": "確認並結算"
     },
+    "sharedWallet": {
+      "title": "共用錢包支出總結",
+      "total": "總支出",
+      "average": "每人平均",
+      "borrowings": "額外個人借款"
+    },
     "markdown": {
       "title": "匯出為 Markdown — 結算 #{sequenceNumber}",
       "helper": "可貼到 Notion、Obsidian 或任何支援 Markdown 的工具。",
@@ -438,6 +446,7 @@
       "toReceive": "應收",
       "toPay": "應付",
       "transfers": "轉帳列表",
+      "noTransfers": "無互轉紀錄",
       "suggested": "建議金額：{amount}",
       "actual": "實際金額：{amount}",
       "done": "完成",

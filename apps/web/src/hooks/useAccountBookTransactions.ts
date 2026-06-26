@@ -22,6 +22,14 @@ function toErrorMessage(error: unknown): string {
   return 'Unknown transaction error'
 }
 
+/**
+ * Hook for managing transactions within a specific account book and date range.
+ *
+ * @param accountBookId - 僅用於 `rangeQuery` (用來組成 queryKey 與發送資料庫請求時的篩選條件)。
+ *   請注意，當我們只想要使用這個 Hook 裡的 Mutations (新增/修改/刪除) 時 (例如 `visibleRange` 傳入 null)，
+ *   這個 `accountBookId` 實質上是不會發揮作用的。
+ *   底下的 CRUD Mutations 完全不會依賴此 `accountBookId` 參數，而是直接讀取 `Transaction` 物件本身攜帶的 `accountBookId`。
+ */
 export function useAccountBookTransactions(
   accountBookId: string | null,
   visibleRange: TransactionCalendarVisibleRange | null,
@@ -99,7 +107,7 @@ export function useAccountBookTransactions(
       saveAccountBookTagsToCache(createdTransaction.accountBookId, createdTransaction.tags)
       patchTransactionRangeQueries(queryClient, null, createdTransaction)
       void queryClient.invalidateQueries({
-        queryKey: ['transactions', 'range'],
+        queryKey: ['transactions'],
       })
     },
   })
@@ -132,7 +140,7 @@ export function useAccountBookTransactions(
         updatedTransaction
       )
       void queryClient.invalidateQueries({
-        queryKey: ['transactions', 'range'],
+        queryKey: ['transactions'],
       })
     },
   })
@@ -154,7 +162,7 @@ export function useAccountBookTransactions(
 
       patchTransactionRangeQueries(queryClient, previousTransaction, null)
       void queryClient.invalidateQueries({
-        queryKey: ['transactions', 'range'],
+        queryKey: ['transactions'],
       })
     },
   })
@@ -165,15 +173,17 @@ export function useAccountBookTransactions(
     updateTransactionMutation.error ??
     deleteTransactionMutation.error
 
+  const isMutating =
+    createTransactionMutation.isPending ||
+    updateTransactionMutation.isPending ||
+    deleteTransactionMutation.isPending
+
   return {
     summariesByDate,
     transactionsByDate,
     rangeTransactions,
-    isLoading:
-      rangeQuery.isPending ||
-      createTransactionMutation.isPending ||
-      updateTransactionMutation.isPending ||
-      deleteTransactionMutation.isPending,
+    isLoading: rangeQuery.isLoading || isMutating,
+    isMutating,
     error: error ? toErrorMessage(error) : null,
     refetch: rangeQuery.refetch,
     createTransaction: createTransactionMutation.mutateAsync,

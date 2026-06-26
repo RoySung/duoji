@@ -17,6 +17,7 @@ type Props = {
   currency: string
   isOpen: boolean
   onClose: () => void
+  onTransactionClick?: (id: string) => void
 }
 
 export default function CategoryTransactionsModal({
@@ -24,6 +25,7 @@ export default function CategoryTransactionsModal({
   currency,
   isOpen,
   onClose,
+  onTransactionClick,
 }: Props) {
   const t = useTranslations()
   const categories = useCategoryStore((state) => state.categories)
@@ -86,45 +88,48 @@ export default function CategoryTransactionsModal({
                   tx.type === 'expense' ? 'text-danger' : 'text-success'
                 const prefix = tx.type === 'income' ? '+' : ''
                 return (
-                  <li
-                    key={tx.id}
-                    className="flex items-start gap-3 rounded-2xl border border-border bg-background px-3 py-3"
-                  >
-                    {category ? (
-                      <Avatar
-                        className="mt-0.5 h-9 w-9 bg-content2"
-                        name={category.name}
-                        src={category.imageUrl}
-                      />
-                    ) : (
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">
-                        <PiQuestionMark size={16} />
-                      </div>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {category?.name ?? t('transactions.list.uncategorized')}
-                        </span>
-                        <span
-                          className={`shrink-0 text-sm font-semibold ${amountClass}`}
-                        >
-                          {prefix}
-                          {formatAmount(tx.amount)}{' '}
-                          <span className="text-xs font-normal text-muted-foreground">
-                            {currency}
+                  <li key={tx.id}>
+                    <button
+                      type="button"
+                      className="group flex w-full items-start gap-3 rounded-2xl border border-border bg-background px-3 py-3 text-left transition-colors hover:border-primary-200 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70"
+                      onClick={() => onTransactionClick?.(tx.id)}
+                    >
+                      {category ? (
+                        <Avatar
+                          className="mt-0.5 h-9 w-9 bg-content2"
+                          name={category.name}
+                          src={category.imageUrl}
+                        />
+                      ) : (
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">
+                          <PiQuestionMark size={16} />
+                        </div>
+                      )}
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="truncate text-sm font-medium text-foreground group-hover:text-primary-700">
+                            {category?.name ?? t('transactions.list.uncategorized')}
                           </span>
-                        </span>
+                          <span
+                            className={`shrink-0 text-sm font-semibold ${amountClass}`}
+                          >
+                            {prefix}
+                            {formatAmount(tx.amount)}{' '}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {currency}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="truncate text-xs text-muted-foreground">
+                            {tx.description || t('transactions.list.noDescription')}
+                          </p>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {tx.date}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="truncate text-xs text-muted-foreground">
-                          {tx.description || t('transactions.list.noDescription')}
-                        </p>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {tx.date}
-                        </span>
-                      </div>
-                    </div>
+                    </button>
                   </li>
                 )
               })}

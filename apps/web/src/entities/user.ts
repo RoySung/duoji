@@ -16,6 +16,7 @@ export const VirtualUserSchema = z.object({
   name: z.string(),
   accountBookId: z.string(),
   avatarUrl: z.url().optional(),
+  isSharedWallet: z.boolean().optional(),
   createdAt: z.number(),
   updatedAt: z.number(),
   deletedAt: z.number().optional(),
@@ -33,6 +34,10 @@ export type User = z.infer<typeof UserSchema>
 
 export function isDeletedUser(user: User): boolean {
   return !!user.deletedAt
+}
+
+export function isSharedWalletUser(user: User): boolean {
+  return user.type === 'virtual' && !!user.isSharedWallet
 }
 
 export interface UserRepo {

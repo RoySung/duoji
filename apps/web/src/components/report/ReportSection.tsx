@@ -27,6 +27,7 @@ type ReportSectionProps = {
   accountBook?: AccountBook | null
   excludedKeys: Set<string>
   onToggleKey: (key: string) => void
+  onEditTransaction?: (id: string) => void
 }
 
 export default function ReportSection({
@@ -40,6 +41,7 @@ export default function ReportSection({
   accountBook,
   excludedKeys,
   onToggleKey,
+  onEditTransaction,
 }: ReportSectionProps) {
   const t = useTranslations()
 
@@ -185,6 +187,7 @@ export default function ReportSection({
           currency={currency}
           excludedKeys={excludedKeys}
           onToggleKey={onToggleKey}
+          onEditTransaction={onEditTransaction}
         />
         <ReportMonthlyTrend points={monthlyTrend} currency={currency} />
       </div>

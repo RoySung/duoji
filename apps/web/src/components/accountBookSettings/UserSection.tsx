@@ -1,8 +1,15 @@
 import { addToast, Button, Input } from '@heroui/react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { PiCheckBold, PiPencilSimpleBold, PiUserCircleBold, PiXBold } from 'react-icons/pi'
+import {
+  PiCheckBold,
+  PiPencilSimpleBold,
+  PiUserCircleBold,
+  PiWalletBold,
+  PiXBold,
+} from 'react-icons/pi'
 import { useUserStore } from '@/stores/user'
+import { isSharedWalletUser } from '@/entities/user'
 
 type UserSectionProps = {
   accountBookId: string
@@ -22,6 +29,11 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
   const [editName, setEditName] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  const hasSharedWallet = useMemo(
+    () => users.some((u) => isSharedWalletUser(u)),
+    [users]
+  )
 
   async function handleAdd() {
     const trimmed = newName.trim()
@@ -161,6 +173,12 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
                       {t('userSection.registered')}
                     </span>
                   ) : null}
+                  {isSharedWalletUser(user) ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-700">
+                      <PiWalletBold size={12} />
+                      {t('userSection.sharedWallet')}
+                    </span>
+                  ) : null}
                 </div>
 
                 {user.type === 'virtual' ? (
@@ -216,31 +234,66 @@ export default function UserSection({ accountBookId }: UserSectionProps) {
       </ul>
 
       <form
-        className="mt-4 flex gap-2"
+        className="mt-4 flex flex-col gap-2"
         onSubmit={(e) => {
           e.preventDefault()
           void handleAdd()
         }}
       >
-        <Input
-          className="flex-1"
-          placeholder={t('userSection.addPlaceholder')}
-          size="sm"
-          value={newName}
-          onValueChange={setNewName}
-        />
-        <Button
-          color="primary"
-          disableRipple
-          isDisabled={!newName.trim()}
-          isLoading={isAdding}
-          size="sm"
-          type="submit"
-          variant="flat"
-        >
-          {t('userSection.addButton')}
-        </Button>
+        <div className="flex gap-2">
+          <Input
+            className="flex-1"
+            placeholder={t('userSection.addPlaceholder')}
+            size="sm"
+            value={newName}
+            onValueChange={setNewName}
+          />
+          <Button
+            color="primary"
+            disableRipple
+            isDisabled={!newName.trim()}
+            isLoading={isAdding}
+            size="sm"
+            type="submit"
+            variant="flat"
+          >
+            {t('userSection.addButton')}
+          </Button>
+        </div>
       </form>
+
+      {!hasSharedWallet ? (
+        <div className="mt-4 pt-4 border-t border-border">
+          <Button
+            className="w-full justify-start text-warning-700 bg-warning-50 hover:bg-warning-100 border border-warning-200"
+            disableRipple
+            isLoading={isAdding}
+            size="sm"
+            variant="flat"
+            onPress={async () => {
+              setIsAdding(true)
+              try {
+                const result = await addVirtualUser(accountBookId, t('userSection.sharedWallet'), {
+                  isSharedWallet: true,
+                })
+                if (result) {
+                  addToast({
+                    title: t('userSection.toast.added', { name: t('userSection.sharedWallet') }),
+                    color: 'success',
+                  })
+                } else {
+                  addToast({ title: t('userSection.toast.addFailed'), color: 'danger' })
+                }
+              } finally {
+                setIsAdding(false)
+              }
+            }}
+          >
+            <PiWalletBold size={16} />
+            {t('userSection.createSharedWallet')}
+          </Button>
+        </div>
+      ) : null}
     </section>
   )
 }

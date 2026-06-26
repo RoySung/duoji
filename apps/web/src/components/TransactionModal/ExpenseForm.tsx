@@ -14,7 +14,7 @@ import TagsInput from '../ui/TagInput'
 import { PiGitBranchBold } from 'react-icons/pi'
 import PaidByDetailModal from './PaidByDetailModal'
 import { AccountBook } from '@/entities/accountBook'
-import { User, VirtualUser } from '@/entities/user'
+import { User, VirtualUser, isSharedWalletUser } from '@/entities/user'
 import {
   DefaultPaymentMethod,
   PaymentMethodValues,
@@ -57,6 +57,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   const selectedPaidByIds = value.paidByDetail.map((item) => item.userId)
   const selectedSplitIds = value.splitDetail.map((item) => item.userId)
 
+  const isNotSharedWallet = (u: User) => !isSharedWalletUser(u)
+
   // In edit mode: show active users + deleted users already on this transaction
   const usersForPaidBy = isEditMode
     ? [
@@ -70,7 +72,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
       ]
     : activeUsers
 
-  const usersForSplit = isEditMode
+  const usersForSplit = (isEditMode
     ? [
         ...activeUsers,
         ...allUsers.filter(
@@ -80,7 +82,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             selectedSplitIds.includes(u.id)
         ),
       ]
-    : activeUsers
+    : activeUsers).filter(isNotSharedWallet)
 
   useEffect(() => {
     if (!currentAccountBookId) {
@@ -114,10 +116,28 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         return Boolean(u)
       })
 
-    onChange({
-      ...value,
-      paidByDetail: buildUserAmountDetails(selectedUsers, value.amount),
+    const isSharedWalletSelected = selectedUsers.some(isSharedWalletUser)
+    const wasSharedWalletSelected = selectedPaidByIds.some(id => {
+      const u = allUsers.find(user => user.id === id)
+      return u && isSharedWalletUser(u)
     })
+
+    const nextPaidByDetail = buildUserAmountDetails(selectedUsers, value.amount)
+
+    if (isSharedWalletSelected && !wasSharedWalletSelected) {
+      const activeRealUsers = activeUsers.filter(isNotSharedWallet)
+      const nextSplitDetail = buildUserAmountDetails(activeRealUsers, value.amount)
+      onChange({
+        ...value,
+        paidByDetail: nextPaidByDetail,
+        splitDetail: nextSplitDetail,
+      })
+    } else {
+      onChange({
+        ...value,
+        paidByDetail: nextPaidByDetail,
+      })
+    }
   }
 
   const date = parseTransactionDateValue(value.date)

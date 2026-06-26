@@ -12,6 +12,11 @@ jest.mock('../src/utils/genUuid', () => {
   }
 })
 
+const mockUsers: any[] = []
+jest.mock('../src/stores/user', () => ({
+  useUserStore: (selector: any) => selector({ allUsers: mockUsers }),
+}))
+
 const baseTimestamp = 1710000000000
 
 function createTransactionFixture(
