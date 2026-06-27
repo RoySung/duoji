@@ -8,8 +8,9 @@ export type TransactionType = z.infer<typeof TransactionTypeSchema>
 export const PaymentMethodValues = [
   'Cash',
   'Line Pay',
-  'JKO Pay',
+  '街口支付',
   'Credit Card',
+  'Other',
 ] as const
 export const PaymentMethodSchema = z.enum(PaymentMethodValues)
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
@@ -116,9 +117,7 @@ export interface TransactionRepo {
   findAll(): Promise<Transaction[]>
   findByDate(query: TransactionDateQuery): Promise<Transaction[]>
   findByAccountBookId(accountBookId: string): Promise<Transaction[]>
-  findByDateRange(
-    query: TransactionDateRangeQuery
-  ): Promise<Transaction[]>
+  findByDateRange(query: TransactionDateRangeQuery): Promise<Transaction[]>
   findUnsettledExpenseByAccountBookId(
     accountBookId: string
   ): Promise<Transaction[]>

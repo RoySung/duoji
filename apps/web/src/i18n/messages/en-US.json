@@ -291,6 +291,13 @@
     "descriptionPlaceholderExpense": "Enter a description (e.g. \"Lunch with friends\")",
     "descriptionPlaceholderIncome": "Enter a description (e.g. \"Monthly salary\")",
     "paymentMethod": "Payment Method",
+    "paymentMethods": {
+      "Cash": "Cash",
+      "Line Pay": "LINE Pay",
+      "街口支付": "JKOPAY",
+      "Credit Card": "Credit Card",
+      "Other": "Other"
+    },
     "paymentMethodPlaceholder": "Select a payment method",
     "accountBook": "Account Book",
     "accountBookPlaceholder": "Select an account book",

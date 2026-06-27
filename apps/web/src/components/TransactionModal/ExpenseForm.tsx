@@ -269,11 +269,15 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             })
           }}
         >
-          {PaymentMethodValues.map((paymentMethod) => (
-            <SelectItem key={paymentMethod} textValue={paymentMethod}>
-              {paymentMethod}
-            </SelectItem>
-          ))}
+          {PaymentMethodValues.map((paymentMethod) => {
+            // @ts-expect-error payment method translation key typing is too complex for now
+            const translatedMethod = t(`transactionForm.paymentMethods.${paymentMethod}`)
+            return (
+              <SelectItem key={paymentMethod} textValue={translatedMethod}>
+                {translatedMethod}
+              </SelectItem>
+            )
+          })}
         </Select>
         <Select
           size="sm"

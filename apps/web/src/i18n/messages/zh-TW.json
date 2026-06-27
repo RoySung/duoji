@@ -291,6 +291,13 @@
     "descriptionPlaceholderExpense": "輸入描述（例如：與朋友的午餐）",
     "descriptionPlaceholderIncome": "輸入描述（例如：每月薪資）",
     "paymentMethod": "付款方式",
+    "paymentMethods": {
+      "Cash": "現金",
+      "Line Pay": "LINE Pay",
+      "街口支付": "街口支付",
+      "Credit Card": "信用卡",
+      "Other": "其他"
+    },
     "paymentMethodPlaceholder": "選擇付款方式",
     "accountBook": "帳本",
     "accountBookPlaceholder": "選擇帳本",
