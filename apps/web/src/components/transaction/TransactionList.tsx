@@ -1,5 +1,5 @@
 import React from 'react'
-import { Avatar, Chip } from '@heroui/react'
+import { Avatar, AvatarGroup, Chip } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { LuDollarSign } from 'react-icons/lu'
 import {
@@ -145,13 +145,16 @@ export default function TransactionList({
             const effectiveCurrency = showAccountBook
               ? accountBook?.currency ?? null
               : currency
-            const primaryUserId =
+            const paidUsers = (
               transaction.type === 'income'
                 ? transaction.receivedByUserId
-                : transaction.paidByDetail[0]?.userId
-            const primaryUser = primaryUserId
-              ? userMap.get(primaryUserId)
-              : null
+                  ? [transaction.receivedByUserId]
+                  : []
+                : transaction.paidByDetail.map((d) => d.userId)
+            ).flatMap((id) => {
+              const user = userMap.get(id)
+              return user ? [user] : []
+            })
 
             return (
               <article key={transaction.id}>
@@ -270,12 +273,27 @@ export default function TransactionList({
                                   className="text-muted-foreground"
                                   size={12}
                                 />
-                                {primaryUser ? (
-                                  <Avatar
-                                    src={primaryUser.avatarUrl}
-                                    name={primaryUser.name}
-                                    className="w-4 h-4 text-[8px]"
-                                  />
+                                {paidUsers.length > 0 ? (
+                                  <AvatarGroup
+                                    max={3}
+                                    renderCount={(count) => (
+                                      <p className="text-small text-foreground font-medium ms-2">
+                                        +{count}
+                                      </p>
+                                    )}
+                                    size="sm"
+                                  >
+                                    {paidUsers.map((user) => (
+                                      <Avatar
+                                        key={user.id}
+                                        src={user.avatarUrl}
+                                        name={user.name}
+                                        classNames={{
+                                          base: 'w-6 h-6 text-[8px]',
+                                        }}
+                                      />
+                                    ))}
+                                  </AvatarGroup>
                                 ) : null}
                               </div>
                             }

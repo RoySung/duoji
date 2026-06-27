@@ -13,6 +13,7 @@ import {
 import { clsx } from 'clsx'
 import { Transaction } from '@/entities/transaction'
 import { User, VirtualUser } from '@/entities/user'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   isOpen: boolean
@@ -31,6 +32,7 @@ export default function SplitDetailModal({
   onSplitDetailChange,
   amount,
 }: Props) {
+  const t = useTranslations()
   const [currentSplitDetail, setCurrentSplitDetail] = useState<
     Transaction['splitDetail']
   >([])
@@ -117,7 +119,7 @@ export default function SplitDetailModal({
       <ModalContent>
         <ModalHeader>
           <div className="flex flex-col gap-2 items-center w-full">
-            <h2>Split Detail</h2>
+            <h2>{t('transactionForm.splitDetailTitle')}</h2>
           </div>
         </ModalHeader>
         <ModalBody>
@@ -149,7 +151,7 @@ export default function SplitDetailModal({
                   <div className={clsx('w-24 truncate', { 'line-through': isDeleted })}>{user.name}</div>
                   <Input
                     size="sm"
-                    label="Amount"
+                    label={t('transactionForm.amount')}
                     type="number"
                     inputMode="decimal"
                     isClearable
@@ -176,14 +178,14 @@ export default function SplitDetailModal({
           <div>
             <NoticeInFooter />
             <div className="flex gap-2">
-              <Button onPress={handleCancel}>Cancel</Button>
+              <Button onPress={handleCancel}>{t('common.cancel')}</Button>
               <Button
                 color="primary"
                 variant="solid"
                 onPress={handleSave}
                 isDisabled={isSaveDisabled}
               >
-                Save
+                {t('common.save')}
               </Button>
             </div>
           </div>

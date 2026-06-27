@@ -12,6 +12,7 @@ import {
   Avatar,
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   isOpen: boolean
@@ -30,6 +31,7 @@ export default function PaidByDetailModal({
   onOpenChange,
   onPaidByDetailChange,
 }: Props) {
+  const t = useTranslations()
   const [currentPaidByDetail, setCurrentPaidByDetail] =
     useState<Transaction['paidByDetail']>(paidByDetail)
   useEffect(() => {
@@ -120,7 +122,7 @@ export default function PaidByDetailModal({
       <ModalContent>
         <ModalHeader>
           <div className="flex flex-col gap-2 items-center w-full">
-            <h2>PaidBy Detail</h2>
+            <h2>{t('transactionForm.paidByDetailTitle')}</h2>
           </div>
         </ModalHeader>
         <ModalBody>
@@ -157,7 +159,7 @@ export default function PaidByDetailModal({
                   </Checkbox>
                   <Input
                     size="sm"
-                    label="Amount"
+                    label={t('transactionForm.amount')}
                     type="number"
                     inputMode="decimal"
                     isClearable
@@ -185,13 +187,13 @@ export default function PaidByDetailModal({
           <div>
             <NoticeInFooter />
             <div className="flex gap-2">
-              <Button onPress={handleCancel}>Cancel</Button>
+              <Button onPress={handleCancel}>{t('common.cancel')}</Button>
               <Button
                 color="primary"
                 onPress={handleSave}
                 isDisabled={isSaveDisabled}
               >
-                Save
+                {t('common.save')}
               </Button>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
 } from '@heroui/react'
 import TagsInput from '../ui/TagInput'
 import { PiGitBranchBold } from 'react-icons/pi'
+import { LuInfo } from 'react-icons/lu'
 import PaidByDetailModal from './PaidByDetailModal'
 import { AccountBook } from '@/entities/accountBook'
 import { User, VirtualUser, isSharedWalletUser } from '@/entities/user'
@@ -54,6 +55,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
 
+  const currency = accountBooks.find(
+    (ab) => ab.id === (value.accountBookId || currentAccountBookId)
+  )?.currency
+
   const selectedPaidByIds = value.paidByDetail.map((item) => item.userId)
   const selectedSplitIds = value.splitDetail.map((item) => item.userId)
 
@@ -72,17 +77,19 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
       ]
     : activeUsers
 
-  const usersForSplit = (isEditMode
-    ? [
-        ...activeUsers,
-        ...allUsers.filter(
-          (u) =>
-            u.type === 'virtual' &&
-            (u as VirtualUser).deletedAt &&
-            selectedSplitIds.includes(u.id)
-        ),
-      ]
-    : activeUsers).filter(isNotSharedWallet)
+  const usersForSplit = (
+    isEditMode
+      ? [
+          ...activeUsers,
+          ...allUsers.filter(
+            (u) =>
+              u.type === 'virtual' &&
+              (u as VirtualUser).deletedAt &&
+              selectedSplitIds.includes(u.id)
+          ),
+        ]
+      : activeUsers
+  ).filter(isNotSharedWallet)
 
   useEffect(() => {
     if (!currentAccountBookId) {
@@ -117,8 +124,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
       })
 
     const isSharedWalletSelected = selectedUsers.some(isSharedWalletUser)
-    const wasSharedWalletSelected = selectedPaidByIds.some(id => {
-      const u = allUsers.find(user => user.id === id)
+    const wasSharedWalletSelected = selectedPaidByIds.some((id) => {
+      const u = allUsers.find((user) => user.id === id)
       return u && isSharedWalletUser(u)
     })
 
@@ -126,7 +133,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
 
     if (isSharedWalletSelected && !wasSharedWalletSelected) {
       const activeRealUsers = activeUsers.filter(isNotSharedWallet)
-      const nextSplitDetail = buildUserAmountDetails(activeRealUsers, value.amount)
+      const nextSplitDetail = buildUserAmountDetails(
+        activeRealUsers,
+        value.amount
+      )
       onChange({
         ...value,
         paidByDetail: nextPaidByDetail,
@@ -169,7 +179,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   return (
     <div className="expense-form">
       <Form className="flex flex-col gap-4">
-        <div data-onboarding-anchor="transaction-form-amount" className="w-full">
+        <div
+          data-onboarding-anchor="transaction-form-amount"
+          className="w-full"
+        >
           <Input
             size="lg"
             isRequired
@@ -192,7 +205,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             }}
           />
         </div>
-        <div data-onboarding-anchor="transaction-form-category" className="w-full">
+        <div
+          data-onboarding-anchor="transaction-form-category"
+          className="w-full"
+        >
           <CategorySelector
             categoryList={expenseCategories}
             selectedCategoryId={value.categoryId}
@@ -290,41 +306,82 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             onChange({ ...value, tags })
           }}
         />
-        <div className="flex items-center w-full" data-onboarding-anchor="transaction-form-payer">
-          <Select
-            className="flex-1"
-            size="sm"
-            label={t('transactionForm.paidBy')}
-            items={usersForPaidBy}
-            selectionMode="multiple"
-            placeholder={t('transactionForm.paidByPlaceholder')}
-            isRequired
-            selectedKeys={selectedPaidByIds}
-            onSelectionChange={(ids) =>
-              selectPaidByUsers(Array.from(ids) as User['id'][])
-            }
-          >
-            {(user) => (
-              <SelectItem
-                key={user.id}
-                textValue={user.name}
-                startContent={
-                  <Avatar
-                    src={user.avatarUrl}
-                    name={user.name}
-                    size="sm"
-                    className="w-5 h-5 text-tiny"
-                  />
+        <div
+          className="flex items-start w-full"
+          data-onboarding-anchor="transaction-form-payer"
+        >
+          <div className="w-full">
+            <Select
+              className="flex-1"
+              size="sm"
+              label={t('transactionForm.paidBy')}
+              items={usersForPaidBy.map((user) => ({
+                ...user,
+                paidAmount:
+                  value.paidByDetail.find((d) => d.userId === user.id)
+                    ?.amount ?? 0,
+              }))}
+              selectionMode="multiple"
+              placeholder={t('transactionForm.paidByPlaceholder')}
+              isRequired
+              selectedKeys={selectedPaidByIds}
+              description={
+                <div className="flex items-center gap-1">
+                  <LuInfo className="flex-shrink-0 text-primary" />
+                  <span>{t('transactionForm.paidByDescription')}</span>
+                </div>
+              }
+              onSelectionChange={(ids) => {
+                const newIds = Array.from(ids) as User['id'][]
+
+                const added = newIds.find(
+                  (id) => !selectedPaidByIds.includes(id)
+                )
+                if (added) {
+                  selectPaidByUsers([added])
+                  return
                 }
-              >
-                {user.name}
-              </SelectItem>
-            )}
-          </Select>
+
+                const removed = selectedPaidByIds.find(
+                  (id) => !newIds.includes(id)
+                )
+                if (removed) {
+                  // Force single-select behavior: if the user clicks an already selected item (which triggers a removal),
+                  // we forcefully re-select it so that the dropdown selection is not cleared.
+                  selectPaidByUsers([removed])
+                }
+              }}
+            >
+              {(user) => (
+                <SelectItem
+                  key={user.id}
+                  textValue={user.name}
+                  startContent={
+                    <Avatar
+                      src={user.avatarUrl}
+                      name={user.name}
+                      size="sm"
+                      className="w-5 h-5 text-tiny"
+                    />
+                  }
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>{user.name}</span>
+                    {user.paidAmount > 0 ? (
+                      <span className="text-default-500 text-small">
+                        {user.paidAmount.toLocaleString()}
+                        {currency ? ` ${currency}` : ''}
+                      </span>
+                    ) : null}
+                  </div>
+                </SelectItem>
+              )}
+            </Select>
+          </div>
           <Button
             isIconOnly
             color="primary"
-            className="ml-2"
+            className="ml-2 mt-1"
             variant="ghost"
             onPress={() => setIsOpenPaidByOptions(true)}
           >
@@ -341,13 +398,21 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
             }}
           />
         </div>
-        <div className="flex items-start w-full" data-onboarding-anchor="transaction-form-split">
+        <div
+          className="flex items-start w-full"
+          data-onboarding-anchor="transaction-form-split"
+        >
           <div className="w-full">
             <Select
               className="flex-1"
               size="sm"
               label={t('transactionForm.splitWith')}
-              items={usersForSplit}
+              items={usersForSplit.map((user) => ({
+                ...user,
+                splitAmount:
+                  value.splitDetail.find((d) => d.userId === user.id)
+                    ?.amount ?? 0,
+              }))}
               selectionMode="multiple"
               placeholder={t('transactionForm.splitWithPlaceholder')}
               isRequired
@@ -355,7 +420,12 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
               onSelectionChange={(ids) =>
                 selectSplitUsers(Array.from(ids) as User['id'][])
               }
-              description={t('transactionForm.splitDescription')}
+              description={
+                <div className="flex items-center gap-1">
+                  <LuInfo className="flex-shrink-0 text-primary" />
+                  <span>{t('transactionForm.splitDescription')}</span>
+                </div>
+              }
             >
               {(user) => (
                 <SelectItem
@@ -370,7 +440,15 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
                     />
                   }
                 >
-                  {user.name}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{user.name}</span>
+                    {user.splitAmount > 0 ? (
+                      <span className="text-default-500 text-small">
+                        {user.splitAmount.toLocaleString()}
+                        {currency ? ` ${currency}` : ''}
+                      </span>
+                    ) : null}
+                  </div>
                 </SelectItem>
               )}
             </Select>
