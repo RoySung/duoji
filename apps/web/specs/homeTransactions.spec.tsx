@@ -1453,7 +1453,7 @@ describe('Home transaction history', () => {
     expect(paymentMethodSelect.value).toBe(DefaultPaymentMethod)
 
     fireEvent.change(paymentMethodSelect, {
-      target: { value: 'JKO Pay' },
+      target: { value: '街口支付' },
     })
 
     expect(saveButton.disabled).toBe(false)
@@ -1472,7 +1472,7 @@ describe('Home transaction history', () => {
     })
 
     expect(
-      within(screen.getByTestId('transaction-row-tx-1')).getByText('JKO Pay')
+      within(screen.getByTestId('transaction-row-tx-1')).getByText('JKOPAY')
     ).toBeTruthy()
   })
 

@@ -195,8 +195,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           }}
         >
           {PaymentMethodValues.map((paymentMethod) => {
-            // @ts-expect-error payment method translation key typing is too complex for now
-            const translatedMethod = t(`transactionForm.paymentMethods.${paymentMethod}`)
+            const translatedMethod = t(`transactionForm.paymentMethods.${paymentMethod}` as any)
             return (
               <SelectItem key={paymentMethod} textValue={translatedMethod}>
                 {translatedMethod}

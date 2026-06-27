@@ -216,12 +216,9 @@ export default function TransactionList({
                                   />
                                 }
                               >
-                                {
-                                  // @ts-expect-error payment method translation key typing is too complex for now
-                                  t(
-                                    `transactionForm.paymentMethods.${transaction.paymentMethod}`
-                                  )
-                                }
+                                {t(
+                                  `transactionForm.paymentMethods.${transaction.paymentMethod}` as any
+                                )}
                               </Chip>
                             ) : null}
                             {hasEqualSplit(transaction) ? (
