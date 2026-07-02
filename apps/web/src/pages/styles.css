@@ -488,6 +488,15 @@ summary svg {
   }
 }
 
+@layer components {
+  /* Ensure the main page content has bottom padding so it can scroll past the fixed NavBar,
+     but without forcing a scrollbar if the content is shorter than the viewport.
+     We target the inner wrapper which typically has 'min-h-full'. */
+  .layout-main .min-h-full {
+    padding-bottom: calc(2rem + 72px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
 @layer base {
   * {
     /* @apply border-border; */

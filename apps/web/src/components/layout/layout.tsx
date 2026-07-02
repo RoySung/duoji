@@ -18,8 +18,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <Providers>
         <div className="fixed inset-0 flex min-h-0 flex-col overflow-hidden bg-background">
           <Header />
-          <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
-          <NavBar />
+          <main className="relative min-h-0 flex-1 overflow-hidden layout-main">
+            {children}
+            <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-none">
+              <div className="pointer-events-auto">
+                <NavBar />
+              </div>
+            </div>
+          </main>
         </div>
       </Providers>
     </>
