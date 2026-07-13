@@ -53,9 +53,9 @@ export default function TransactionCalendar({
     onViewModeChange?.(next)
   }
   const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>(() => {
-    if (typeof window === 'undefined') return 'dot'
+    if (typeof window === 'undefined') return 'amount'
     const stored = window.localStorage.getItem('calendar-display-mode')
-    return stored === 'amount' ? 'amount' : 'dot'
+    return stored === 'dot' ? 'dot' : 'amount'
   })
 
   useEffect(() => {

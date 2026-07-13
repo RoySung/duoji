@@ -217,7 +217,7 @@ export default function OnboardingTutorial({
           maxWidth: 360,
           zIndex: 100001,
         }),
-        maskWrapper: (base) => ({ ...base, zIndex: 99999 }),
+        maskWrapper: (base) => ({ ...base, zIndex: 99999, color: 'rgba(0, 0, 0, 0.85)' }),
         maskArea: (base) => ({ ...base, rx: 12 }),
       }}
     >

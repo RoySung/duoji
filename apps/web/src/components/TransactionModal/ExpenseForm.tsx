@@ -223,6 +223,9 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         <DatePicker
           isRequired
           size="sm"
+          classNames={{
+            selectorButton: 'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
+          }}
           label={t('transactionForm.date')}
           granularity="day"
           value={date}
