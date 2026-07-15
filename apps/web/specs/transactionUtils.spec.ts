@@ -2,6 +2,7 @@ import {
   changeTransactionDraftType,
   createTransactionDraft,
   formatTransactionDateValue,
+  getDefaultTransactionCategoryId,
   parseTransactionDateValue,
   resolveIncomeRecipientId,
 } from '../src/utils/transactionUtils'
@@ -276,5 +277,31 @@ describe('resolveTransactionCategoryId via createTransactionDraft', () => {
       (c) => c.id === draft.categoryId
     )
     expect(resolvedCategory).toBeDefined()
+  })
+})
+
+describe('getDefaultTransactionCategoryId', () => {
+  it('returns the first sub-category under the first root category', () => {
+    const mockCategories = [
+      { id: 'root-1', name: 'Food & Dining', parentId: null, type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 0 },
+      { id: 'sub-1-1', name: 'Breakfast', parentId: 'root-1', type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 1 },
+      { id: 'sub-1-2', name: 'Lunch', parentId: 'root-1', type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 2 },
+      { id: 'root-2', name: 'Everyday Shopping', parentId: null, type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 3 },
+      { id: 'sub-2-1', name: 'Daily Essentials', parentId: 'root-2', type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 4 },
+    ]
+
+    expect(getDefaultTransactionCategoryId('expense', mockCategories)).toBe('sub-1-1')
+  })
+
+  it('correctly returns the first default sub-category even when custom categories exist and are sorted at the top', () => {
+    const mockCategories = [
+      { id: 'custom-sub', name: 'Custom Sub', parentId: 'custom-root', type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 0 },
+      { id: 'root-1', name: 'Food & Dining', parentId: null, type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 1 },
+      { id: 'sub-1-1', name: 'Breakfast', parentId: 'root-1', type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 2 },
+      { id: 'sub-1-2', name: 'Lunch', parentId: 'root-1', type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 3 },
+      { id: 'custom-root', name: 'Custom Root', parentId: null, type: 'expense' as const, imageUrl: '', description: '', accountBookId: '1', sortOrder: 25 },
+    ]
+
+    expect(getDefaultTransactionCategoryId('expense', mockCategories)).toBe('sub-1-1')
   })
 })

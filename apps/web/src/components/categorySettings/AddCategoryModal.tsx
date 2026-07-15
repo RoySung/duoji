@@ -101,19 +101,7 @@ export default function AddCategoryModal({
       : t('categorySettings.expense')
   }
 
-  function renderIconLabel(key: CategoryIconKey) {
-    return (
-      <div className="flex items-center gap-2">
-        <img
-          alt=""
-          aria-hidden="true"
-          className="size-4 shrink-0"
-          src={CATEGORY_ICONS[key]}
-        />
-        <span>{t(`categorySettings.iconOptions.${key}`)}</span>
-      </div>
-    )
-  }
+
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose}>
@@ -134,30 +122,37 @@ export default function AddCategoryModal({
             }}
           />
 
-          <Select
-            label={t('categorySettings.icon')}
-            renderValue={(items) => {
-              const selectedKey = items[0]?.key
-
-              if (typeof selectedKey !== 'string') return null
-
-              return renderIconLabel(selectedKey as CategoryIconKey)
-            }}
-            selectedKeys={[iconKey]}
-            onSelectionChange={(keys) => {
-              const key = Array.from(keys)[0] as CategoryIconKey
-              if (key) setIconKey(key)
-            }}
-          >
-            {ICON_KEYS.map((key) => (
-              <SelectItem
-                key={key}
-                textValue={t(`categorySettings.iconOptions.${key}`)}
-              >
-                {renderIconLabel(key)}
-              </SelectItem>
-            ))}
-          </Select>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground-600">
+              {t('categorySettings.icon')}
+            </span>
+            <div className="grid grid-cols-6 gap-2 max-h-[160px] overflow-y-auto p-2 border border-default-200 rounded-medium bg-default-50">
+              {ICON_KEYS.map((key) => {
+                const isSelected = iconKey === key
+                const labelText = t(`categorySettings.iconOptions.${key}`)
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    title={labelText}
+                    aria-label={labelText}
+                    className={`flex items-center justify-center p-2 rounded-medium border-2 transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary-50/50'
+                        : 'border-transparent hover:bg-default-100'
+                    }`}
+                    onClick={() => setIconKey(key)}
+                  >
+                    <img
+                      alt={labelText}
+                      className="size-6 shrink-0"
+                      src={CATEGORY_ICONS[key]}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
           {/* Type indicator/selector — hidden in edit mode */}
           {!isEditMode &&

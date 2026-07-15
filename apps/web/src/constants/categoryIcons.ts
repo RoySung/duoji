@@ -57,6 +57,35 @@ export const CATEGORY_ICONS = {
   laptop: iconUrl('lucide', 'laptop'),
   users: iconUrl('lucide', 'users'),
 
+  // Pets
+  'paw-print': iconUrl('lucide', 'paw-print'),
+  dog: iconUrl('lucide', 'dog'),
+  cat: iconUrl('lucide', 'cat'),
+
+  // Supplies
+  package: iconUrl('lucide', 'package'),
+  box: iconUrl('lucide', 'box'),
+  wrench: iconUrl('lucide', 'wrench'),
+  sparkles: iconUrl('lucide', 'sparkles'),
+
+  // Activities
+  calendar: iconUrl('lucide', 'calendar'),
+  ticket: iconUrl('lucide', 'ticket'),
+  trophy: iconUrl('lucide', 'trophy'),
+  activity: iconUrl('lucide', 'activity'),
+
+  // Daily / Utilities
+  home: iconUrl('lucide', 'home'),
+  droplet: iconUrl('lucide', 'droplet'),
+  zap: iconUrl('lucide', 'zap'),
+  phone: iconUrl('lucide', 'phone'),
+  wifi: iconUrl('lucide', 'wifi'),
+  baby: iconUrl('lucide', 'baby'),
+  plane: iconUrl('lucide', 'plane'),
+  'map-pin': iconUrl('lucide', 'map-pin'),
+  receipt: iconUrl('lucide', 'receipt'),
+  scissors: iconUrl('lucide', 'scissors'),
+
   // Misc
   'plus-circle': iconUrl('lucide', 'plus-circle'),
   'credit-card': iconUrl('lucide', 'credit-card'),

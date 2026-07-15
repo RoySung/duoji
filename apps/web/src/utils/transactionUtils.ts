@@ -144,11 +144,41 @@ export function getDefaultTransactionCategoryId(
   type: TransactionType,
   categories: Category[] = []
 ): string {
+  const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder)
+
+  // Build a map grouping subcategories under their parentId
+  const childrenMap = new Map<string | null, Category[]>()
+  for (const category of sorted) {
+    const parentId = category.parentId
+    if (!childrenMap.has(parentId)) {
+      childrenMap.set(parentId, [])
+    }
+    childrenMap.get(parentId)!.push(category)
+  }
+
+  // Retrieve root categories that match the target transaction type
+  const rootCategories =
+    childrenMap.get(null)?.filter((category) => category.type === type) ?? []
+
+  // Main flow: Find the first root category that actually has subcategories
+  // and return its first subcategory. This ensures we default to the first
+  // child of the first main category, rather than a custom/secondary child
+  // that might have a lower global sortOrder.
+  for (const root of rootCategories) {
+    const childCategories = childrenMap.get(root.id) ?? []
+    if (childCategories.length > 0) {
+      return childCategories[0].id
+    }
+  }
+
+  // Fallback: If no root category of this type has subcategories (or categories list is empty),
+  // fallback to finding the first subcategory of this type, then any category of this type,
+  // and finally return an empty string.
   return (
-    categories.find(
+    sorted.find(
       (category) => category.type === type && category.parentId !== null
     )?.id ??
-    categories.find((category) => category.type === type)?.id ??
+    sorted.find((category) => category.type === type)?.id ??
     ''
   )
 }
@@ -232,7 +262,10 @@ export function createTransactionDraft(options?: {
             )
           : clonedTransaction.splitDetail.length > 0
           ? clonedTransaction.splitDetail
-          : buildUserAmountDetails(users.filter(u => !isSharedWalletUser(u)), clonedTransaction.amount),
+          : buildUserAmountDetails(
+              users.filter((u) => !isSharedWalletUser(u)),
+              clonedTransaction.amount
+            ),
     }
 
     return type === 'income'
@@ -263,7 +296,9 @@ export function createTransactionDraft(options?: {
     tags: [],
     paidByDetail: buildUserAmountDetails(users.slice(0, 1), 0),
     splitDetail: buildUserAmountDetails(
-      type === 'expense' ? users.filter(u => !isSharedWalletUser(u)) : users.slice(0, 1),
+      type === 'expense'
+        ? users.filter((u) => !isSharedWalletUser(u))
+        : users.slice(0, 1),
       0
     ),
     createdAt: timestamp,

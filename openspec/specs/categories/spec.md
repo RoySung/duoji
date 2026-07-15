@@ -8,40 +8,21 @@ TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Upd
 
 ### Requirement: Default categories exist for income and expense flows
 
-The system SHALL provide default category sets for both income and expense transactions scoped to the active account book, so users can record common transaction types without manual setup.
+The system SHALL provide default category sets for both income and expense transactions scoped to the active account book, so users can record common transaction types without manual setup. When initiating a new transaction form without an existing selected category, the system SHALL default to selecting the first sub-category under the first root category of the matching transaction type.
 
 #### Scenario: Start recording a new transaction
 
 - **WHEN** a user opens a new income or expense transaction form
-- **THEN** the system SHALL provide category choices sourced from the category store, filtered to the active account book and appropriate to the selected transaction type
+- **THEN** the system SHALL provide category choices sourced from the category store, filtered to the active account book and appropriate to the selected transaction type, and SHALL default the selection to the first sub-category under the first root category of that type even if custom categories are present in the account book
 
 
 <!-- @trace
-source: category-store
-updated: 2026-03-23
+source: fix-category-selector-default
+updated: 2026-07-15
 code:
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/stores/category/categoryStoreProvider.tsx
-  - apps/web/src/mocks/category.ts
-  - apps/web/src/stores/category/categoryStore.ts
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - apps/web/src/stores/category/index.ts
-  - apps/web/src/entities/category.ts
-  - apps/web/jest.config.ts
-  - apps/web/src/entities/transaction.ts
   - apps/web/src/utils/transactionUtils.ts
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/repositories/categoryRepo/categoryLocalRepo.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/components/TransactionModal/CategorySelector.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/transaction/TransactionList.tsx
 tests:
-  - apps/web/specs/category.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/accountBookSettings.spec.tsx
+  - apps/web/specs/transactionUtils.spec.ts
 -->
 
 ---
@@ -86,39 +67,25 @@ code:
 ---
 ### Requirement: Custom categories support visual metadata
 
-The system SHALL support user-defined categories with icon and color metadata so custom categories remain distinguishable in transaction flows.
+The system SHALL support user-defined categories with icon and color metadata so custom categories remain distinguishable in transaction flows. The system SHALL support icons for pets (e.g. dog, cat, paw-print), supplies (e.g. package, box, wrench, sparkles), activities (e.g. calendar, ticket, trophy, activity), and other daily items (e.g. home, droplet, zap, phone, wifi, baby, plane, map-pin, receipt, scissors) in addition to other pre-configured icons.
 
 #### Scenario: Create a custom category
 
 - **WHEN** a user creates a custom category with a name, icon, and color
 - **THEN** the system SHALL make that category available in future transaction flows with the configured visual metadata
 
+
 <!-- @trace
-source: migrate-project-instructions-to-spectra
-updated: 2026-03-18
+source: add-more-category-icons
+updated: 2026-07-15
 code:
-  - .github/prompts/spectra-debug.prompt.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - CLAUDE.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/skills/spectra-apply/SKILL.md
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/copilot-instructions.md
-  - .github/instructions/phase-1-todo.instructions.md
-  - .github/skills/spectra-debug/SKILL.md
-  - .github/instructions/prd.instructions.md
-  - .github/prompts/spectra-audit.prompt.md
-  - .github/skills/spectra-archive/SKILL.md
-  - .github/skills/spectra-audit/SKILL.md
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - .github/prompts/spectra-archive.prompt.md
-  - AGENTS.md
+  - apps/web/src/constants/categoryIcons.ts
+  - apps/web/src/utils/transactionUtils.ts
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/src/i18n/messages/zh-TW.json
+tests:
+  - apps/web/specs/transactionUtils.spec.ts
 -->
 
 ---
