@@ -1,8 +1,14 @@
 import { Category } from '@/entities/category'
-import { Tabs, Tab, Avatar } from '@heroui/react'
+import { Tabs, Tab, Avatar, addToast } from '@heroui/react'
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
-import { PiWarning } from 'react-icons/pi'
+import { PiWarning, PiPlus } from 'react-icons/pi'
+import { useCategoryStore } from '@/stores/category'
+import { useAccountBookStore } from '@/stores/accountBook'
+import AddCategoryModal from '@/components/categorySettings/AddCategoryModal'
+import { CategoryIconKey, CATEGORY_ICONS } from '@/constants/categoryIcons'
+import { TransactionType } from '@/entities/transaction'
+import { useTranslations } from 'next-intl'
 
 type Props = {
   selectedCategoryId: string
@@ -42,6 +48,7 @@ export default function CategorySelector({
   selectedCategoryId,
   onSelectCategory,
 }: Props) {
+  const t = useTranslations()
   const rootCategories = getRootCategories(categoryList)
   const defaultSelectedRootCategoryId = findRootCategoryId(
     selectedCategoryId,
@@ -52,9 +59,52 @@ export default function CategorySelector({
     Category['id']
   >(defaultSelectedRootCategoryId || '')
 
+  const [addSubModalOpen, setAddSubModalOpen] = useState(false)
+  const [addSubParent, setAddSubParent] = useState<Category | null>(null)
+
+  const addCategory = useCategoryStore((s) => s.addCategory)
+  const currentAccountBookId =
+    useAccountBookStore((s) => s.currentAccountBookId) ?? ''
+
   useEffect(() => {
     setSelectedRootCategoryId(defaultSelectedRootCategoryId || '')
   }, [defaultSelectedRootCategoryId])
+
+  async function handleAddSubSubmit({
+    name,
+    iconKey,
+    type,
+  }: {
+    name: string
+    iconKey: CategoryIconKey
+    type: TransactionType
+  }) {
+    if (!addSubParent) return
+    try {
+      const created = await addCategory({
+        name,
+        imageUrl: CATEGORY_ICONS[iconKey],
+        description: '',
+        type,
+        parentId: addSubParent.id,
+        accountBookId: currentAccountBookId,
+      })
+      setAddSubModalOpen(false)
+      setAddSubParent(null)
+      onSelectCategory(created)
+    } catch (error) {
+      console.error('Failed to add subcategory:', error)
+      addToast({
+        title: t('categorySettings.toast.saveFailed'),
+        color: 'danger',
+      })
+    }
+  }
+
+  const handleOpenAddSubModal = (category: Category) => {
+    setAddSubParent(category)
+    setAddSubModalOpen(true)
+  }
 
   return (
     <div className="category-selector w-full">
@@ -113,11 +163,39 @@ export default function CategorySelector({
                     </span>
                   </div>
                 ))}
+                {/* 新增子分類按鈕 */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="flex items-center gap-1.5 cursor-pointer p-2 rounded border border-dashed border-default-300 text-default-500 hover:border-primary hover:text-primary transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
+                  onClick={() => handleOpenAddSubModal(category)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleOpenAddSubModal(category)
+                    }
+                  }}
+                >
+                  <PiPlus size={14} />
+                  <span className="text-xs w-[max-content]">{t('categorySettings.addSubTitle')}</span>
+                </div>
               </div>
             </Tab>
           )
         })}
       </Tabs>
+
+      {addSubParent && (
+        <AddCategoryModal
+          isOpen={addSubModalOpen}
+          parentType={addSubParent.type}
+          onClose={() => {
+            setAddSubModalOpen(false)
+            setAddSubParent(null)
+          }}
+          onSubmit={handleAddSubSubmit}
+        />
+      )}
     </div>
   )
 }
