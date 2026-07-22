@@ -16,6 +16,7 @@ import {
   type CSSProperties,
   type FocusEvent,
 } from 'react'
+import { useLatest } from 'react-use'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import {
@@ -70,6 +71,9 @@ export default function TransactionModal({
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
+  const setCurrentAccountBookId = useAccountBookStore(
+    (state) => state.setCurrentAccountBookId
+  )
   const categories = useCategoryStore((state) => state.categories)
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
@@ -77,6 +81,12 @@ export default function TransactionModal({
   const [keyboardInset, setKeyboardInset] = useState(0)
   const keyboardBaseViewportHeightRef = useRef(0)
   const isEditMode = modalMode === 'edit'
+  const categoriesRef = useLatest(categories)
+  const accountBooksRef = useLatest(accountBooks)
+  const activeUsersRef = useLatest(activeUsers)
+  const allUsersRef = useLatest(allUsers)
+  const selectedTransactionRef = useLatest(selectedTransaction)
+
   const [draft, setDraft] = useState(() =>
     createTransactionDraft({
       accountBookId: currentAccountBookId ?? '',
@@ -93,14 +103,14 @@ export default function TransactionModal({
 
     if (
       (modalMode === 'edit' || modalMode === 'view') &&
-      selectedTransaction
+      selectedTransactionRef.current
     ) {
       setDraft(
         createTransactionDraft({
-          baseTransaction: selectedTransaction,
-          accountBooks,
-          users: allUsers,
-          categories,
+          baseTransaction: selectedTransactionRef.current,
+          accountBooks: accountBooksRef.current,
+          users: allUsersRef.current,
+          categories: categoriesRef.current,
         })
       )
       return
@@ -108,21 +118,20 @@ export default function TransactionModal({
 
     const next = createTransactionDraft({
       accountBookId: currentAccountBookId ?? '',
-      accountBooks,
-      users: activeUsers,
-      categories,
+      accountBooks: accountBooksRef.current,
+      users: activeUsersRef.current,
+      categories: categoriesRef.current,
     })
     setDraft(defaultDate ? { ...next, date: defaultDate } : next)
   }, [
-    accountBooks,
-    activeUsers,
-    allUsers,
-    categories,
     currentAccountBookId,
     defaultDate,
     isOpen,
     modalMode,
-    selectedTransaction,
+    // Use id as dep (not the whole object) so draft resets when switching
+    // to a different transaction in edit/view mode, but NOT when the object
+    // reference changes due to unrelated store updates (e.g. adding a subcategory).
+    selectedTransaction?.id,
   ])
 
   useEffect(() => {
@@ -332,6 +341,14 @@ export default function TransactionModal({
           ...nextDraft,
           updatedAt: timestamp,
         })
+
+        if (
+          nextDraft.accountBookId &&
+          nextDraft.accountBookId !== currentAccountBookId
+        ) {
+          setCurrentAccountBookId(nextDraft.accountBookId)
+          void router.push(`/account-books/${nextDraft.accountBookId}`)
+        }
 
         addToast({
           title: t('transactionModal.toast.createdTitle'),

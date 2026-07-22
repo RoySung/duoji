@@ -4,7 +4,6 @@ import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 import { PiWarning, PiPlus } from 'react-icons/pi'
 import { useCategoryStore } from '@/stores/category'
-import { useAccountBookStore } from '@/stores/accountBook'
 import AddCategoryModal from '@/components/categorySettings/AddCategoryModal'
 import { CategoryIconKey, CATEGORY_ICONS } from '@/constants/categoryIcons'
 import { TransactionType } from '@/entities/transaction'
@@ -14,6 +13,8 @@ type Props = {
   selectedCategoryId: string
   categoryList: Category[]
   onSelectCategory: (category: Category) => void
+  accountBookId: string
+  onCategoryAdded?: () => void
 }
 
 // 輔助函數：根據 parentId 獲取子分類
@@ -47,6 +48,8 @@ export default function CategorySelector({
   categoryList,
   selectedCategoryId,
   onSelectCategory,
+  accountBookId,
+  onCategoryAdded,
 }: Props) {
   const t = useTranslations()
   const rootCategories = getRootCategories(categoryList)
@@ -63,8 +66,6 @@ export default function CategorySelector({
   const [addSubParent, setAddSubParent] = useState<Category | null>(null)
 
   const addCategory = useCategoryStore((s) => s.addCategory)
-  const currentAccountBookId =
-    useAccountBookStore((s) => s.currentAccountBookId) ?? ''
 
   useEffect(() => {
     setSelectedRootCategoryId(defaultSelectedRootCategoryId || '')
@@ -87,11 +88,12 @@ export default function CategorySelector({
         description: '',
         type,
         parentId: addSubParent.id,
-        accountBookId: currentAccountBookId,
+        accountBookId,
       })
       setAddSubModalOpen(false)
       setAddSubParent(null)
       onSelectCategory(created)
+      onCategoryAdded?.()
     } catch (error) {
       console.error('Failed to add subcategory:', error)
       addToast({

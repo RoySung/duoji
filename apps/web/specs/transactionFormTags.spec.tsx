@@ -224,6 +224,21 @@ jest.mock('../src/stores/category', () => ({
   useCategoryStore: (selector: any) => selector(mockCategoryStoreState),
 }))
 
+jest.mock('../src/hooks/useCategoriesByAccountBook', () => ({
+  useCategoriesByAccountBook: (accountBookId: string) => {
+    const categories = mockCategoryStoreState.expenseCategories.concat(
+      mockCategoryStoreState.incomeCategories
+    )
+    return {
+      categories,
+      expenseCategories: mockCategoryStoreState.expenseCategories,
+      incomeCategories: mockCategoryStoreState.incomeCategories,
+      isLoading: false,
+      refetch: jest.fn(),
+    }
+  },
+}))
+
 jest.mock('../src/stores/user', () => ({
   useUserStore: (selector: any) => selector(mockUserStoreState),
 }))

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLatest } from 'react-use'
 import { useTranslations } from 'next-intl'
 import {
   Select,
@@ -22,11 +23,11 @@ import {
   Transaction,
 } from '@/entities/transaction'
 import { useAccountBookStore } from '@/stores/accountBook/index'
-import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import SplitDetailModal from './SplitDetailModal'
 import CategorySelector from './CategorySelector'
 import { useAccountBookTagSuggestions } from '@/hooks/useAccountBookTagSuggestions'
+import { useCategoriesByAccountBook } from '@/hooks/useCategoriesByAccountBook'
 import {
   amountInputClassNames,
   amountInputCurrencyClassName,
@@ -51,7 +52,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
-  const expenseCategories = useCategoryStore((state) => state.expenseCategories)
+  const { expenseCategories, refetch: refetchCategories } =
+    useCategoriesByAccountBook(value.accountBookId || currentAccountBookId)
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
 
@@ -91,23 +93,28 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
       : activeUsers
   ).filter(isNotSharedWallet)
 
+  const valueRef = useLatest(value)
+
   useEffect(() => {
     if (!currentAccountBookId) {
       return
     }
 
+    const currentValue = valueRef.current
     if (
-      value.accountBookId &&
-      accountBooks.some((accountBook) => accountBook.id === value.accountBookId)
+      currentValue.accountBookId &&
+      accountBooks.some(
+        (accountBook) => accountBook.id === currentValue.accountBookId
+      )
     ) {
       return
     }
 
     onChange({
-      ...value,
+      ...currentValue,
       accountBookId: currentAccountBookId,
     })
-  }, [accountBooks, currentAccountBookId, onChange, value])
+  }, [accountBooks, currentAccountBookId, onChange])
 
   function selectPaidByUsers(userIds: Array<User['id']>) {
     const selectedUsers = userIds
@@ -212,6 +219,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           <CategorySelector
             categoryList={expenseCategories}
             selectedCategoryId={value.categoryId}
+            accountBookId={value.accountBookId || currentAccountBookId}
+            onCategoryAdded={refetchCategories}
             onSelectCategory={(category) => {
               onChange({
                 ...value,
@@ -224,7 +233,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           isRequired
           size="sm"
           classNames={{
-            selectorButton: 'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
+            selectorButton:
+              'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
           }}
           label={t('transactionForm.date')}
           granularity="day"
@@ -273,7 +283,9 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           }}
         >
           {PaymentMethodValues.map((paymentMethod) => {
-            const translatedMethod = t(`transactionForm.paymentMethods.${paymentMethod}` as any)
+            const translatedMethod = t(
+              `transactionForm.paymentMethods.${paymentMethod}` as any
+            )
             return (
               <SelectItem key={paymentMethod} textValue={translatedMethod}>
                 {translatedMethod}
@@ -291,7 +303,19 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           isDisabled={accountBooks.length === 0}
           onSelectionChange={(keys) => {
             const key = (Array.from(keys)[0] as string) || ''
-            onChange({ ...value, accountBookId: key })
+            onChange({
+              ...value,
+              accountBookId: key,
+              categoryId: '',
+              paidByDetail: buildUserAmountDetails(
+                activeUsers.slice(0, 1),
+                value.amount
+              ),
+              splitDetail: buildUserAmountDetails(
+                activeUsers.filter(isNotSharedWallet),
+                value.amount
+              ),
+            })
           }}
         >
           {(item: AccountBook) => (
@@ -416,8 +440,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
               items={usersForSplit.map((user) => ({
                 ...user,
                 splitAmount:
-                  value.splitDetail.find((d) => d.userId === user.id)
-                    ?.amount ?? 0,
+                  value.splitDetail.find((d) => d.userId === user.id)?.amount ??
+                  0,
               }))}
               selectionMode="multiple"
               placeholder={t('transactionForm.splitWithPlaceholder')}

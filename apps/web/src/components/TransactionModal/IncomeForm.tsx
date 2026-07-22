@@ -1,6 +1,14 @@
 import { useEffect } from 'react'
+import { useLatest } from 'react-use'
 import { useTranslations } from 'next-intl'
-import { Avatar, DatePicker, Form, Input, Select, SelectItem } from '@heroui/react'
+import {
+  Avatar,
+  DatePicker,
+  Form,
+  Input,
+  Select,
+  SelectItem,
+} from '@heroui/react'
 import { AccountBook } from '@/entities/accountBook'
 import {
   DefaultPaymentMethod,
@@ -11,9 +19,9 @@ import { User, VirtualUser } from '@/entities/user'
 import CategorySelector from './CategorySelector'
 import TagsInput from '../ui/TagInput'
 import { useAccountBookStore } from '@/stores/accountBook'
-import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import { useAccountBookTagSuggestions } from '@/hooks/useAccountBookTagSuggestions'
+import { useCategoriesByAccountBook } from '@/hooks/useCategoriesByAccountBook'
 import {
   amountInputClassNames,
   amountInputCurrencyClassName,
@@ -39,7 +47,8 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
-  const incomeCategories = useCategoryStore((state) => state.incomeCategories)
+  const { incomeCategories, refetch: refetchCategories } =
+    useCategoriesByAccountBook(value.accountBookId || currentAccountBookId)
   const allUsers = useUserStore((state) => state.allUsers)
   const activeUsers = useUserStore((state) => state.activeUsers)
 
@@ -63,26 +72,31 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
   const deletedRecipientId =
     isEditMode && currentRecipient ? currentRecipient.id : undefined
 
+  const valueRef = useLatest(value)
+
   useEffect(() => {
     if (!currentAccountBookId) {
       return
     }
 
+    const currentValue = valueRef.current
     const nextAccountBookId =
-      value.accountBookId &&
-      accountBooks.some((accountBook) => accountBook.id === value.accountBookId)
-        ? value.accountBookId
+      currentValue.accountBookId &&
+      accountBooks.some(
+        (accountBook) => accountBook.id === currentValue.accountBookId
+      )
+        ? currentValue.accountBookId
         : currentAccountBookId
 
     const nextRecipientId = resolveIncomeRecipientId({
       users: usersForLookup,
       accountBookId: nextAccountBookId,
-      receivedByUserId: value.receivedByUserId,
+      receivedByUserId: currentValue.receivedByUserId,
     })
 
     if (
-      value.accountBookId === nextAccountBookId &&
-      value.receivedByUserId === nextRecipientId
+      currentValue.accountBookId === nextAccountBookId &&
+      currentValue.receivedByUserId === nextRecipientId
     ) {
       return
     }
@@ -90,14 +104,14 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
     onChange(
       applyIncomeRecipient(
         {
-          ...value,
+          ...currentValue,
           accountBookId: nextAccountBookId,
         },
         nextRecipientId,
         usersForLookup
       )
     )
-  }, [accountBooks, currentAccountBookId, usersForLookup, onChange, value])
+  }, [accountBooks, currentAccountBookId, usersForLookup, onChange])
 
   const date = parseTransactionDateValue(value.date)
   const amountInput = useAmountInputValue({
@@ -138,6 +152,8 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         <CategorySelector
           categoryList={incomeCategories}
           selectedCategoryId={value.categoryId}
+          accountBookId={value.accountBookId || currentAccountBookId}
+          onCategoryAdded={refetchCategories}
           onSelectCategory={(category) => {
             onChange({
               ...value,
@@ -149,7 +165,8 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           isRequired
           size="sm"
           classNames={{
-            selectorButton: 'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
+            selectorButton:
+              'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
           }}
           label={t('transactionForm.date')}
           granularity="day"
@@ -198,7 +215,9 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           }}
         >
           {PaymentMethodValues.map((paymentMethod) => {
-            const translatedMethod = t(`transactionForm.paymentMethods.${paymentMethod}` as any)
+            const translatedMethod = t(
+              `transactionForm.paymentMethods.${paymentMethod}` as any
+            )
             return (
               <SelectItem key={paymentMethod} textValue={translatedMethod}>
                 {translatedMethod}
@@ -216,7 +235,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           isDisabled={accountBooks.length === 0}
           onSelectionChange={(keys) => {
             const key = (Array.from(keys)[0] as string) || ''
-            onChange({ ...value, accountBookId: key })
+            onChange({ ...value, accountBookId: key, categoryId: '' })
           }}
         >
           {(item: AccountBook) => (
@@ -229,9 +248,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
           size="sm"
           label={t('transactionForm.receivedBy')}
           items={usersForSelector}
-          selectedKeys={
-            value.receivedByUserId ? [value.receivedByUserId] : []
-          }
+          selectedKeys={value.receivedByUserId ? [value.receivedByUserId] : []}
           placeholder={t('transactionForm.receivedByPlaceholder')}
           isRequired
           isDisabled={usersForSelector.length === 0}
@@ -247,7 +264,9 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
                     receivedByUserId: value.receivedByUserId,
                   })
 
-            onChange(applyIncomeRecipient(value, nextRecipientId, usersForLookup))
+            onChange(
+              applyIncomeRecipient(value, nextRecipientId, usersForLookup)
+            )
           }}
         >
           {(user) => (
