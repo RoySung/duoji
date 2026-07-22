@@ -39,6 +39,21 @@ export default function UnsettledTransactionList({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-accent/60 px-4 py-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-medium text-foreground">
+            {t('settlement.unsettled.total')}
+          </span>
+          <span className="text-base font-semibold text-danger">
+            -{total.toLocaleString()}
+            {currency ? ` ${currency}` : ''}
+          </span>
+        </div>
+        <Button color="primary" disableRipple onPress={onConfirm}>
+          {t('settlement.unsettled.reviewAndSettle')}
+        </Button>
+      </div>
+
       <TransactionList
         currency={currency}
         error={null}
@@ -46,20 +61,6 @@ export default function UnsettledTransactionList({
         transactions={transactions}
         onEditTransaction={onEditTransaction}
       />
-
-      <div className="flex items-center justify-between rounded-2xl bg-accent/60 px-4 py-3">
-        <p className="text-sm font-medium text-foreground">{t('settlement.unsettled.total')}</p>
-        <p className="text-sm font-semibold text-danger">
-          -{total.toLocaleString()}
-          {currency ? ` ${currency}` : ''}
-        </p>
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <Button color="primary" disableRipple onPress={onConfirm}>
-          {t('settlement.unsettled.reviewAndSettle')}
-        </Button>
-      </div>
     </div>
   )
 }

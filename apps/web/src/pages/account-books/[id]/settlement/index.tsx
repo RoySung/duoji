@@ -124,81 +124,81 @@ export default function SettlementPage() {
 
   return (
     <SplitTutorial>
-    <div className="h-full overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-8">
-        <div className="space-y-1">
-          <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
-            {t('settlement.label')}
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {currentAccountBook?.name ?? t('transactions.fallbackName')}
-          </h1>
+      <div className="h-full overflow-y-auto bg-background text-foreground">
+        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-8">
+          <div className="space-y-1">
+            <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
+              {t('settlement.label')}
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {currentAccountBook?.name ?? t('transactions.fallbackName')}
+            </h1>
+          </div>
+
+          <Tabs
+            aria-label={t('settlement.tabsAriaLabel')}
+            data-onboarding-anchor="settlement-tabs"
+            fullWidth
+          >
+            <Tab key="unsettled" title={t('settlement.tabs.unsettled')}>
+              <div className="">
+                <UnsettledTransactionList
+                  transactions={unsettledTransactions}
+                  currency={currentAccountBook?.currency ?? null}
+                  onConfirm={() => setIsConfirmOpen(true)}
+                  onEditTransaction={openEditModal}
+                />
+              </div>
+            </Tab>
+            <Tab
+              key="records"
+              title={
+                <div className="relative inline-flex items-center">
+                  <span>{t('settlement.tabs.history')}</span>
+                  {pendingRecordsCount > 0 && (
+                    <span className="absolute -right-3.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-white">
+                      {pendingRecordsCount}
+                    </span>
+                  )}
+                </div>
+              }
+            >
+              <div className="pt-4">
+                <SettlementRecordList
+                  records={records}
+                  onSelectRecord={(recordId) =>
+                    void router.push(
+                      `/account-books/${accountBookId}/settlement/${recordId}`
+                    )
+                  }
+                />
+              </div>
+            </Tab>
+          </Tabs>
         </div>
 
-        <Tabs
-          aria-label={t('settlement.tabsAriaLabel')}
-          data-onboarding-anchor="settlement-tabs"
-          fullWidth
-        >
-          <Tab key="unsettled" title={t('settlement.tabs.unsettled')}>
-            <div className="pt-4">
-              <UnsettledTransactionList
-                transactions={unsettledTransactions}
-                currency={currentAccountBook?.currency ?? null}
-                onConfirm={() => setIsConfirmOpen(true)}
-                onEditTransaction={openEditModal}
-              />
-            </div>
-          </Tab>
-          <Tab
-            key="records"
-            title={
-              <div className="relative inline-flex items-center">
-                <span>{t('settlement.tabs.history')}</span>
-                {pendingRecordsCount > 0 && (
-                  <span className="absolute -right-3.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-white">
-                    {pendingRecordsCount}
-                  </span>
-                )}
-              </div>
-            }
-          >
-            <div className="pt-4">
-              <SettlementRecordList
-                records={records}
-                onSelectRecord={(recordId) =>
-                  void router.push(
-                    `/account-books/${accountBookId}/settlement/${recordId}`
-                  )
-                }
-              />
-            </div>
-          </Tab>
-        </Tabs>
+        <SettlementConfirmModal
+          isOpen={isConfirmOpen}
+          memberStatuses={memberStatuses}
+          transferSuggestions={transferSuggestions}
+          sharedWalletSummary={sharedWalletSummary}
+          currency={currentAccountBook?.currency ?? null}
+          isSubmitting={isSubmitting}
+          onConfirm={handleCreateRecord}
+          onClose={() => setIsConfirmOpen(false)}
+        />
+
+        <TransactionModal
+          isOpen={isModalOpen}
+          onOpenChange={handleModalOpenChange}
+          modalMode={modalMode}
+          selectedTransaction={selectedTransaction}
+          isSubmitting={isModalSubmitting}
+          onCreateTransaction={async (t) => t}
+          onUpdateTransaction={handleUpdateTransaction}
+          onDeleteTransaction={handleDeleteTransaction}
+        />
       </div>
-
-      <SettlementConfirmModal
-        isOpen={isConfirmOpen}
-        memberStatuses={memberStatuses}
-        transferSuggestions={transferSuggestions}
-        sharedWalletSummary={sharedWalletSummary}
-        currency={currentAccountBook?.currency ?? null}
-        isSubmitting={isSubmitting}
-        onConfirm={handleCreateRecord}
-        onClose={() => setIsConfirmOpen(false)}
-      />
-
-      <TransactionModal
-        isOpen={isModalOpen}
-        onOpenChange={handleModalOpenChange}
-        modalMode={modalMode}
-        selectedTransaction={selectedTransaction}
-        isSubmitting={isModalSubmitting}
-        onCreateTransaction={async (t) => t}
-        onUpdateTransaction={handleUpdateTransaction}
-        onDeleteTransaction={handleDeleteTransaction}
-      />
-    </div>
     </SplitTutorial>
   )
 }
