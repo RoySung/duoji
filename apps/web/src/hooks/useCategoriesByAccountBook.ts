@@ -23,6 +23,7 @@ export function useCategoriesByAccountBook(accountBookId: string) {
   const isSameScope = accountBookId === scopedAccountBookId
 
   const [dynamicCategories, setDynamicCategories] = useState<Category[]>([])
+  const [loadedBookId, setLoadedBookId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchDynamic = useCallback(
@@ -33,11 +34,13 @@ export function useCategoriesByAccountBook(accountBookId: string) {
         .then((categories) => {
           if (!signal?.cancelled) {
             setDynamicCategories(categories)
+            setLoadedBookId(accountBookId)
             setIsLoading(false)
           }
         })
         .catch((error) => {
           if (!signal?.cancelled) {
+            setLoadedBookId(accountBookId)
             setIsLoading(false)
             console.error('Failed to fetch categories:', error)
           }
@@ -49,6 +52,7 @@ export function useCategoriesByAccountBook(accountBookId: string) {
   useEffect(() => {
     if (isSameScope || !accountBookId) {
       setDynamicCategories([])
+      setLoadedBookId(null)
       setIsLoading(false)
       return
     }
@@ -79,11 +83,14 @@ export function useCategoriesByAccountBook(accountBookId: string) {
     [categories]
   )
 
+  const isBookLoading =
+    !isSameScope && !!accountBookId && (isLoading || loadedBookId !== accountBookId)
+
   return {
     categories,
     expenseCategories,
     incomeCategories,
-    isLoading: !isSameScope && isLoading,
+    isLoading: isBookLoading,
     refetch,
   }
 }

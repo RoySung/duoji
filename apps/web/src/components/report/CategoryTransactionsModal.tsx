@@ -42,6 +42,11 @@ export default function CategoryTransactionsModal({
     [summary]
   )
 
+  const displayName =
+    summary?.displayName === 'Uncategorized'
+      ? t('transactions.list.uncategorized')
+      : (summary?.displayName ?? '')
+
   return (
     <Drawer
       isOpen={isOpen}
@@ -55,7 +60,7 @@ export default function CategoryTransactionsModal({
             {summary?.imageUrl ? (
               <Avatar
                 className="h-9 w-9 bg-content2"
-                name={summary.displayName}
+                name={displayName}
                 src={summary.imageUrl}
               />
             ) : (
@@ -65,7 +70,7 @@ export default function CategoryTransactionsModal({
             )}
             <div className="flex flex-col">
               <span className="text-base font-semibold text-foreground">
-                {summary?.displayName ?? ''}
+                {displayName}
               </span>
               <span className="text-xs font-normal text-muted-foreground">
                 {t('report.categoryModal.recordsCount', { count: summary?.transactionCount ?? 0 })} ·{' '}

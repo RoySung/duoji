@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import ReportCategoryBreakdown from '../src/components/report/ReportCategoryBreakdown'
 import type { CategorySummary } from '../src/components/report/reportTypes'
 
@@ -33,7 +33,8 @@ jest.mock('../src/components/report/ReportApexChart', () => ({
 
 jest.mock('../src/components/report/CategoryTransactionsModal', () => ({
   __esModule: true,
-  default: () => null,
+  default: ({ summary, isOpen }: any) =>
+    isOpen ? <div data-testid="category-modal">{summary?.totalAmount}</div> : null,
 }))
 
 describe('ReportCategoryBreakdown', () => {
@@ -100,5 +101,60 @@ describe('ReportCategoryBreakdown', () => {
     expect(screen.queryByText('Food')).not.toBeNull()
     expect(screen.queryByText('Utilities')).not.toBeNull()
     expect(screen.queryByText('Transport')).toBeNull()
+  })
+
+  it('updates modal content reactively when expense prop updates', () => {
+    const initialExpense: CategorySummary[] = [
+      {
+        key: 'name::expense::Food',
+        displayName: 'Food',
+        imageUrl: null,
+        totalAmount: 300,
+        transactionCount: 2,
+        percentage: 100,
+        transactions: [],
+      },
+    ]
+
+    const { rerender } = render(
+      <ReportCategoryBreakdown
+        expense={initialExpense}
+        income={[]}
+        currency="TWD"
+        excludedKeys={new Set()}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    // Open modal by clicking the view transactions button for Food
+    const viewButton = screen.getByRole('button', { name: /view transactions/i })
+    fireEvent.click(viewButton)
+
+    expect(screen.getByTestId('category-modal').textContent).toBe('300')
+
+    // Simulate update to expense prop after transaction edit
+    const updatedExpense: CategorySummary[] = [
+      {
+        key: 'name::expense::Food',
+        displayName: 'Food',
+        imageUrl: null,
+        totalAmount: 500,
+        transactionCount: 3,
+        percentage: 100,
+        transactions: [],
+      },
+    ]
+
+    rerender(
+      <ReportCategoryBreakdown
+        expense={updatedExpense}
+        income={[]}
+        currency="TWD"
+        excludedKeys={new Set()}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('category-modal').textContent).toBe('500')
   })
 })

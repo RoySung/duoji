@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLatest } from 'react-use'
 import { useTranslations } from 'next-intl'
 import {
@@ -19,9 +19,9 @@ import { User, VirtualUser } from '@/entities/user'
 import CategorySelector from './CategorySelector'
 import TagsInput from '../ui/TagInput'
 import { useAccountBookStore } from '@/stores/accountBook'
-import { useUserStore } from '@/stores/user'
 import { useAccountBookTagSuggestions } from '@/hooks/useAccountBookTagSuggestions'
 import { useCategoriesByAccountBook } from '@/hooks/useCategoriesByAccountBook'
+import { useUsersByAccountBook } from '@/hooks/useUsersByAccountBook'
 import {
   amountInputClassNames,
   amountInputCurrencyClassName,
@@ -33,6 +33,7 @@ import {
   formatTransactionDateValue,
   parseTransactionDateValue,
   resolveIncomeRecipientId,
+  getDefaultTransactionCategoryId,
 } from '@/utils/transactionUtils'
 
 type Props = {
@@ -47,10 +48,16 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
   const currentAccountBookId =
     useAccountBookStore((state) => state.currentAccountBookId) ?? ''
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
-  const { incomeCategories, refetch: refetchCategories } =
-    useCategoriesByAccountBook(value.accountBookId || currentAccountBookId)
-  const allUsers = useUserStore((state) => state.allUsers)
-  const activeUsers = useUserStore((state) => state.activeUsers)
+  const {
+    incomeCategories,
+    isLoading: isLoadingCategories,
+    refetch: refetchCategories,
+  } = useCategoriesByAccountBook(value.accountBookId || currentAccountBookId)
+  const {
+    allUsers,
+    activeUsers,
+    isLoading: isLoadingUsers,
+  } = useUsersByAccountBook(value.accountBookId || currentAccountBookId)
 
   // Use allUsers for lookup in edit mode so deleted recipients are preserved
   const usersForLookup = isEditMode ? allUsers : activeUsers
@@ -74,6 +81,8 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
 
   const valueRef = useLatest(value)
 
+  const lastBookIdRef = useRef<string | null>(value.accountBookId || null)
+
   useEffect(() => {
     if (!currentAccountBookId) {
       return
@@ -88,30 +97,53 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         ? currentValue.accountBookId
         : currentAccountBookId
 
+    const isBookChanged = nextAccountBookId !== lastBookIdRef.current
+    if (isBookChanged && (isLoadingUsers || isLoadingCategories)) {
+      return
+    }
+
+    const nextCategoryId = isBookChanged
+      ? getDefaultTransactionCategoryId('income', incomeCategories)
+      : currentValue.categoryId
+
     const nextRecipientId = resolveIncomeRecipientId({
-      users: usersForLookup,
+      users: activeUsers,
       accountBookId: nextAccountBookId,
-      receivedByUserId: currentValue.receivedByUserId,
+      receivedByUserId: isBookChanged ? null : currentValue.receivedByUserId,
     })
 
     if (
       currentValue.accountBookId === nextAccountBookId &&
+      currentValue.categoryId === nextCategoryId &&
       currentValue.receivedByUserId === nextRecipientId
     ) {
+      if (isBookChanged) {
+        lastBookIdRef.current = nextAccountBookId
+      }
       return
     }
 
+    const updatedValue = {
+      ...currentValue,
+      accountBookId: nextAccountBookId,
+      categoryId: nextCategoryId,
+    }
+
     onChange(
-      applyIncomeRecipient(
-        {
-          ...currentValue,
-          accountBookId: nextAccountBookId,
-        },
-        nextRecipientId,
-        usersForLookup
-      )
+      applyIncomeRecipient(updatedValue, nextRecipientId, activeUsers)
     )
-  }, [accountBooks, currentAccountBookId, usersForLookup, onChange])
+    lastBookIdRef.current = nextAccountBookId
+  }, [
+    accountBooks,
+    currentAccountBookId,
+    activeUsers,
+    incomeCategories,
+    isLoadingUsers,
+    isLoadingCategories,
+    onChange,
+    value.accountBookId,
+    value.receivedByUserId,
+  ])
 
   const date = parseTransactionDateValue(value.date)
   const amountInput = useAmountInputValue({

@@ -167,7 +167,7 @@ export default function TransactionList({
                   <div className="flex items-start gap-3">
                     {category ? (
                       <Avatar
-                        className="mt-1 h-10 w-10 bg-content2"
+                        className="mt-1 h-10 w-10 bg-content2 p-2"
                         name={category.name}
                         src={category.imageUrl}
                       />

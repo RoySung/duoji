@@ -288,7 +288,13 @@ export default function ReportCategoryBreakdown({
 }: ReportCategoryBreakdownProps & { onEditTransaction?: (id: string) => void }) {
   const t = useTranslations()
   const [activeTab, setActiveTab] = useState<TransactionType>('expense')
-  const [selected, setSelected] = useState<CategorySummary | null>(null)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+
+  const allSummaries = useMemo(() => [...expense, ...income], [expense, income])
+  const selectedSummary = useMemo(
+    () => allSummaries.find((s) => s.key === selectedKey) ?? null,
+    [allSummaries, selectedKey]
+  )
 
   return (
     <div className="space-y-4">
@@ -321,7 +327,7 @@ export default function ReportCategoryBreakdown({
           emptyLabel={t('report.breakdown.emptyExpense')}
           excludedKeys={excludedKeys}
           onToggle={onToggleKey}
-          onSelect={setSelected}
+          onSelect={(summary) => setSelectedKey(summary.key)}
         />
       ) : (
         <BreakdownPanel
@@ -330,15 +336,15 @@ export default function ReportCategoryBreakdown({
           emptyLabel={t('report.breakdown.emptyIncome')}
           excludedKeys={excludedKeys}
           onToggle={onToggleKey}
-          onSelect={setSelected}
+          onSelect={(summary) => setSelectedKey(summary.key)}
         />
       )}
 
       <CategoryTransactionsModal
-        summary={selected}
+        summary={selectedSummary}
         currency={currency}
-        isOpen={selected !== null}
-        onClose={() => setSelected(null)}
+        isOpen={selectedSummary !== null}
+        onClose={() => setSelectedKey(null)}
         onTransactionClick={onEditTransaction}
       />
     </div>
