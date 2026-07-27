@@ -8,6 +8,7 @@ import {
   PiCircleFill,
   PiCurrencyDollarBold,
 } from 'react-icons/pi'
+import { Currency } from '@/entities/accountBook'
 import { TransactionCalendarSummary } from '@/entities/transaction'
 import { TransactionCalendarVisibleRange } from '@/hooks/transactionQueryUtils'
 import WeekStrip from './WeekStrip'
@@ -22,6 +23,7 @@ import {
 export type CalendarDisplayMode = 'dot' | 'amount'
 
 type Props = {
+  currency?: Currency
   selectedDate: string | null
   onSelectDate: (date: string | null) => void
   calendarSummaries: Record<string, TransactionCalendarSummary>
@@ -33,6 +35,7 @@ type Props = {
 }
 
 export default function TransactionCalendar({
+  currency = 'TWD',
   selectedDate,
   onSelectDate,
   calendarSummaries,
@@ -166,6 +169,7 @@ export default function TransactionCalendar({
             transition={{ duration: 0.2, ease: 'easeInOut' }}
           >
             <MonthGrid
+              currency={currency}
               selectedDate={selectedDate}
               displayMonth={displayMonth}
               onSelectDate={handleMonthSelectDate}

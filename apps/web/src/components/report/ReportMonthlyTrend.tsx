@@ -2,19 +2,20 @@ import { useMemo } from 'react'
 import { PiChartBarFill } from 'react-icons/pi'
 import { useTranslations } from 'next-intl'
 import type { ApexOptions } from 'apexcharts'
-import { formatAmount } from '@/utils/reportAggregate'
+import { formatAmount } from '@/utils/amountUtils'
+import { Currency } from '@/entities/accountBook'
 import ReportApexChart from './ReportApexChart'
 import ReportEmptyState from './ReportEmptyState'
 import { MonthlyTrendPoint } from './reportTypes'
 
 type ReportMonthlyTrendProps = {
   points: MonthlyTrendPoint[]
-  currency: string
+  currency: Currency
 }
 
 function buildTrendOptions(
   points: MonthlyTrendPoint[],
-  currency: string
+  currency: Currency
 ): ApexOptions {
   return {
     chart: {
@@ -28,9 +29,9 @@ function buildTrendOptions(
     colors: ['hsl(var(--income-color))', 'hsl(var(--expense-color))'],
     plotOptions: {
       bar: {
-        columnWidth: '50%',
-        borderRadius: 6,
-        borderRadiusApplication: 'end',
+        horizontal: false,
+        columnWidth: '55%',
+        borderRadius: 4,
       },
     },
     dataLabels: { enabled: false },
@@ -43,7 +44,7 @@ function buildTrendOptions(
     yaxis: {
       labels: {
         style: { colors: 'hsl(var(--muted-foreground))' },
-        formatter: (value: number) => formatAmount(value),
+        formatter: (value: number) => formatAmount(value, currency),
       },
     },
     grid: {
@@ -57,7 +58,7 @@ function buildTrendOptions(
     },
     tooltip: {
       y: {
-        formatter: (value: number) => `${formatAmount(value)} ${currency}`,
+        formatter: (value: number) => formatAmount(value, currency),
       },
     },
   }
@@ -111,8 +112,8 @@ export default function ReportMonthlyTrend({
           {points.map((p) => (
             <tr key={p.month}>
               <td>{p.month}</td>
-              <td>{formatAmount(p.income)}</td>
-              <td>{formatAmount(p.expense)}</td>
+              <td>{formatAmount(p.income, currency)}</td>
+              <td>{formatAmount(p.expense, currency)}</td>
             </tr>
           ))}
         </tbody>

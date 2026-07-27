@@ -426,7 +426,8 @@
       "emptyTitle": "All settled",
       "emptyDescription": "There are no unsettled transactions.",
       "total": "Total",
-      "reviewAndSettle": "Review & settle"
+      "reviewAndSettle": "Review & settle",
+      "autoRound": "Auto-round amounts (hide decimals)"
     },
     "sharedWallet": {
       "title": "Shared Wallet Summary",
@@ -446,6 +447,7 @@
       "copyFailedDesc": "Please select and copy the text manually.",
       "content": {
         "title": "# Settlement #{sequenceNumber}\n\nDate: {date}",
+        "autoRoundNote": "Rounding: Ceil",
         "deleted": "(deleted)",
         "memberBalances": "## Member Balances",
         "noMemberData": "_No member data._",

@@ -11,6 +11,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { SettlementTransfer } from '@/entities/settlement'
 import { useUserStore } from '@/stores/user'
+import { formatAmount } from '@/utils/amountUtils'
 
 type Props = {
   transfer: SettlementTransfer
@@ -58,7 +59,7 @@ export default function SettlementTransferModal({
             <p className="text-sm text-muted-foreground">
               {fromName} → {toName}
               <span className="ml-2 font-medium text-foreground">
-                {t('settlement.detail.suggested', { amount: transfer.suggestedAmount.toLocaleString() + (currency ? ` ${currency}` : '') })}
+                {t('settlement.detail.suggested', { amount: formatAmount(transfer.suggestedAmount, currency) })}
               </span>
             </p>
             <Input

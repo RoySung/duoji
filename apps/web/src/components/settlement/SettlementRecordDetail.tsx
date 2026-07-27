@@ -1,21 +1,22 @@
 import { useMemo, useState } from 'react'
-import { Button, Chip } from '@heroui/react'
+import { Button, Chip, Switch } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import {
   PiCaretDownBold,
   PiCaretUpBold,
   PiCheckBold,
   PiCopyBold,
+  PiSlidersBold,
 } from 'react-icons/pi'
 import { SettlementRecord, SettlementTransfer } from '@/entities/settlement'
 import { Transaction } from '@/entities/transaction'
-import { User, isDeletedUser } from '@/entities/user'
+import { User, isDeletedUser, isSharedWalletUser } from '@/entities/user'
 import { useUserStore } from '@/stores/user'
 import { useCategoryStore } from '@/stores/category'
 import TransactionList from '@/components/transaction/TransactionList'
 import { generateSettlementMarkdown } from '@/utils/settlementMarkdown'
 import { computeSharedWalletSummary } from '@/utils/settlementUtils'
-import { isSharedWalletUser } from '@/entities/user'
+import { formatAmount } from '@/utils/amountUtils'
 import SettlementTransferModal from './SettlementTransferModal'
 import SettlementMarkdownModal from './SettlementMarkdownModal'
 
@@ -52,6 +53,7 @@ export default function SettlementRecordDetail({
   onViewTransaction,
 }: Props) {
   const t = useTranslations()
+  const [autoRound, setAutoRound] = useState(true)
   const [isTransactionsExpanded, setIsTransactionsExpanded] = useState(false)
   const [selectedTransfer, setSelectedTransfer] =
     useState<SettlementTransfer | null>(null)
@@ -111,11 +113,12 @@ export default function SettlementRecordDetail({
         record,
         transactions,
         currency,
+        autoRound,
         userMap,
         categoryMap,
         t,
       }),
-    [sequenceNumber, record, transactions, currency, userMap, categoryMap, t]
+    [sequenceNumber, record, transactions, currency, autoRound, userMap, categoryMap, t]
   )
 
   const coveredTransactions = transactions
@@ -130,7 +133,7 @@ export default function SettlementRecordDetail({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-foreground">
@@ -152,14 +155,32 @@ export default function SettlementRecordDetail({
           </div>
           <p className="text-sm text-muted-foreground">{date}</p>
         </div>
-        <Button
+        <div className="flex items-center gap-4">
+          <Button
+            size="sm"
+            startContent={<PiCopyBold size={14} />}
+            variant="flat"
+            onPress={() => setIsMarkdownModalOpen(true)}
+          >
+            {t('settlement.detail.exportMarkdown')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Auto-round Setting Toolbar Card */}
+      <div className="flex items-center justify-between rounded-2xl border border-border bg-accent/40 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <PiSlidersBold className="text-muted-foreground" size={16} />
+          <span className="text-sm font-medium text-foreground">
+            {t('settlement.unsettled.autoRound')}
+          </span>
+        </div>
+        <Switch
+          isSelected={autoRound}
+          onValueChange={setAutoRound}
           size="sm"
-          startContent={<PiCopyBold size={14} />}
-          variant="flat"
-          onPress={() => setIsMarkdownModalOpen(true)}
-        >
-          {t('settlement.detail.exportMarkdown')}
-        </Button>
+          aria-label={t('settlement.unsettled.autoRound')}
+        />
       </div>
 
       {/* Member statuses */}
@@ -199,15 +220,17 @@ export default function SettlementRecordDetail({
                   <div className="min-w-0">
                     <p>{t('settlement.detail.split')}</p>
                     <p className="break-words font-medium tabular-nums text-foreground">
-                      {ms.splitAmount.toLocaleString()}
-                      {currency ? ` ${currency}` : ''}
+                      {formatAmount(ms.splitAmount, currency, {
+                        roundMode: autoRound ? 'ceil' : 'none',
+                      })}
                     </p>
                   </div>
                   <div className="min-w-0">
                     <p>{t('settlement.detail.paid')}</p>
                     <p className="break-words font-medium tabular-nums text-foreground">
-                      {ms.paidAmount.toLocaleString()}
-                      {currency ? ` ${currency}` : ''}
+                      {formatAmount(ms.paidAmount, currency, {
+                        roundMode: autoRound ? 'ceil' : 'none',
+                      })}
                     </p>
                   </div>
                   <div className="min-w-0">
@@ -221,8 +244,9 @@ export default function SettlementRecordDetail({
                         isCreditor ? 'text-success' : 'text-danger'
                       }`}
                     >
-                      {Math.abs(ms.netAmount).toLocaleString()}
-                      {currency ? ` ${currency}` : ''}
+                      {formatAmount(Math.abs(ms.netAmount), currency, {
+                        roundMode: autoRound ? 'ceil' : 'none',
+                      })}
                     </p>
                   </div>
                 </div>
@@ -257,17 +281,15 @@ export default function SettlementRecordDetail({
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {t('settlement.detail.suggested', {
-                          amount:
-                            transfer.suggestedAmount.toLocaleString() +
-                            (currency ? ` ${currency}` : ''),
+                          amount: formatAmount(transfer.suggestedAmount, currency, {
+                            roundMode: autoRound ? 'ceil' : 'none',
+                          }),
                         })}
                       </p>
                       {transfer.status === 'completed' && (
                         <p className="text-xs text-muted-foreground">
                           {t('settlement.detail.actual', {
-                            amount:
-                              (transfer.actualAmount?.toLocaleString() ?? '-') +
-                              (currency ? ` ${currency}` : ''),
+                            amount: formatAmount(transfer.actualAmount ?? 0, currency),
                           })}
                           {transfer.note ? `  ·  ${transfer.note}` : ''}
                         </p>
@@ -315,8 +337,7 @@ export default function SettlementRecordDetail({
                 {t('settlement.sharedWallet.total')}
               </p>
               <p className="text-sm font-semibold text-foreground">
-                {sharedWalletSummary.totalExpense.toLocaleString()}
-                {currency ? ` ${currency}` : ''}
+                {formatAmount(sharedWalletSummary.totalExpense, currency)}
               </p>
             </div>
             <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
@@ -324,8 +345,9 @@ export default function SettlementRecordDetail({
                 {t('settlement.sharedWallet.average')}
               </p>
               <p className="text-sm font-semibold text-foreground">
-                {sharedWalletSummary.averagePerPerson.toLocaleString()}
-                {currency ? ` ${currency}` : ''}
+                {formatAmount(sharedWalletSummary.averagePerPerson, currency, {
+                  roundMode: autoRound ? 'ceil' : 'none',
+                })}
               </p>
             </div>
 
@@ -348,17 +370,15 @@ export default function SettlementRecordDetail({
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {t('settlement.detail.suggested', {
-                              amount:
-                                transfer.suggestedAmount.toLocaleString() +
-                                (currency ? ` ${currency}` : ''),
+                              amount: formatAmount(transfer.suggestedAmount, currency, {
+                                roundMode: autoRound ? 'ceil' : 'none',
+                              }),
                             })}
                           </p>
                           {transfer.status === 'completed' && (
                             <p className="text-xs text-muted-foreground">
                               {t('settlement.detail.actual', {
-                                amount:
-                                  (transfer.actualAmount?.toLocaleString() ??
-                                    '-') + (currency ? ` ${currency}` : ''),
+                                amount: formatAmount(transfer.actualAmount ?? 0, currency),
                               })}
                               {transfer.note ? `  ·  ${transfer.note}` : ''}
                             </p>

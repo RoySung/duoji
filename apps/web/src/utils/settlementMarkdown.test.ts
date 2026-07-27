@@ -7,6 +7,8 @@ const mockT = (key: string, values?: any): string => {
   switch (key) {
     case 'settlement.markdown.content.title':
       return `# Settlement #${values.sequenceNumber}\n\nDate: ${values.date}`
+    case 'settlement.markdown.content.autoRoundNote':
+      return 'Rounding: Ceil'
     case 'settlement.markdown.content.deleted':
       return '(deleted)'
     case 'settlement.markdown.content.memberBalances':
@@ -124,17 +126,32 @@ const baseTransaction: Transaction = {
 }
 
 describe('generateSettlementMarkdown', () => {
-  it('renders header with sequence number and formatted date', () => {
+  it('renders header with sequence number, date, and autoRoundNote when autoRound is true', () => {
     const md = generateSettlementMarkdown({
       sequenceNumber: 7,
       record: baseRecord,
       transactions: [],
       currency: 'TWD',
+      autoRound: true,
       userMap,
       categoryMap,
     })
     expect(md).toContain('# Settlement #7')
     expect(md).toMatch(/Date: \d{4}-\d{2}-\d{2}/)
+    expect(md).toContain('_Rounding: Ceil_')
+  })
+
+  it('omits autoRoundNote when autoRound is false', () => {
+    const md = generateSettlementMarkdown({
+      sequenceNumber: 7,
+      record: baseRecord,
+      transactions: [],
+      currency: 'TWD',
+      autoRound: false,
+      userMap,
+      categoryMap,
+    })
+    expect(md).not.toContain('_Rounding: Ceil_')
   })
 
   it('shows placeholder when there are no member statuses', () => {
@@ -150,12 +167,12 @@ describe('generateSettlementMarkdown', () => {
     expect(md).toContain('_No member data._')
   })
 
-  it('renders member balances with settled / receive / pay states', () => {
+  it('renders member balances with settled / receive / pay states and applies autoRound', () => {
     const record: SettlementRecord = {
       ...baseRecord,
       memberStatuses: [
-        { userId: alice.id, paidAmount: 100, splitAmount: 50, netAmount: 50 },
-        { userId: bob.id, paidAmount: 0, splitAmount: 50, netAmount: -50 },
+        { userId: alice.id, paidAmount: 100.2, splitAmount: 50.1, netAmount: 50.1 },
+        { userId: bob.id, paidAmount: 0, splitAmount: 50.1, netAmount: -50.1 },
         { userId: deletedCarol.id, paidAmount: 30, splitAmount: 30, netAmount: 0 },
       ],
     }
@@ -164,11 +181,12 @@ describe('generateSettlementMarkdown', () => {
       record,
       transactions: [],
       currency: 'TWD',
+      autoRound: true,
       userMap,
       categoryMap,
     })
-    expect(md).toContain('| Alice | 50 TWD | 100 TWD | +50 TWD (to receive) |')
-    expect(md).toContain('| Bob | 50 TWD | 0 TWD | -50 TWD (to pay) |')
+    expect(md).toContain('| Alice | 51 TWD | 101 TWD | +51 TWD (to receive) |')
+    expect(md).toContain('| Bob | 51 TWD | 0 TWD | -51 TWD (to pay) |')
     expect(md).toContain('| Carol (deleted) | 30 TWD | 30 TWD | 0 TWD (settled) |')
   })
 
@@ -246,6 +264,45 @@ describe('generateSettlementMarkdown', () => {
       categoryMap,
     })
     expect(md).toContain('- [ ] Bob → Alice: 50 TWD')
+  })
+
+  it('formats suggested transfer amounts with ceil rounding when autoRound is true', () => {
+    const record: SettlementRecord = {
+      ...baseRecord,
+      transfers: [
+        {
+          id: 't-1',
+          fromUserId: bob.id,
+          toUserId: alice.id,
+          suggestedAmount: 150.2,
+          actualAmount: null,
+          note: '',
+          status: 'pending',
+          completedAt: null,
+        },
+      ],
+    }
+    const mdAutoRound = generateSettlementMarkdown({
+      sequenceNumber: 1,
+      record,
+      transactions: [],
+      currency: 'TWD',
+      autoRound: true,
+      userMap,
+      categoryMap,
+    })
+    expect(mdAutoRound).toContain('- [ ] Bob → Alice: 151 TWD')
+
+    const mdNoRound = generateSettlementMarkdown({
+      sequenceNumber: 1,
+      record,
+      transactions: [],
+      currency: 'TWD',
+      autoRound: false,
+      userMap,
+      categoryMap,
+    })
+    expect(mdNoRound).toContain('- [ ] Bob → Alice: 150.2 TWD')
   })
 
   it('renders completed transfer without actual when amount matches and no note', () => {

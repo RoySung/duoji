@@ -364,6 +364,7 @@ export default function AccountBookPage() {
             </div>
 
             <TransactionCalendar
+              currency={currentAccountBook?.currency ?? 'TWD'}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
               calendarSummaries={summariesByDate}

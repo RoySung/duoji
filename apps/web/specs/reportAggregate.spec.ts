@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 
+import { formatAmount } from '../src/utils/amountUtils'
 import {
-  formatAmount,
   groupByCurrency,
   groupByCategory,
   groupByMonth,
@@ -67,12 +67,12 @@ function makeCategory(id: string, name: string): Category {
 // ─── formatAmount ─────────────────────────────────────────────────────────────
 
 describe('formatAmount', () => {
-  it('rounds to integer and localizes', () => {
-    expect(formatAmount(1234.7)).toBe('1,235')
+  it('rounds to integer when roundMode round is specified', () => {
+    expect(formatAmount(1234.7, 'TWD', { roundMode: 'round' })).toBe('1,235 TWD')
   })
 
   it('returns 0 for zero', () => {
-    expect(formatAmount(0)).toBe('0')
+    expect(formatAmount(0, 'TWD')).toBe('0 TWD')
   })
 })
 

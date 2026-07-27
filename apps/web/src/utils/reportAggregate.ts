@@ -10,10 +10,6 @@ import {
   SummaryTotals,
 } from '@/components/report/reportTypes'
 
-export function formatAmount(amount: number): string {
-  return Math.round(amount).toLocaleString()
-}
-
 export function extractReportTags(transactions: Transaction[]): string[] {
   const tags = new Set<string>()
 

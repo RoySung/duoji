@@ -123,103 +123,49 @@ The system SHALL compute a list of transfer suggestions that settles all non-zer
 
 The algorithm SHALL use a greedy approach: repeatedly match the member with the highest positive balance (creditor) against the member with the most negative balance (debtor), transferring `min(creditor balance, |debtor balance|)` until all balances reach zero (within a $0.01 threshold).
 
-All suggested amounts SHALL be rounded to 2 decimal places.
+All suggested amounts SHALL be rounded to 2 decimal places in calculation storage. The settlement view SHALL provide a toggle for auto-rounding transfer suggested amounts to integers (using `Math.ceil`) for transfer convenience and Markdown summary export.
 
 #### Scenario: Three members, two transfers needed
-
 - **WHEN** member A has +$2,000, member B has -$1,200, member C has -$800
 - **THEN** the system SHALL suggest exactly 2 transfers: B→A $1,200 and C→A $800
 
 #### Scenario: All balances are zero
-
 - **WHEN** all members have a net balance of $0
 - **THEN** the system SHALL return an empty transfer suggestion list
 
+#### Scenario: Settlement auto-rounding toggle
+- **WHEN** the auto-rounding toggle is enabled on the settlement page for transfer $150.20
+- **THEN** the settlement list and exported Markdown text SHALL format the transfer suggestion as $151 while preserving $150.20 in stored record data
+
 
 <!-- @trace
-source: split-settlement-feature
-updated: 2026-04-11
+source: amount-rounding-formatting
+updated: 2026-07-27
 code:
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
   - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
+  - apps/web/src/components/report/ReportSummaryCards.tsx
+  - apps/web/src/utils/settlementMarkdown.ts
   - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - CLAUDE.md
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - apps/web/src/hooks/useSettlement.ts
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/account-books/new.tsx
-  - apps/web/src/utils/settlementUtils.ts
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - .github/skills/spectra-apply/SKILL.md
   - apps/web/src/components/transaction/TransactionList.tsx
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
-  - apps/web/src/pages/index.tsx
-  - GEMINI.md
-  - apps/web/package.json
-  - apps/web/src/components/accountBook/AccountBookMenu.tsx
-  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/next.config.js
-  - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - .spectra.yaml
-  - AGENTS.md
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/hooks/useUnsettledTransactions.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/src/components/layout/header.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/.babelrc
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/layout/navbar.tsx
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/src/components/calendar/MonthGrid.tsx
   - apps/web/src/components/settlement/UnsettledTransactionList.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - apps/web/src/stores/accountBook/index.ts
-  - apps/web/src/entities/settlement.ts
-  - .github/skills/spectra-debug/SKILL.md
-  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/utils/transactionUtils.ts
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/stores/transaction/index.ts
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
+  - apps/web/src/hooks/useFormatAmount.ts
+  - apps/web/src/components/calendar/TransactionCalendar.tsx
+  - apps/web/src/components/report/CategoryTransactionsModal.tsx
   - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/prompts/spectra-debug.prompt.md
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/utils/amountUtils.ts
+  - apps/web/src/components/report/ReportMonthlyTrend.tsx
+  - apps/web/src/i18n/messages/zh-TW.json
 tests:
-  - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
-  - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/transaction.spec.ts
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/settlementPage.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
-  - apps/web/specs/transactionStore.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/settlement.spec.ts
+  - apps/web/src/utils/amountUtils.test.ts
+  - apps/web/src/hooks/useFormatAmount.test.ts
+  - apps/web/specs/reportAggregate.spec.ts
+  - apps/web/src/utils/settlementMarkdown.test.ts
 -->
 
 ---

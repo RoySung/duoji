@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl'
-import { formatAmount } from '@/utils/reportAggregate'
+import { formatAmount } from '@/utils/amountUtils'
 import { SummaryTotals } from './reportTypes'
 
 type ReportSummaryCardsProps = {
@@ -24,10 +24,7 @@ export default function ReportSummaryCards({
         </p>
         <p className={`text-3xl font-semibold tracking-tight ${netColor}`}>
           {netSign}
-          {formatAmount(Math.abs(totals.net))}
-          <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-            {currency}
-          </span>
+          {formatAmount(Math.abs(totals.net), currency)}
         </p>
       </div>
 
@@ -38,10 +35,7 @@ export default function ReportSummaryCards({
             {t('categorySettings.income')}
           </p>
           <p className="mt-1.5 text-xl font-semibold tracking-tight text-success">
-            +{formatAmount(totals.income)}
-            <span className="ml-1 text-xs font-normal text-muted-foreground">
-              {currency}
-            </span>
+            +{formatAmount(totals.income, currency)}
           </p>
         </div>
         <div>
@@ -49,10 +43,7 @@ export default function ReportSummaryCards({
             {t('categorySettings.expense')}
           </p>
           <p className="mt-1.5 text-xl font-semibold tracking-tight text-primary-400">
-            −{formatAmount(totals.expense)}
-            <span className="ml-1 text-xs font-normal text-muted-foreground">
-              {currency}
-            </span>
+            −{formatAmount(totals.expense, currency)}
           </p>
         </div>
       </div>

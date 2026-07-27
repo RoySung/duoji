@@ -8,7 +8,7 @@ import {
   PiReceiptBold,
 } from 'react-icons/pi'
 import type { ApexOptions } from 'apexcharts'
-import { formatAmount } from '@/utils/reportAggregate'
+import { formatAmount } from '@/utils/amountUtils'
 import CategoryTransactionsModal from './CategoryTransactionsModal'
 import ReportApexChart from './ReportApexChart'
 import ReportEmptyState from './ReportEmptyState'
@@ -76,7 +76,7 @@ function buildDonutOptions(
                   (sum: number, value: number) => sum + value,
                   0
                 )
-                return `${formatAmount(total)} ${currency}`
+                return formatAmount(total, currency)
               },
             },
           },
@@ -85,7 +85,7 @@ function buildDonutOptions(
     },
     tooltip: {
       y: {
-        formatter: (value: number) => `${formatAmount(value)} ${currency}`,
+        formatter: (value: number) => formatAmount(value, currency),
       },
     },
   }
@@ -175,10 +175,7 @@ function BreakdownList({
                 </span>
               </div>
               <span className="shrink-0 text-sm font-semibold text-foreground">
-                {formatAmount(summary.totalAmount)}{' '}
-                <span className="text-xs font-normal text-muted-foreground">
-                  {currency}
-                </span>
+                {formatAmount(summary.totalAmount, currency)}
               </span>
             </button>
 

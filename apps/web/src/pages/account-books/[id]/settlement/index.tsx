@@ -19,6 +19,7 @@ export default function SettlementPage() {
   const { id } = router.query
   const accountBookId = typeof id === 'string' ? id : null
 
+  const [autoRound, setAutoRound] = useState(true)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -183,6 +184,8 @@ export default function SettlementPage() {
           transferSuggestions={transferSuggestions}
           sharedWalletSummary={sharedWalletSummary}
           currency={currentAccountBook?.currency ?? null}
+          autoRound={autoRound}
+          onAutoRoundChange={setAutoRound}
           isSubmitting={isSubmitting}
           onConfirm={handleCreateRecord}
           onClose={() => setIsConfirmOpen(false)}

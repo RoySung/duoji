@@ -17,6 +17,7 @@ import { User } from '@/entities/user'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
+import { formatAmount } from '@/utils/amountUtils'
 
 type Props = {
   currency: string | null
@@ -36,9 +37,13 @@ function formatUserNameSummary(names: string[]): string | null {
   return normalizedNames.join('、')
 }
 
-function formatSignedAmount(amount: number, type: Transaction['type']): string {
+function formatSignedAmount(
+  amount: number,
+  type: Transaction['type'],
+  currency: string | null
+): string {
   const prefix = type === 'income' ? '+' : ''
-  return `${prefix}${amount.toLocaleString()}`
+  return `${prefix}${formatAmount(amount, currency)}`
 }
 
 function hasEqualSplit(transaction: Transaction): boolean {
@@ -133,18 +138,19 @@ export default function TransactionList({
               transaction,
               userMap
             )
-            const signedAmount = formatSignedAmount(
-              transaction.amount,
-              transaction.type
-            )
-            const amountClassName =
-              transaction.type === 'expense' ? 'text-danger' : 'text-success'
             const accountBook = showAccountBook
               ? accountBookMap.get(transaction.accountBookId) ?? null
               : null
             const effectiveCurrency = showAccountBook
               ? accountBook?.currency ?? null
               : currency
+            const signedAmount = formatSignedAmount(
+              transaction.amount,
+              transaction.type,
+              effectiveCurrency
+            )
+            const amountClassName =
+              transaction.type === 'expense' ? 'text-danger' : 'text-success'
             const paidUsers = (
               transaction.type === 'income'
                 ? transaction.receivedByUserId
@@ -258,7 +264,6 @@ export default function TransactionList({
                             className={`text-lg font-semibold ${amountClassName}`}
                           >
                             {signedAmount}
-                            {effectiveCurrency ? ` ${effectiveCurrency}` : ''}
                           </p>
                         </div>
                       </div>

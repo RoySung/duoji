@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Modal,
   ModalContent,
@@ -5,6 +6,7 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Switch,
 } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import {
@@ -13,6 +15,7 @@ import {
 } from '@/entities/settlement'
 import { SharedWalletSummary } from '@/utils/settlementUtils'
 import { useUserStore } from '@/stores/user'
+import { formatAmount } from '@/utils/amountUtils'
 
 type Props = {
   isOpen: boolean
@@ -23,6 +26,8 @@ type Props = {
   >[]
   sharedWalletSummary?: SharedWalletSummary | null
   currency: string | null
+  autoRound?: boolean
+  onAutoRoundChange?: (autoRound: boolean) => void
   isSubmitting: boolean
   onConfirm: () => Promise<void>
   onClose: () => void
@@ -34,11 +39,21 @@ export default function SettlementConfirmModal({
   transferSuggestions,
   sharedWalletSummary,
   currency,
+  autoRound: autoRoundProp,
+  onAutoRoundChange,
   isSubmitting,
   onConfirm,
   onClose,
 }: Props) {
   const t = useTranslations()
+  const [internalAutoRound, setInternalAutoRound] = useState(true)
+  const autoRound = autoRoundProp ?? internalAutoRound
+
+  const handleAutoRoundChange = (val: boolean) => {
+    setInternalAutoRound(val)
+    onAutoRoundChange?.(val)
+  }
+
   const allUsers = useUserStore((state) => state.allUsers)
   const userMap = new Map(allUsers.map((u) => [u.id, u]))
 
@@ -48,6 +63,18 @@ export default function SettlementConfirmModal({
         <ModalHeader>{t('settlement.confirm.title')}</ModalHeader>
         <ModalBody>
           <div className="space-y-5">
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-accent/40 px-4 py-3">
+              <span className="text-sm font-medium text-foreground">
+                {t('settlement.unsettled.autoRound')}
+              </span>
+              <Switch
+                isSelected={autoRound}
+                onValueChange={handleAutoRoundChange}
+                size="sm"
+                aria-label={t('settlement.unsettled.autoRound')}
+              />
+            </div>
+
             <section>
               <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 {t('settlement.confirm.balances')}
@@ -76,8 +103,9 @@ export default function SettlementConfirmModal({
                         }`}
                       >
                         {isCreditor ? '+' : isZero ? '' : '-'}
-                        {Math.abs(ms.netAmount).toLocaleString()}
-                        {currency ? ` ${currency}` : ''}
+                        {formatAmount(Math.abs(ms.netAmount), currency, {
+                          roundMode: autoRound ? 'ceil' : 'none',
+                        })}
                       </p>
                     </div>
                   )
@@ -91,11 +119,11 @@ export default function SettlementConfirmModal({
                   {t('settlement.confirm.transfers')}
                 </h3>
                 <div className="space-y-2">
-                  {transferSuggestions.map((t, i) => {
+                  {transferSuggestions.map((transfer, i) => {
                     const fromName =
-                      userMap.get(t.fromUserId)?.name ?? t.fromUserId
+                      userMap.get(transfer.fromUserId)?.name ?? transfer.fromUserId
                     const toName =
-                      userMap.get(t.toUserId)?.name ?? t.toUserId
+                      userMap.get(transfer.toUserId)?.name ?? transfer.toUserId
 
                     return (
                       <div
@@ -106,8 +134,9 @@ export default function SettlementConfirmModal({
                           {fromName} → {toName}
                         </p>
                         <p className="text-sm font-semibold text-foreground">
-                          {t.suggestedAmount.toLocaleString()}
-                          {currency ? ` ${currency}` : ''}
+                          {formatAmount(transfer.suggestedAmount, currency, {
+                            roundMode: autoRound ? 'ceil' : 'none',
+                          })}
                         </p>
                       </div>
                     )
@@ -127,8 +156,7 @@ export default function SettlementConfirmModal({
                       {t('settlement.sharedWallet.total')}
                     </p>
                     <p className="text-sm font-semibold text-foreground">
-                      {sharedWalletSummary.totalExpense.toLocaleString()}
-                      {currency ? ` ${currency}` : ''}
+                      {formatAmount(sharedWalletSummary.totalExpense, currency)}
                     </p>
                   </div>
                   <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
@@ -136,8 +164,9 @@ export default function SettlementConfirmModal({
                       {t('settlement.sharedWallet.average')}
                     </p>
                     <p className="text-sm font-semibold text-foreground">
-                      {sharedWalletSummary.averagePerPerson.toLocaleString()}
-                      {currency ? ` ${currency}` : ''}
+                      {formatAmount(sharedWalletSummary.averagePerPerson, currency, {
+                        roundMode: autoRound ? 'ceil' : 'none',
+                      })}
                     </p>
                   </div>
 
@@ -157,8 +186,9 @@ export default function SettlementConfirmModal({
                               {name}
                             </p>
                             <p className="text-sm font-semibold text-danger">
-                              -{b.amount.toLocaleString()}
-                              {currency ? ` ${currency}` : ''}
+                              -{formatAmount(b.amount, currency, {
+                                roundMode: autoRound ? 'ceil' : 'none',
+                              })}
                             </p>
                           </div>
                         )

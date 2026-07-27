@@ -9,7 +9,7 @@ import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
 import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { useCategoryStore } from '@/stores/category'
-import { formatAmount } from '@/utils/reportAggregate'
+import { formatAmount } from '@/utils/amountUtils'
 import { CategorySummary } from './reportTypes'
 
 type Props = {
@@ -74,7 +74,7 @@ export default function CategoryTransactionsModal({
               </span>
               <span className="text-xs font-normal text-muted-foreground">
                 {t('report.categoryModal.recordsCount', { count: summary?.transactionCount ?? 0 })} ·{' '}
-                {summary ? formatAmount(summary.totalAmount) : '0'} {currency}
+                {summary ? formatAmount(summary.totalAmount, currency) : formatAmount(0, currency)}
               </span>
             </div>
           </div>
@@ -119,10 +119,7 @@ export default function CategoryTransactionsModal({
                             className={`shrink-0 text-sm font-semibold ${amountClass}`}
                           >
                             {prefix}
-                            {formatAmount(tx.amount)}{' '}
-                            <span className="text-xs font-normal text-muted-foreground">
-                              {currency}
-                            </span>
+                            {formatAmount(tx.amount, currency)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">

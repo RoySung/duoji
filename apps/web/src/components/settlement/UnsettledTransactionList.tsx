@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl'
 import { PiReceiptBold } from 'react-icons/pi'
 import { Transaction } from '@/entities/transaction'
 import TransactionList from '@/components/transaction/TransactionList'
+import { formatAmount } from '@/utils/amountUtils'
 
 type Props = {
   transactions: Transaction[]
@@ -45,8 +46,7 @@ export default function UnsettledTransactionList({
             {t('settlement.unsettled.total')}
           </span>
           <span className="text-base font-semibold text-danger">
-            -{total.toLocaleString()}
-            {currency ? ` ${currency}` : ''}
+            -{formatAmount(total, currency)}
           </span>
         </div>
         <Button color="primary" disableRipple onPress={onConfirm}>

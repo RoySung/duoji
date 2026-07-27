@@ -426,7 +426,8 @@
       "emptyTitle": "已全部結算",
       "emptyDescription": "目前沒有未結算的交易。",
       "total": "總計",
-      "reviewAndSettle": "確認並結算"
+      "reviewAndSettle": "確認並結算",
+      "autoRound": "金額自動進位，不顯示小數點"
     },
     "sharedWallet": {
       "title": "共用錢包支出總結",
@@ -446,6 +447,7 @@
       "copyFailedDesc": "請手動選取並複製文字。",
       "content": {
         "title": "# 結算 #{sequenceNumber}\n\n日期：{date}",
+        "autoRoundNote": "金額設定：無條件進位",
         "deleted": "(已刪除)",
         "memberBalances": "## 成員餘額",
         "noMemberData": "_無成員資料。_",
