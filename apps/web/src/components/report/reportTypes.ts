@@ -1,4 +1,3 @@
-import { Currency } from '@/entities/accountBook'
 import { Transaction, TransactionType } from '@/entities/transaction'
 
 export type TimeRangePreset = 'thisWeek' | 'month' | '3m' | '1y' | 'all'
@@ -14,7 +13,7 @@ export type CategorySummary = {
 }
 
 export type CurrencyGroup = {
-  currency: Currency
+  currency: string
   transactions: Transaction[]
 }
 

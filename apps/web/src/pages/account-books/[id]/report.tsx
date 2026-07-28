@@ -17,7 +17,6 @@ import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import { isSharedWalletUser, isDeletedUser } from '@/entities/user'
 import { extractReportTags, groupByCurrency, filterTransactionsByMember } from '@/utils/reportAggregate'
-import { Currency } from '@/entities/accountBook'
 import ReportTutorial from '@/components/onboarding/ReportTutorial'
 import { TransactionModal } from '@/components/TransactionModal'
 import { TransactionModalMode } from '@/entities/transaction'
@@ -255,7 +254,7 @@ export default function AccountBookReportPage() {
     )
   }
 
-  const singleCurrency: Currency = currentAccountBook?.currency ?? 'TWD'
+  const singleCurrency: string = currentAccountBook?.currency ?? 'TWD'
 
   return (
     <ReportTutorial>

@@ -159,6 +159,10 @@
       "name": "名稱",
       "namePlaceholder": "日常生活",
       "currency": "幣別",
+      "currencyCustom": "自訂幣別...",
+      "currencyCustomLabel": "自訂幣別",
+      "currencyCustomPlaceholder": "例如 BTC、點",
+      "currencyCustomError": "幣別不可為空",
       "description": "說明",
       "descriptionPlaceholder": "共同的日用採買預算或個人日常支出"
     },

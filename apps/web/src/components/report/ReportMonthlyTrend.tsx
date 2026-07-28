@@ -3,19 +3,18 @@ import { PiChartBarFill } from 'react-icons/pi'
 import { useTranslations } from 'next-intl'
 import type { ApexOptions } from 'apexcharts'
 import { formatAmount } from '@/utils/amountUtils'
-import { Currency } from '@/entities/accountBook'
 import ReportApexChart from './ReportApexChart'
 import ReportEmptyState from './ReportEmptyState'
 import { MonthlyTrendPoint } from './reportTypes'
 
 type ReportMonthlyTrendProps = {
   points: MonthlyTrendPoint[]
-  currency: Currency
+  currency: string
 }
 
 function buildTrendOptions(
   points: MonthlyTrendPoint[],
-  currency: Currency
+  currency: string
 ): ApexOptions {
   return {
     chart: {

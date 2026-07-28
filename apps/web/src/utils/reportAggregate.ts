@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { AccountBook, Currency } from '@/entities/accountBook'
+import { AccountBook } from '@/entities/accountBook'
 import { Category } from '@/entities/category'
 import { Transaction, TransactionType } from '@/entities/transaction'
 import {
@@ -33,11 +33,11 @@ export function groupByCurrency(
   transactions: Transaction[],
   accountBooks: AccountBook[]
 ): CurrencyGroup[] {
-  const bookCurrencyById = new Map<string, Currency>(
+  const bookCurrencyById = new Map<string, string>(
     accountBooks.map((book) => [book.id, book.currency])
   )
 
-  const byCurrency = new Map<Currency, Transaction[]>()
+  const byCurrency = new Map<string, Transaction[]>()
 
   for (const transaction of transactions) {
     const currency = bookCurrencyById.get(transaction.accountBookId)

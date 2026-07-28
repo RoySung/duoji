@@ -1,8 +1,21 @@
 import { z } from 'zod'
 import { VirtualUser, VirtualUserSchema } from './user'
 
-export const CurrencySchema = z.enum(['USD', 'JPY', 'TWD'])
-export type Currency = z.infer<typeof CurrencySchema>
+export const CurrencySchema = z.string().trim().min(1).max(10)
+
+export const DEFAULT_CURRENCIES = [
+  'TWD',
+  'USD',
+  'JPY',
+  'EUR',
+  'GBP',
+  'CNY',
+  'HKD',
+  'SGD',
+  'AUD',
+  'CAD',
+  'KRW',
+] as const
 
 export const AccountBookSchema = z.object({
   id: z.string(),

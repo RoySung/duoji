@@ -33,3 +33,5 @@ Changes can be parked（暫存）— temporarily moved out of `openspec/changes/
 - They are not canonical sources for approved requirements, official backlog state, or implementation truth.
 - If either file conflicts with `openspec/`, `openspec/` wins.
 - When a plan becomes approved work, capture it in `openspec/changes/`.
+- **Spectra Workflow Preference**: Do not park changes after proposal (`spectra-propose`); keep changes active in `openspec/changes/` (run `spectra unpark` or avoid parking) unless explicitly requested by the user.
+

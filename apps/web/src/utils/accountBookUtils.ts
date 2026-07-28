@@ -1,8 +1,8 @@
-import { AccountBook, Currency } from '@/entities/accountBook'
+import { AccountBook } from '@/entities/accountBook'
 
 export type AccountBookFormValues = {
   name: string
-  currency: Currency
+  currency: string
   description: string
 }
 
@@ -39,7 +39,7 @@ export function buildAccountBookPayload(
   return {
     id: generateAccountBookId(),
     name: values.name.trim(),
-    currency: values.currency,
+    currency: values.currency.trim(),
     description: values.description.trim(),
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -52,12 +52,12 @@ export function buildAccountBookPayload(
 export function buildAccountBookUpdates(values: AccountBookFormValues) {
   return {
     name: values.name.trim(),
-    currency: values.currency,
+    currency: values.currency.trim(),
     description: values.description.trim(),
     updatedAt: Date.now(),
   }
 }
 
 export function isAccountBookFormValid(values: AccountBookFormValues) {
-  return values.name.trim().length > 0
+  return values.name.trim().length > 0 && values.currency.trim().length > 0
 }

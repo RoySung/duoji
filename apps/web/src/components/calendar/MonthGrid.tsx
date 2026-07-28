@@ -12,10 +12,9 @@ import {
 } from './calendarUtils'
 import type { CalendarDisplayMode } from './TransactionCalendar'
 import { formatAmount } from '@/utils/amountUtils'
-import { Currency } from '@/entities/accountBook'
 
 type Props = {
-  currency: Currency
+  currency: string
   selectedDate: string | null
   displayMonth: dayjs.Dayjs
   onSelectDate: (date: string | null) => void

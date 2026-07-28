@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Chip } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { PiReceiptBold } from 'react-icons/pi'
-import { AccountBook, Currency } from '@/entities/accountBook'
+import { AccountBook } from '@/entities/accountBook'
 import { Category } from '@/entities/category'
 import { Transaction } from '@/entities/transaction'
 import {
@@ -20,7 +20,7 @@ type ReportSectionProps = {
   transactions: Transaction[]
   categories: Category[]
   mergeByName: boolean
-  currency: Currency
+  currency: string
   selectedTags: Set<string>
   label?: string
   showCurrencyHeading?: boolean

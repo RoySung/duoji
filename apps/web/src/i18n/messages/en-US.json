@@ -159,6 +159,10 @@
       "name": "Name",
       "namePlaceholder": "Daily Life",
       "currency": "Currency",
+      "currencyCustom": "Custom currency...",
+      "currencyCustomLabel": "Custom currency",
+      "currencyCustomPlaceholder": "e.g. BTC, Gold",
+      "currencyCustomError": "Currency cannot be empty",
       "description": "Description",
       "descriptionPlaceholder": "Shared grocery budget or personal everyday spending"
     },

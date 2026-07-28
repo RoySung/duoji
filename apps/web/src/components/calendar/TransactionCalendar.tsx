@@ -8,7 +8,6 @@ import {
   PiCircleFill,
   PiCurrencyDollarBold,
 } from 'react-icons/pi'
-import { Currency } from '@/entities/accountBook'
 import { TransactionCalendarSummary } from '@/entities/transaction'
 import { TransactionCalendarVisibleRange } from '@/hooks/transactionQueryUtils'
 import WeekStrip from './WeekStrip'
@@ -23,7 +22,7 @@ import {
 export type CalendarDisplayMode = 'dot' | 'amount'
 
 type Props = {
-  currency?: Currency
+  currency?: string
   selectedDate: string | null
   onSelectDate: (date: string | null) => void
   calendarSummaries: Record<string, TransactionCalendarSummary>
