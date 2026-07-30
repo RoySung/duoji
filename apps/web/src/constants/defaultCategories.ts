@@ -21,7 +21,8 @@ const EN_US_EXPENSE: DefaultCategoryRaw[] = [
       { name: 'Breakfast', description: 'Breakfast expenses', icon: 'coffee' },
       { name: 'Lunch', description: 'Lunch expenses', icon: 'sandwich' },
       { name: 'Dinner', description: 'Dinner expenses', icon: 'chef-hat' },
-      { name: 'Drinks & Snacks', description: 'Beverages and snack expenses', icon: 'cookie' },
+      { name: 'Drinks', description: 'Beverages, coffee, and tea expenses', icon: 'coffee' },
+      { name: 'Snacks', description: 'Snacks and dessert expenses', icon: 'cookie' },
       { name: 'Groceries', description: 'Grocery shopping and ingredients', icon: 'shopping-bag' },
     ],
   },
@@ -42,7 +43,8 @@ const EN_US_EXPENSE: DefaultCategoryRaw[] = [
     children: [
       { name: 'Public Transit', description: 'Bus, subway, and other public transportation', icon: 'bus' },
       { name: 'Taxi', description: 'Taxi and ride-hailing fares', icon: 'taxi' },
-      { name: 'Fuel & Parking', description: 'Fuel and parking expenses', icon: 'fuel' },
+      { name: 'Fuel', description: 'Fuel and gas expenses', icon: 'fuel' },
+      { name: 'Parking', description: 'Parking fees and expenses', icon: 'parking' },
     ],
   },
   {
@@ -109,7 +111,8 @@ const ZH_TW_EXPENSE: DefaultCategoryRaw[] = [
       { name: '早餐', description: '早餐支出', icon: 'coffee' },
       { name: '午餐', description: '午餐支出', icon: 'sandwich' },
       { name: '晚餐', description: '晚餐支出', icon: 'chef-hat' },
-      { name: '飲料點心', description: '飲料與點心支出', icon: 'cookie' },
+      { name: '飲料', description: '飲料、手搖飲與咖啡支出', icon: 'coffee' },
+      { name: '點心', description: '點心、零食與甜點支出', icon: 'cookie' },
       { name: '食材費', description: '買菜與食材採買', icon: 'shopping-bag' },
     ],
   },
@@ -130,7 +133,8 @@ const ZH_TW_EXPENSE: DefaultCategoryRaw[] = [
     children: [
       { name: '大眾運輸', description: '公車、捷運等大眾運輸', icon: 'bus' },
       { name: '計程車', description: '計程車搭乘支出', icon: 'taxi' },
-      { name: '加油停車', description: '加油與停車相關支出', icon: 'fuel' },
+      { name: '加油', description: '加油與燃料費用', icon: 'fuel' },
+      { name: '停車', description: '停車與車位相關支出', icon: 'parking' },
     ],
   },
   {

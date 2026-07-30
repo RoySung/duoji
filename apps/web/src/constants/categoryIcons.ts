@@ -26,6 +26,7 @@ export const CATEGORY_ICONS = {
   bus: iconUrl('lucide', 'bus'),
   taxi: iconUrl('lucide', 'car-taxi-front'),
   fuel: iconUrl('lucide', 'fuel'),
+  parking: iconUrl('lucide', 'square-parking'),
 
   // Entertainment
   music: iconUrl('lucide', 'music'),
