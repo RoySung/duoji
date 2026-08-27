@@ -1,11 +1,13 @@
 ---
-name: Spectra: Debug
-description: Systematically debug a problem using a four-phase workflow
-category: Development
-tags: ["development", "debugging"]
+name: spectra-debug
+description: "Systematically debug a problem using a four-phase workflow"
+license: MIT
+compatibility: Requires spectra CLI.
+metadata:
+  author: spectra
+  version: "1.0"
+  generatedBy: "Spectra"
 ---
-
-<!-- SPECTRA:START v1.0.2 -->
 
 Systematically debug a problem using a four-phase workflow.
 
@@ -111,5 +113,3 @@ Now — and only now — fix the bug.
 - **Don't power through** — After 3 failed attempts, stop and reassess
 - **Do keep notes** — Document what you tried, what you found, what you ruled out
 - **Do check broadly** — A bug in one place often means the same bug exists elsewhere
-
-<!-- SPECTRA:END -->

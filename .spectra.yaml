@@ -6,15 +6,15 @@
 # spec_dir: docs/specs
 
 # Language for AI-generated artifacts
-locale: tw
+locale: en
 
 # Workflow toggles
 # tdd: true
-# audit: true
-# parallel_tasks: true
+audit: true
+parallel_tasks: true
 
 # Claude slash commands (set true to also generate /spectra:X commands)
-# claude_slash_commands: true
+claude_slash_commands: true
 
 # Enable git worktree support for isolated change branches
 # worktree: true
@@ -22,9 +22,16 @@ locale: tw
 # Custom git worktrees directory
 # worktrees_dir: .spectra/worktrees
 
-# Claude Code skill effort levels (low/medium/high/max)
-# claude_effort:
-#   apply: high
+# Claude Code skill effort levels (low/medium/high/xhigh/max)
+claude_effort:
+  apply: xhigh
+  archive: low
+  ask: low
+  audit: xhigh
+  debug: xhigh
+  discuss: medium
+  ingest: xhigh
+  propose: xhigh
 
 # AI tools to generate instruction files for
 # tools:

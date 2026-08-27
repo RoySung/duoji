@@ -1,11 +1,14 @@
 ---
-name: Spectra: Discuss
-description: Have a focused discussion about a topic and reach a conclusion
-category: Workflow
-tags: ["workflow", "discuss", "thinking"]
+name: spectra-discuss
+description: "Have a focused discussion about a topic and reach a conclusion"
+disallowedTools: [Edit, Write]
+license: MIT
+compatibility: Requires spectra CLI.
+metadata:
+  author: spectra
+  version: "1.0"
+  generatedBy: "Spectra"
 ---
-
-<!-- SPECTRA:START v1.0.2 -->
 
 Have a focused discussion about a topic and reach a conclusion.
 
@@ -271,5 +274,3 @@ When the discussion converges on building something:
 - **Do visualize** — A good diagram is worth many paragraphs.
 - **Do explore the codebase** — Ground discussions in reality.
 - **Do be opinionated** — Have a recommendation. The user can disagree.
-
-<!-- SPECTRA:END -->
