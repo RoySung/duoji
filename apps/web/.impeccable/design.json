@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-28T01:57:13Z",
+  "title": "Design System: Duoji",
+  "extensions": {
+    "colorMeta": {
+      "porcelain-canvas": {
+        "role": "neutral",
+        "displayName": "Porcelain Canvas",
+        "canonical": "#F8F7F4",
+        "tonalRamp": [
+          "#202522",
+          "#3E4642",
+          "#626B66",
+          "#89918D",
+          "#B1B7B3",
+          "#D7DAD7",
+          "#ECEDEB",
+          "#F8F7F4"
+        ]
+      },
+      "deep-teal-ink": {
+        "role": "neutral",
+        "displayName": "Deep Teal Ink",
+        "canonical": "#20322F",
+        "tonalRamp": [
+          "#14211F",
+          "#20322F",
+          "#36504B",
+          "#53706A",
+          "#78928C",
+          "#A3B4AF",
+          "#CDD8D4",
+          "#F1F6F4"
+        ]
+      },
+      "sage-waypoint": {
+        "role": "primary",
+        "displayName": "Sage Waypoint",
+        "canonical": "#6F958C",
+        "tonalRamp": [
+          "#142720",
+          "#26463F",
+          "#3F675F",
+          "#5C8980",
+          "#7BAB9F",
+          "#A4C9C0",
+          "#CDE4DE",
+          "#EEF7F4"
+        ]
+      },
+      "sage-action": {
+        "role": "primary",
+        "displayName": "Sage Action",
+        "canonical": "#456A62",
+        "tonalRamp": [
+          "#10231F",
+          "#23423B",
+          "#456A62",
+          "#658B82",
+          "#89ACA3",
+          "#B0CBC4",
+          "#D6E6E1",
+          "#F1F8F6"
+        ]
+      },
+      "tangerine-marker": {
+        "role": "secondary",
+        "displayName": "Tangerine Marker",
+        "canonical": "#ED7A35",
+        "tonalRamp": [
+          "#361708",
+          "#652A0D",
+          "#993C0C",
+          "#C85618",
+          "#ED7A35",
+          "#F6A370",
+          "#FBCBAA",
+          "#FFF0E4"
+        ]
+      },
+      "peach-glow": {
+        "role": "tertiary",
+        "displayName": "Peach Glow",
+        "canonical": "#F0D7C1",
+        "tonalRamp": [
+          "#34231A",
+          "#604332",
+          "#89654D",
+          "#AF886C",
+          "#D1AD91",
+          "#E7C6AB",
+          "#F0D7C1",
+          "#FBF0E7"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Hero Display",
+        "purpose": "Account-book names in the transaction hero only."
+      },
+      "headline": {
+        "displayName": "Page Headline",
+        "purpose": "Compact route-level page headings."
+      },
+      "title": {
+        "displayName": "Content Title",
+        "purpose": "Cards, rows, and modal headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Instructions, descriptions, form content, and values."
+      },
+      "label": {
+        "displayName": "UI Label",
+        "purpose": "Controls, metadata, chips, and compact states."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-low",
+        "value": "0 2px 8px rgba(32, 50, 47, 0.08)",
+        "purpose": "Separates floating navigation and standalone surfaces from the canvas."
+      },
+      {
+        "name": "overlay",
+        "value": "0 8px 24px rgba(20, 31, 29, 0.18)",
+        "purpose": "Drawers, popovers, and modals only."
+      },
+      {
+        "name": "focus",
+        "value": "0 0 0 3px rgba(69, 106, 98, 0.28)",
+        "purpose": "Visible keyboard focus when an outline cannot be used."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-fast",
+        "value": "150ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Hover, focus, and selected-state feedback."
+      },
+      {
+        "name": "state-standard",
+        "value": "200ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Calendar and modal state transitions."
+      }
+    ],
+    "breakpoints": [
+      { "name": "small", "value": "640px" },
+      { "name": "content-max", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single highest-priority action in a decision area.",
+      "html": "<button class=\"ds-button-primary\">Save transaction</button>",
+      "css": ".ds-button-primary{min-height:44px;padding:10px 16px;border:0;border-radius:12px;background:#456A62;color:#fff;font:550 14px/1.3 jf-openhuninn,system-ui,sans-serif;transition:background 150ms cubic-bezier(.22,1,.36,1)}.ds-button-primary:hover{background:#365850}.ds-button-primary:focus-visible{outline:3px solid rgba(69,106,98,.28);outline-offset:2px}.ds-button-primary:active{background:#294A43}.ds-button-primary:disabled{background:#B8C3BF;color:#44534F}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "A familiar secondary action with quiet tonal separation.",
+      "html": "<button class=\"ds-button-ghost\">Refresh</button>",
+      "css": ".ds-button-ghost{min-height:44px;padding:10px 16px;border:1px solid #DEDCD6;border-radius:12px;background:#EEF2EF;color:#20322F;font:550 14px/1.3 jf-openhuninn,system-ui,sans-serif;transition:background 150ms cubic-bezier(.22,1,.36,1)}.ds-button-ghost:hover{background:#E2E9E5}.ds-button-ghost:focus-visible{outline:3px solid rgba(69,106,98,.28);outline-offset:2px}.ds-button-ghost:active{background:#D7E1DC}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "description": "A readable product field with explicit focus and error states.",
+      "html": "<label class=\"ds-field\"><span>Account book name</span><input value=\"Roy’s\" /></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#20322F;font:550 14px/1.3 jf-openhuninn,system-ui,sans-serif}.ds-field input{min-height:44px;padding:10px 12px;border:1px solid #DEDCD6;border-radius:12px;background:#fff;color:#20322F;font:400 16px/1.5 jf-openhuninn,system-ui,sans-serif}.ds-field input:focus-visible{outline:3px solid rgba(69,106,98,.28);border-color:#456A62}.ds-field input:disabled{background:#EEF2EF;color:#586A65}"
+    },
+    {
+      "name": "Selected Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "A compact marker for the current date or highest-priority state.",
+      "html": "<span class=\"ds-chip-selected\">24</span>",
+      "css": ".ds-chip-selected{display:inline-grid;min-width:36px;min-height:36px;place-items:center;padding:6px 10px;border-radius:999px;background:#ED7A35;color:#fff;font:550 14px/1 jf-openhuninn,system-ui,sans-serif}"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "surface-card",
+      "description": "A standalone content group with compact structural elevation.",
+      "html": "<article class=\"ds-surface-card\"><strong>Breakfast</strong><span>100 TWD</span></article>",
+      "css": ".ds-surface-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:0;border-radius:16px;background:rgba(255,255,255,.92);color:#20322F;box-shadow:0 2px 8px rgba(32,50,47,.08);font-family:jf-openhuninn,system-ui,sans-serif}.ds-surface-card strong{font-size:18px}.ds-surface-card span{color:#993C0C;font-size:18px;font-weight:600}"
+    },
+    {
+      "name": "Floating Navigation",
+      "kind": "nav",
+      "description": "The stable five-destination mobile-first application navigation.",
+      "html": "<nav class=\"ds-bottom-nav\"><button class=\"is-active\">Home</button><button>Settle</button><button class=\"ds-create\">Add</button><button>Report</button><button>Settings</button></nav>",
+      "css": ".ds-bottom-nav{display:flex;align-items:center;justify-content:space-around;gap:4px;padding:8px 12px;border:0;border-radius:999px;background:rgba(255,255,255,.94);box-shadow:0 2px 8px rgba(32,50,47,.08);font:550 12px/1.2 jf-openhuninn,system-ui,sans-serif}.ds-bottom-nav button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:transparent;color:#586A65}.ds-bottom-nav button:focus-visible{outline:3px solid rgba(69,106,98,.28)}.ds-bottom-nav .is-active{color:#993C0C;text-decoration:underline;text-underline-offset:5px}.ds-bottom-nav .ds-create{border-radius:12px;background:#456A62;color:#fff}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Shared Journey Ledger",
+    "overview": "Duoji feels like a trusted shared notebook carried through ordinary days, meals, homes, and trips. It is warm without becoming nostalgic, friendly without becoming childish, and distinctive without changing familiar financial-product affordances. The interface gives amounts, dates, people, and available actions first priority; travel imagery and brand color create atmosphere around that work.",
+    "keyCharacteristics": [
+      "Mobile-first, centered, and calm at widths from 320px through the 768px content maximum.",
+      "Deep-teal information hierarchy with sage actions, rare tangerine emphasis, and restrained peach atmosphere.",
+      "Familiar controls with complete hover, focus, active, disabled, loading, and error states.",
+      "Flat or softly lifted surfaces; decoration never competes with amounts or settlement outcomes.",
+      "One Open Huninn family across headings, labels, data, and body text."
+    ],
+    "rules": [
+      {
+        "name": "The One Marker Rule",
+        "body": "Tangerine identifies the current selection or highest-priority amount; it never becomes a decorative wash across an entire page.",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic Pair Rule",
+        "body": "Every dark-theme role has the same meaning and hierarchy as its light-theme counterpart; no isolated light surface survives a theme switch.",
+        "section": "colors"
+      },
+      {
+        "name": "The Data Before Display Rule",
+        "body": "Amounts, dates, people, and action labels remain legible at product sizes; display scale is confined to the decorative transaction hero.",
+        "section": "typography"
+      },
+      {
+        "name": "The Structural Depth Rule",
+        "body": "If a card has a visible border, its decorative shadow is removed. If it has an ambient shadow, its border remains transparent.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep amounts, dates, payers, split details, and primary actions above decoration in the visual hierarchy.",
+      "Do use the same component vocabulary and state meaning across transaction, report, settlement, settings, authentication, and onboarding screens.",
+      "Do keep normal text at 4.5:1 contrast, large text and non-text boundaries at 3:1, touch targets at least 44 × 44 CSS pixels, and layouts usable at 320px.",
+      "Do pair color with text, shape, iconography, or labels, and respect prefers-reduced-motion.",
+      "Do reserve travel imagery and the largest display type for the transaction hero."
+    ],
+    "donts": [
+      "Don't use cold, severe, or overly authoritative corporate-finance interfaces.",
+      "Don't use black, saturated neon, or dense information to imitate a technical trading terminal.",
+      "Don't rely on pervasive glass blur, decorative gradients, excessive shadows, or animation that communicates no state.",
+      "Don't reinvent familiar controls for style or give the same action inconsistent visual treatments across pages.",
+      "Don't let illustrations, brand colors, or motion reduce the readability of amounts, split results, errors, or action states.",
+      "Don't use side-stripe accents, gradient text, nested cards, card radii above 16px, or a border combined with a wide decorative shadow."
+    ]
+  }
+}

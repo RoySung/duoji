@@ -82,7 +82,6 @@ function TutorialController({ step }: { step: OnboardingStep }) {
     } else if (isOpen) {
       setIsOpen(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
 
   return null
@@ -158,24 +157,36 @@ export default function OnboardingTutorial({
             }
           }
           return (
-            <div className="flex flex-col gap-3 p-1">
-              <p className="text-xs font-medium uppercase tracking-[0.3em] text-orange-300">
+            <div className="flex min-w-0 flex-col gap-3 pr-8">
+              <p className="text-label font-medium text-emphasis-foreground">
                 {t('onboarding.shell.progress', {
                   current: step,
                   total: ONBOARDING_TOTAL_STEPS,
                 })}
                 {totalSubSteps > 1 ? ` · ${idx + 1}/${totalSubSteps}` : ''}
               </p>
-              <h2 className="text-lg font-semibold">{t(sub.titleKey)}</h2>
-              <p className="text-sm text-muted-foreground">
+              <h2 className="break-words text-title font-semibold">
+                {t(sub.titleKey)}
+              </h2>
+              <p className="break-words text-body text-muted-foreground">
                 {t(sub.descriptionKey)}
               </p>
-              <div className="mt-2 flex items-center justify-end gap-2">
-                <Button size="sm" variant="light" onPress={advance}>
+              <div className="mt-1 flex flex-wrap items-center justify-end gap-2">
+                <Button
+                  className="min-h-11 rounded-xl px-4 text-body focus-visible:ring-2 focus-visible:ring-ring"
+                  size="sm"
+                  variant="light"
+                  onPress={advance}
+                >
                   {t('common.skip')}
                 </Button>
                 {sub.showNextButton || isLast ? (
-                  <Button size="sm" color="primary" onPress={goNext}>
+                  <Button
+                    className="min-h-11 rounded-xl px-4 text-body font-medium focus-visible:ring-2 focus-visible:ring-ring"
+                    size="sm"
+                    color="primary"
+                    onPress={goNext}
+                  >
                     {step === ONBOARDING_FINAL_STEP && isLast
                       ? t('onboarding.shell.finish')
                       : t('common.next')}
@@ -186,7 +197,6 @@ export default function OnboardingTutorial({
           )
         },
       })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [normalizedSubSteps, step, accountBookId, totalSubSteps]
   )
 
@@ -207,18 +217,41 @@ export default function OnboardingTutorial({
         // do not auto-advance when the user clicks outside.
         return undefined
       }}
+      padding={{ mask: 8, popover: 12 }}
       styles={{
         popover: (base) => ({
           ...base,
           borderRadius: 16,
           padding: 16,
-          background: 'hsl(var(--background))',
-          color: 'hsl(var(--foreground))',
-          maxWidth: 360,
+          border: '1px solid hsl(var(--border))',
+          background: 'hsl(var(--card))',
+          color: 'hsl(var(--card-foreground))',
+          boxShadow: '0 8px 24px hsl(var(--surface-shadow) / 0.3)',
+          maxWidth: 'min(360px, calc(100vw - 32px))',
           zIndex: 100001,
         }),
-        maskWrapper: (base) => ({ ...base, zIndex: 99999, color: 'rgba(0, 0, 0, 0.85)' }),
+        maskWrapper: (base) => ({
+          ...base,
+          zIndex: 99999,
+          color: 'hsl(var(--foreground) / 0.72)',
+        }),
         maskArea: (base) => ({ ...base, rx: 12 }),
+        highlightedArea: (base) => ({
+          ...base,
+          rx: 12,
+          stroke: 'hsl(var(--emphasis))',
+          strokeWidth: 3,
+        }),
+        close: (base) => ({
+          ...base,
+          top: 6,
+          right: 6,
+          width: 44,
+          height: 44,
+          padding: 12,
+          borderRadius: 12,
+          color: 'hsl(var(--muted-foreground))',
+        }),
       }}
     >
       <TutorialController step={step} />
@@ -260,7 +293,9 @@ function SelectorWaiter({
       // fold when the subStep activates. Scroll the anchor into view and nudge
       ;(el as HTMLElement).scrollIntoView({
         block: 'center',
-        behavior: 'smooth',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'auto'
+          : 'smooth',
       })
       window.setTimeout(() => {
         if (cancelled) return

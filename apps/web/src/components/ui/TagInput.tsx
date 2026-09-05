@@ -126,7 +126,7 @@ const TagsInput: React.FC<TagsInputProps> = ({
     <div className={clsx(className, 'flex w-full flex-col gap-2')}>
       {label ? (
         <label
-          className="text-sm font-medium text-foreground"
+          className="text-body font-medium text-foreground"
           htmlFor={inputId}
         >
           {label}
@@ -144,7 +144,7 @@ const TagsInput: React.FC<TagsInputProps> = ({
         {tags.map((tag, index) => (
           <Chip
             key={`${tag}-${index}`}
-            className="max-w-full"
+            className="max-w-full text-label"
             onClose={() => handleRemoveTag(index)}
           >
             {tag}
@@ -155,7 +155,7 @@ const TagsInput: React.FC<TagsInputProps> = ({
           autoFocus={autoFocus}
           id={inputId}
           aria-label={typeof label === 'string' ? label : undefined}
-          className="min-w-[8rem] flex-1 border-0 bg-transparent text-sm outline-none placeholder:text-default-400"
+          className="min-w-[8rem] flex-1 border-0 bg-transparent text-body outline-none placeholder:text-muted-foreground"
           disabled={isDisabled}
           inputMode={inputMode}
           name={name}
@@ -172,7 +172,7 @@ const TagsInput: React.FC<TagsInputProps> = ({
           {visibleSuggestions.map((suggestion) => (
             <Chip
               key={suggestion}
-              className="cursor-pointer transition-colors hover:bg-default-300"
+              className="cursor-pointer text-label transition-colors hover:bg-default-300"
               onClick={() => addTag(suggestion)}
             >
               {suggestion}

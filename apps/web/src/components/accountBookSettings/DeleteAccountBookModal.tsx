@@ -1,5 +1,4 @@
 import {
-  Button,
   Modal,
   ModalBody,
   ModalContent,
@@ -7,6 +6,8 @@ import {
   ModalHeader,
 } from '@heroui/react'
 import { useTranslations } from 'next-intl'
+import { confirmModalClassNames } from '@/components/TransactionModal/formControlStyles'
+import { AppButton } from '@/components/ui/AppButton'
 
 type DeleteAccountBookModalProps = {
   accountBookName: string
@@ -27,33 +28,46 @@ export default function DeleteAccountBookModal({
 
   return (
     <Modal
+      classNames={confirmModalClassNames}
       disableAnimation
       isOpen={isOpen}
       onOpenChange={(open) => !open && onClose()}
+      placement="center"
+      scrollBehavior="inside"
     >
       <ModalContent>
-        <ModalHeader>{t('accountBook.deleteModal.title')}</ModalHeader>
+        <ModalHeader>
+          <h2 className="text-title font-semibold text-foreground">
+            {t('accountBook.deleteModal.title')}
+          </h2>
+        </ModalHeader>
         <ModalBody>
-          <p className="text-sm text-zinc-500">
+          <p className="break-words text-body text-muted-foreground text-pretty">
             {t('accountBook.deleteModal.bodyPrefix')}
-            <span className="font-semibold text-zinc-900">
+            <span className="font-semibold text-foreground">
               {accountBookName}
             </span>
             {t('accountBook.deleteModal.bodySuffix')}
           </p>
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <AppButton
+            className="min-h-11 rounded-xl text-body"
+            appearance="light"
+            tone="neutral"
+            onPress={onClose}
+          >
             {t('common.cancel')}
-          </Button>
-          <Button
-            color="danger"
+          </AppButton>
+          <AppButton
+            className="min-h-11 rounded-xl text-body"
+            tone="danger"
             disableRipple
             isLoading={isSubmitting}
             onPress={() => void onConfirm()}
           >
             {t('accountBook.deleteModal.confirm')}
-          </Button>
+          </AppButton>
         </ModalFooter>
       </ModalContent>
     </Modal>

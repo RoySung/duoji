@@ -1,4 +1,4 @@
-import { test, expect, devices, type Page } from '@playwright/test'
+import { test, expect, devices } from '@playwright/test'
 
 const { viewport, userAgent, deviceScaleFactor, hasTouch } =
   devices['iPhone 12']
@@ -34,11 +34,15 @@ test.describe('transaction modal mobile layout', () => {
     const amountInput = dialog.locator(
       '[data-onboarding-anchor="transaction-form-amount"] input'
     )
+    const submitButton = dialog.locator(
+      '[data-onboarding-anchor="transaction-form-submit"] button'
+    )
     const viewport = page.viewportSize()
 
     await expect(dialog).toBeVisible()
     await expect(heading).toBeVisible()
     await expect(amountInput).toHaveAttribute('inputmode', 'decimal')
+    await expect(submitButton).toHaveCSS('color', 'rgb(255, 255, 255)')
 
     const boxBeforeFocus = await dialog.boundingBox()
 
@@ -58,5 +62,44 @@ test.describe('transaction modal mobile layout', () => {
     expect(
       Math.abs((boxAfterFocus?.height ?? 0) - (boxBeforeFocus?.height ?? 0))
     ).toBeLessThanOrEqual(2)
+  })
+
+  test('keeps solid transaction actions white in their computed foreground', async ({
+    page,
+  }) => {
+    await createAccountBookAndSkipOnboarding(page, 'Button Foreground Book', {
+      name: 'Button Foreground User',
+      email: 'button-foreground@example.com',
+    })
+
+    await page.getByRole('button', { name: 'New Transaction' }).click()
+
+    const createDialog = page.getByRole('dialog').first()
+    const amountInput = createDialog.locator(
+      '[data-onboarding-anchor="transaction-form-amount"] input'
+    )
+    const submitButton = createDialog.locator(
+      '[data-onboarding-anchor="transaction-form-submit"] button'
+    )
+
+    await expect(submitButton).toBeDisabled()
+    await expect(submitButton).toHaveCSS('color', 'rgb(255, 255, 255)')
+
+    await amountInput.fill('150')
+    await expect(submitButton).toBeEnabled()
+    await submitButton.click()
+    await expect(createDialog).toBeHidden()
+
+    const transactionRow = page
+      .getByTestId('transaction-list')
+      .getByRole('button')
+      .first()
+    await transactionRow.click()
+
+    const editDialog = page.getByRole('dialog').first()
+    const deleteButton = editDialog.getByRole('button', { name: 'Delete' })
+
+    await expect(deleteButton).toBeVisible()
+    await expect(deleteButton).toHaveCSS('color', 'rgb(255, 255, 255)')
   })
 })

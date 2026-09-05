@@ -40,7 +40,9 @@ export default function AccountBookStep({
       return
     }
     try {
-      const created = await createAccountBook(buildAccountBookPayload(values, ownerId))
+      const created = await createAccountBook(
+        buildAccountBookPayload(values, ownerId)
+      )
       await seedDefaultCategories(created.id, language)
       onCreated(created.id)
     } catch (err) {
@@ -48,7 +50,9 @@ export default function AccountBookStep({
         title: t('accountBook.toast.createFailTitle'),
         color: 'danger',
         description:
-          err instanceof Error ? err.message : t('accountBook.toast.createUnknownError'),
+          err instanceof Error
+            ? err.message
+            : t('accountBook.toast.createUnknownError'),
       })
     }
   }

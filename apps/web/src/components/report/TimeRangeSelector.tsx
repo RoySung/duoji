@@ -93,8 +93,8 @@ export default function TimeRangeSelector({
   onChange,
 }: TimeRangeSelectorProps) {
   const t = useTranslations()
-  const [activePreset, setActivePreset] = useState<TimeRangePreset | null>(
-    () => detectPreset(value)
+  const [activePreset, setActivePreset] = useState<TimeRangePreset | null>(() =>
+    detectPreset(value)
   )
 
   const pickerValue = useMemo((): CalendarRange | null => {
@@ -123,7 +123,7 @@ export default function TimeRangeSelector({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex w-full min-w-0 flex-col gap-3">
       <DateRangePicker
         value={pickerValue}
         onChange={handlePickerChange}
@@ -132,8 +132,15 @@ export default function TimeRangeSelector({
         aria-label={t('report.dateRangeAria')}
         showMonthAndYearPickers
         firstDayOfWeek={'mon'}
+        className="w-full"
+        classNames={{
+          inputWrapper:
+            'min-h-11 rounded-xl border border-input bg-background shadow-none transition-colors hover:border-primary/50 data-[focus=true]:border-primary data-[focus=true]:ring-2 data-[focus=true]:ring-ring/25',
+          input: 'text-body',
+          label: 'text-label',
+        }}
       />
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-2">
         {QUICK_PRESET_VALUES.map((p) => (
           <Button
             key={p}
@@ -141,6 +148,12 @@ export default function TimeRangeSelector({
             variant={activePreset === p ? 'solid' : 'flat'}
             color={activePreset === p ? 'warning' : 'default'}
             onPress={() => handlePresetClick(p)}
+            aria-pressed={activePreset === p}
+            className={
+              activePreset === p
+                ? 'min-h-11 rounded-full bg-emphasis px-3 text-body text-emphasis-contrast hover:bg-emphasis/90 focus-visible:ring-2 focus-visible:ring-ring'
+                : 'min-h-11 rounded-full bg-secondary px-3 text-body text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring'
+            }
           >
             {t(`report.presets.${PRESET_LABEL_KEYS[p]}`)}
           </Button>

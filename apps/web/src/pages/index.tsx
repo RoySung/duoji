@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import { PiBooksBold } from 'react-icons/pi'
+import { PageScaffold } from '@/components/ui/PageScaffold'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useSettingsStore } from '@/stores/settings'
 
@@ -46,27 +48,34 @@ export function Index() {
 
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col items-center justify-center gap-8 px-4 py-8">
-        <div className="w-full rounded-3xl border border-dashed border-border bg-card px-6 py-16 text-center shadow-lg shadow-black/5">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-400/15 text-orange-300">
+      <PageScaffold className="items-center justify-center">
+        <SurfaceCard
+          aria-labelledby="empty-account-books-title"
+          className="w-full px-6 py-14 text-center sm:px-8 sm:py-16"
+          role="region"
+        >
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-peach text-emphasis-foreground">
             <PiBooksBold size={26} />
           </div>
-          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+          <h1
+            id="empty-account-books-title"
+            className="mt-5 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] text-foreground text-balance"
+          >
             {t('emptyState.noAccountBooks.title')}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-[65ch] text-sm leading-6 text-muted-foreground text-pretty">
             {t('emptyState.noAccountBooks.description')}
           </p>
           <Button
-            className="mt-6"
+            className="mt-6 min-h-11 rounded-xl px-5"
             color="primary"
             disableRipple
             onPress={() => void router.push('/account-books/new')}
           >
             {t('emptyState.noAccountBooks.action')}
           </Button>
-        </div>
-      </div>
+        </SurfaceCard>
+      </PageScaffold>
     </div>
   )
 }

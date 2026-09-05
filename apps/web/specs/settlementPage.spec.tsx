@@ -1,5 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { HeroUIProvider } from '@heroui/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import { HeroUIProvider, addToast } from '@heroui/react'
 import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/router'
 import SettlementPage from '../src/pages/account-books/[id]/settlement'
@@ -118,6 +124,7 @@ jest.mock('@heroui/react', () => {
 
 const transactionRepo = new TransactionLocalRepo()
 const baseTimestamp = 1710000000000
+const mockPush = jest.fn()
 
 class InMemoryCategoryRepo implements CategoryRepo {
   constructor(private readonly categories: Category[] = []) {}
@@ -127,9 +134,7 @@ class InMemoryCategoryRepo implements CategoryRepo {
     return category
   }
 
-  async bulkCreate(
-    categories: Category[]
-  ): Promise<CategoryBulkCreateResult> {
+  async bulkCreate(categories: Category[]): Promise<CategoryBulkCreateResult> {
     this.categories.push(...categories)
 
     return {
@@ -204,9 +209,11 @@ class InMemoryCategoryRepo implements CategoryRepo {
       (category) => category.id !== id
     ).length
     const deleted = nextLength !== this.categories.length
-    this.categories.splice(0, this.categories.length, ...this.categories.filter(
-      (category) => category.id !== id
-    ))
+    this.categories.splice(
+      0,
+      this.categories.length,
+      ...this.categories.filter((category) => category.id !== id)
+    )
     return deleted
   }
 
@@ -343,7 +350,7 @@ describe('Settlement page', () => {
   beforeEach(async () => {
     ;(useRouter as jest.Mock).mockReturnValue({
       query: { id: 'book-1' },
-      push: jest.fn(),
+      push: mockPush,
       pathname: '/account-books/[id]/settlement',
     })
 
@@ -361,6 +368,16 @@ describe('Settlement page', () => {
     renderSettlementPage()
 
     expect(await screen.findByText('Breakfast with friends')).toBeTruthy()
+    expect(screen.getByTestId('settlement-page').dataset.ui).toBe(
+      'page-scaffold'
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Settlement' }).className
+    ).toContain('text-headline')
+    expect(screen.getByText('Trip fund').className).toContain('text-body')
+    expect(screen.getByTestId('unsettled-summary').dataset.ui).toBe(
+      'surface-card'
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'Review & settle' }))
     fireEvent.click(
@@ -371,5 +388,26 @@ describe('Settlement page', () => {
       expect(screen.getByText('All settled')).toBeTruthy()
     })
     expect(screen.queryByText('Breakfast with friends')).toBeNull()
+    expect(addToast).toHaveBeenCalledWith({
+      title: 'Settlement record created',
+      color: 'success',
+    })
+
+    const recordList = await screen.findByTestId('settlement-record-list')
+    const recordButton = within(recordList).getByRole('button', {
+      name: /Settlement #1/,
+    })
+    expect(recordButton.className).toContain('min-h-11')
+    expect(
+      within(recordButton).getByRole('heading', { name: 'Settlement #1' })
+        .className
+    ).toContain('text-title')
+    expect(
+      within(recordButton).getByText('0/1 transfers done').className
+    ).toContain('text-label')
+    fireEvent.click(recordButton)
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/account-books\/book-1\/settlement\//)
+    )
   })
 })

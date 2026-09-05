@@ -6,6 +6,7 @@ import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useSettingsStore } from '@/stores/settings'
 import { useUserStore } from '@/stores/user'
+import { PageScaffold } from '@/components/ui/PageScaffold'
 import {
   AccountBookFormValues,
   buildAccountBookPayload,
@@ -26,7 +27,9 @@ export default function AccountBookCreatePage() {
   const seedDefaultCategories = useCategoryStore((s) => s.seedDefaultCategories)
   const language = useSettingsStore((s) => s.language)
 
-  const [formValues, setFormValues] = useState<AccountBookFormValues>(defaultAccountBookFormValues)
+  const [formValues, setFormValues] = useState<AccountBookFormValues>(
+    defaultAccountBookFormValues
+  )
 
   async function handleSubmit() {
     if (!isAccountBookFormValid(formValues)) {
@@ -69,14 +72,17 @@ export default function AccountBookCreatePage() {
       addToast({
         title: t('accountBook.toast.createFailTitle'),
         color: 'danger',
-        description: err instanceof Error ? err.message : t('accountBook.toast.createUnknownError'),
+        description:
+          err instanceof Error
+            ? err.message
+            : t('accountBook.toast.createUnknownError'),
       })
     }
   }
 
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-6 md:px-6">
+      <PageScaffold>
         <AccountBookNavHeader
           title={t('accountBook.createTitle')}
           subtitle={t('accountBook.createSubtitle')}
@@ -90,7 +96,7 @@ export default function AccountBookCreatePage() {
           submitLabel={t('common.create')}
           values={formValues}
         />
-      </div>
+      </PageScaffold>
     </div>
   )
 }

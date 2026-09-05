@@ -16,10 +16,16 @@ import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import { isSharedWalletUser, isDeletedUser } from '@/entities/user'
-import { extractReportTags, groupByCurrency, filterTransactionsByMember } from '@/utils/reportAggregate'
+import {
+  extractReportTags,
+  groupByCurrency,
+  filterTransactionsByMember,
+} from '@/utils/reportAggregate'
 import ReportTutorial from '@/components/onboarding/ReportTutorial'
 import { TransactionModal } from '@/components/TransactionModal'
 import { TransactionModalMode } from '@/entities/transaction'
+import { PageScaffold } from '@/components/ui/PageScaffold'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 
 type DateRange = { startDate: string; endDate: string }
 
@@ -59,12 +65,10 @@ export default function AccountBookReportPage() {
     string | null
   >(null)
 
-  const {
-    transactions,
-    isLoading,
-    isFetching,
-    error,
-  } = useReportTransactions(accountBookId, dateRange)
+  const { transactions, isLoading, isFetching, error } = useReportTransactions(
+    accountBookId,
+    dateRange
+  )
 
   const {
     updateTransaction,
@@ -106,7 +110,6 @@ export default function AccountBookReportPage() {
     () => new Set(allUsers.filter(isSharedWalletUser).map((u) => u.id)),
     [allUsers]
   )
-
 
   const availableMembers = useMemo(() => {
     const memberIds = new Set<string>()
@@ -237,19 +240,19 @@ export default function AccountBookReportPage() {
   if (isAccountBooksInitialized && !currentAccountBook && !isAllBooksView) {
     return (
       <div className="h-full overflow-y-auto bg-background text-foreground">
-        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col items-center justify-center gap-8 px-4 py-8">
-          <div className="w-full rounded-3xl border border-dashed border-border bg-card px-6 py-16 text-center shadow-lg shadow-black/5">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary-300">
-              <PiBooksBold size={26} />
+        <PageScaffold className="items-center justify-center">
+          <SurfaceCard className="w-full px-6 py-14 text-center sm:px-8 sm:py-16">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+              <PiBooksBold size={24} />
             </div>
-            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+            <h1 className="mt-5 text-headline font-semibold leading-tight tracking-[-0.02em] text-foreground text-balance">
               {t('transactions.notFoundTitle')}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mx-auto mt-2 max-w-[65ch] text-body text-muted-foreground text-pretty">
               {t('transactions.notFoundDescription')}
             </p>
-          </div>
-        </div>
+          </SurfaceCard>
+        </PageScaffold>
       </div>
     )
   }
@@ -259,44 +262,45 @@ export default function AccountBookReportPage() {
   return (
     <ReportTutorial>
       <div className="h-full overflow-y-auto bg-background text-foreground">
-        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-8">
-          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary-300">
+        <PageScaffold>
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <h1 className="text-headline font-semibold leading-tight tracking-[-0.02em] text-foreground text-balance">
                 {t('report.label')}
-              </p>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              </h1>
+              <p className="truncate text-body text-muted-foreground">
                 {isAllBooksView
                   ? t('transactions.allBooks')
                   : currentAccountBook?.name ?? t('transactions.fallbackName')}
-              </h1>
+              </p>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={
-                  justExported ? (
-                    <PiCheckBold size={14} />
-                  ) : (
-                    <PiDownloadSimpleBold size={14} />
-                  )
-                }
-                isDisabled={
-                  isLoading ||
-                  isFetching ||
-                  bookFilteredTransactions.length === 0
-                }
-                onPress={handleExportCsv}
-                aria-label={`Export ${bookFilteredTransactions.length} transactions as CSV`}
-                className="bg-accent/60 text-foreground"
-              >
-                {justExported ? t('report.exported') : t('report.exportCsv')}
-              </Button>
-              <div
-                className="flex flex-wrap items-start gap-2"
-                data-onboarding-anchor="report-filters"
-              >
+            <Button
+              variant="flat"
+              size="sm"
+              startContent={
+                justExported ? (
+                  <PiCheckBold size={14} />
+                ) : (
+                  <PiDownloadSimpleBold size={14} />
+                )
+              }
+              isDisabled={
+                isLoading || isFetching || bookFilteredTransactions.length === 0
+              }
+              onPress={handleExportCsv}
+              aria-label={`Export ${bookFilteredTransactions.length} transactions as CSV`}
+              className="min-h-11 w-fit rounded-xl bg-secondary px-4 text-body text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {justExported ? t('report.exported') : t('report.exportCsv')}
+            </Button>
+          </header>
+
+          <SurfaceCard className="p-3 sm:p-4">
+            <div
+              className="flex flex-col gap-3"
+              data-onboarding-anchor="report-filters"
+            >
+              <div className="flex flex-wrap items-center gap-2">
                 {isAllBooksView ? (
                   <BookFilterSelector
                     accountBooks={accountBooks}
@@ -314,25 +318,32 @@ export default function AccountBookReportPage() {
                   selectedMemberId={selectedMemberId}
                   onChange={setSelectedMemberId}
                 />
-                <TimeRangeSelector value={dateRange} onChange={setDateRange} />
               </div>
+              <TimeRangeSelector value={dateRange} onChange={setDateRange} />
             </div>
-          </header>
+          </SurfaceCard>
 
           {error ? (
-            <div className="rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger-700">
+            <SurfaceCard
+              className="bg-danger/10 px-4 py-3 text-body text-danger shadow-none ring-1 ring-inset ring-danger/25"
+              role="alert"
+            >
               {error}
-            </div>
+            </SurfaceCard>
           ) : null}
 
           {isLoading ? (
-            <div className="flex items-center justify-center gap-3 rounded-3xl border border-dashed border-border bg-background px-5 py-10 text-center text-sm text-muted-foreground">
+            <SurfaceCard
+              className="flex items-center justify-center gap-3 px-5 py-10 text-center text-body text-muted-foreground"
+              aria-live="polite"
+              aria-busy="true"
+            >
               <span
                 aria-hidden
-                className="h-4 w-4 animate-spin rounded-full border-2 border-primary-300 border-t-transparent"
+                className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
               />
               {t('report.loading')}
-            </div>
+            </SurfaceCard>
           ) : (
             <div className="relative">
               {isFetching ? (
@@ -341,10 +352,10 @@ export default function AccountBookReportPage() {
                   aria-live="polite"
                   aria-busy="true"
                 >
-                  <div className="flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur">
+                  <div className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-label text-muted-foreground shadow-[0_8px_24px_rgba(20,31,29,0.18)]">
                     <span
                       aria-hidden
-                      className="h-3 w-3 animate-spin rounded-full border-2 border-primary-300 border-t-transparent"
+                      className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
                     />
                     {t('report.updating')}
                   </div>
@@ -402,7 +413,7 @@ export default function AccountBookReportPage() {
               </div>
             </div>
           )}
-        </div>
+        </PageScaffold>
       </div>
 
       <TransactionModal

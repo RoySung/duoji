@@ -1,6 +1,12 @@
-import { Button, Input, Select, SelectItem, Textarea } from '@heroui/react'
+import { Input, Select, SelectItem, Textarea } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { DEFAULT_CURRENCIES } from '@/entities/accountBook'
+import {
+  compactInputClassNames,
+  compactSelectClassNames,
+} from '@/components/TransactionModal/formControlStyles'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
+import { AppButton } from '@/components/ui/AppButton'
 import {
   AccountBookFormValues,
   isAccountBookFormValid,
@@ -42,6 +48,7 @@ export default function AccountBookForm({
   const content = (
     <div className="space-y-5">
       <Input
+        classNames={compactInputClassNames}
         isRequired
         label={t('accountBook.form.name')}
         placeholder={t('accountBook.form.namePlaceholder')}
@@ -53,60 +60,69 @@ export default function AccountBookForm({
           })
         }
       />
-      <Select
-        label={t('accountBook.form.currency')}
-        selectedKeys={[selectValue]}
-        onSelectionChange={(keys) => {
-          const nextKey = Array.from(keys)[0] as string | undefined
-
-          if (!nextKey) {
-            return
-          }
-
-          if (nextKey === CUSTOM_CURRENCY_KEY) {
-            onValuesChange({
-              ...values,
-              currency: '',
-            })
-          } else {
-            onValuesChange({
-              ...values,
-              currency: nextKey,
-            })
-          }
-        }}
-        items={[
-          ...DEFAULT_CURRENCIES.map((c) => ({ key: c, label: c })),
-          {
-            key: CUSTOM_CURRENCY_KEY,
-            label: t('accountBook.form.currencyCustom'),
-          },
-        ]}
+      <div
+        className={
+          isCustomCurrency ? 'grid gap-4 sm:grid-cols-2' : 'w-full sm:max-w-sm'
+        }
       >
-        {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
-      </Select>
-      {isCustomCurrency && (
-        <Input
-          isRequired
-          label={t('accountBook.form.currencyCustomLabel')}
-          maxLength={10}
-          placeholder={t('accountBook.form.currencyCustomPlaceholder')}
-          value={values.currency}
-          isInvalid={values.currency.trim().length === 0}
-          errorMessage={
-            values.currency.trim().length === 0
-              ? t('accountBook.form.currencyCustomError')
-              : undefined
-          }
-          onChange={(event) =>
-            onValuesChange({
-              ...values,
-              currency: event.target.value.toUpperCase(),
-            })
-          }
-        />
-      )}
+        <Select
+          classNames={compactSelectClassNames}
+          label={t('accountBook.form.currency')}
+          selectedKeys={[selectValue]}
+          onSelectionChange={(keys) => {
+            const nextKey = Array.from(keys)[0] as string | undefined
+
+            if (!nextKey) {
+              return
+            }
+
+            if (nextKey === CUSTOM_CURRENCY_KEY) {
+              onValuesChange({
+                ...values,
+                currency: '',
+              })
+            } else {
+              onValuesChange({
+                ...values,
+                currency: nextKey,
+              })
+            }
+          }}
+          items={[
+            ...DEFAULT_CURRENCIES.map((c) => ({ key: c, label: c })),
+            {
+              key: CUSTOM_CURRENCY_KEY,
+              label: t('accountBook.form.currencyCustom'),
+            },
+          ]}
+        >
+          {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
+        </Select>
+        {isCustomCurrency ? (
+          <Input
+            classNames={compactInputClassNames}
+            isRequired
+            label={t('accountBook.form.currencyCustomLabel')}
+            maxLength={10}
+            placeholder={t('accountBook.form.currencyCustomPlaceholder')}
+            value={values.currency}
+            isInvalid={values.currency.trim().length === 0}
+            errorMessage={
+              values.currency.trim().length === 0
+                ? t('accountBook.form.currencyCustomError')
+                : undefined
+            }
+            onChange={(event) =>
+              onValuesChange({
+                ...values,
+                currency: event.target.value.toUpperCase(),
+              })
+            }
+          />
+        ) : null}
+      </div>
       <Textarea
+        classNames={compactInputClassNames}
         label={t('accountBook.form.description')}
         minRows={4}
         placeholder={t('accountBook.form.descriptionPlaceholder')}
@@ -119,21 +135,28 @@ export default function AccountBookForm({
         }
       />
 
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-col gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
         {showCancel && (
-          <Button variant="light" onPress={onCancel}>
+          <AppButton
+            className="min-h-11 w-full rounded-xl text-body sm:w-auto"
+            appearance="light"
+            tone="neutral"
+            onPress={onCancel}
+          >
             {cancelLabel ?? t('common.cancel')}
-          </Button>
+          </AppButton>
         )}
-        <Button
-          color="primary"
+        <AppButton
+          className="min-h-11 w-full rounded-xl px-5 text-body sm:w-auto"
           disableRipple
+          appearance="solid"
           isDisabled={!isAccountBookFormValid(values)}
           isLoading={isSubmitting}
           onPress={onSubmit}
+          tone="primary"
         >
           {submitLabel}
-        </Button>
+        </AppButton>
       </div>
     </div>
   )
@@ -142,9 +165,5 @@ export default function AccountBookForm({
     return content
   }
 
-  return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-lg shadow-black/5">
-      {content}
-    </section>
-  )
+  return <SurfaceCard className="p-5 sm:p-6">{content}</SurfaceCard>
 }

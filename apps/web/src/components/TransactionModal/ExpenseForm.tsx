@@ -32,6 +32,11 @@ import {
   amountInputClassNames,
   amountInputCurrencyClassName,
 } from './amountInputStyles'
+import {
+  compactDatePickerClassNames,
+  compactInputClassNames,
+  compactSelectClassNames,
+} from './formControlStyles'
 import { useAmountInputValue } from './useAmountInputValue'
 import {
   formatTransactionDateValue,
@@ -140,7 +145,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
     if (
       currentValue.accountBookId === nextAccountBookId &&
       currentValue.categoryId === nextCategoryId &&
-      JSON.stringify(currentValue.paidByDetail) === JSON.stringify(nextPaidBy) &&
+      JSON.stringify(currentValue.paidByDetail) ===
+        JSON.stringify(nextPaidBy) &&
       JSON.stringify(currentValue.splitDetail) === JSON.stringify(nextSplit)
     ) {
       if (isBookChanged) {
@@ -237,8 +243,8 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
   )
 
   return (
-    <div className="expense-form">
-      <Form className="flex flex-col gap-4">
+    <div className="expense-form w-full">
+      <Form className="flex w-full flex-col gap-5">
         <div
           data-onboarding-anchor="transaction-form-amount"
           className="w-full"
@@ -285,10 +291,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         <DatePicker
           isRequired
           size="sm"
-          classNames={{
-            selectorButton:
-              'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
-          }}
+          classNames={compactDatePickerClassNames}
           label={t('transactionForm.date')}
           granularity="day"
           value={date}
@@ -301,6 +304,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         />
         <Input
           size="sm"
+          classNames={compactInputClassNames}
           label={t('transactionForm.description')}
           value={value.description}
           isClearable
@@ -314,6 +318,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         />
         <Select
           size="sm"
+          classNames={compactSelectClassNames}
           isRequired
           label={t('transactionForm.paymentMethod')}
           selectedKeys={value.paymentMethod ? [value.paymentMethod] : []}
@@ -348,6 +353,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <Select
           size="sm"
+          classNames={compactSelectClassNames}
           label={t('transactionForm.accountBook')}
           items={accountBooks}
           selectedKeys={value.accountBookId ? [value.accountBookId] : []}
@@ -384,12 +390,13 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           }}
         />
         <div
-          className="flex items-start w-full"
+          className="flex w-full items-start"
           data-onboarding-anchor="transaction-form-payer"
         >
           <div className="w-full">
             <Select
               className="flex-1"
+              classNames={compactSelectClassNames}
               size="sm"
               label={t('transactionForm.paidBy')}
               items={usersForPaidBy.map((user) => ({
@@ -442,10 +449,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
                     />
                   }
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span>{user.name}</span>
+                  <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                    <span className="min-w-0 truncate">{user.name}</span>
                     {user.paidAmount > 0 ? (
-                      <span className="text-default-500 text-small">
+                      <span className="shrink-0 text-label tabular-nums text-muted-foreground">
                         {user.paidAmount.toLocaleString()}
                         {currency ? ` ${currency}` : ''}
                       </span>
@@ -457,12 +464,13 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           </div>
           <Button
             isIconOnly
+            aria-label={t('transactionForm.paidBy')}
             color="primary"
-            className="ml-2 mt-1"
+            className="ml-2 mt-1 min-h-11 min-w-11 rounded-xl"
             variant="ghost"
             onPress={() => setIsOpenPaidByOptions(true)}
           >
-            <PiGitBranchBold size={18} className="transform rotate-90" />
+            <PiGitBranchBold size={16} className="transform rotate-90" />
           </Button>
           <PaidByDetailModal
             isOpen={isOpenPaidByOptions}
@@ -476,12 +484,13 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           />
         </div>
         <div
-          className="flex items-start w-full"
+          className="flex w-full items-start"
           data-onboarding-anchor="transaction-form-split"
         >
           <div className="w-full">
             <Select
               className="flex-1"
+              classNames={compactSelectClassNames}
               size="sm"
               label={t('transactionForm.splitWith')}
               items={usersForSplit.map((user) => ({
@@ -517,10 +526,10 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
                     />
                   }
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span>{user.name}</span>
+                  <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                    <span className="min-w-0 truncate">{user.name}</span>
                     {user.splitAmount > 0 ? (
-                      <span className="text-default-500 text-small">
+                      <span className="shrink-0 text-label tabular-nums text-muted-foreground">
                         {user.splitAmount.toLocaleString()}
                         {currency ? ` ${currency}` : ''}
                       </span>
@@ -533,12 +542,13 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
 
           <Button
             isIconOnly
+            aria-label={t('transactionForm.splitWith')}
             color="primary"
-            className="ml-2 mt-1"
+            className="ml-2 mt-1 min-h-11 min-w-11 rounded-xl"
             variant="ghost"
             onPress={() => setIsOpenSplitDetail(true)}
           >
-            <PiGitBranchBold size={18} className="transform rotate-90" />
+            <PiGitBranchBold size={16} className="transform rotate-90" />
           </Button>
           <SplitDetailModal
             isOpen={isOpenSplitDetail}

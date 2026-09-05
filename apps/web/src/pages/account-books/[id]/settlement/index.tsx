@@ -12,6 +12,7 @@ import SettlementRecordList from '@/components/settlement/SettlementRecordList'
 import SettlementConfirmModal from '@/components/settlement/SettlementConfirmModal'
 import { TransactionModal } from '@/components/TransactionModal'
 import SplitTutorial from '@/components/onboarding/SplitTutorial'
+import { PageScaffold } from '@/components/ui/PageScaffold'
 
 export default function SettlementPage() {
   const router = useRouter()
@@ -126,30 +127,37 @@ export default function SettlementPage() {
   return (
     <SplitTutorial>
       <div className="h-full overflow-y-auto bg-background text-foreground">
-        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-8">
-          <div className="space-y-1">
-            <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
+        <PageScaffold data-testid="settlement-page">
+          <header className="min-w-0 space-y-1">
+            <h1 className="text-headline font-semibold leading-tight tracking-[-0.02em] text-foreground text-balance">
               {t('settlement.label')}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {currentAccountBook?.name ?? t('transactions.fallbackName')}
             </h1>
-          </div>
+            <p className="truncate text-body text-muted-foreground">
+              {currentAccountBook?.name ?? t('transactions.fallbackName')}
+            </p>
+          </header>
 
           <Tabs
             aria-label={t('settlement.tabsAriaLabel')}
+            classNames={{
+              base: 'w-full',
+              cursor: 'rounded-lg bg-card shadow-none',
+              panel: 'px-0 pt-4',
+              tab: 'min-h-11',
+              tabContent:
+                'text-body font-medium text-muted-foreground group-data-[selected=true]:text-foreground',
+              tabList: 'w-full rounded-xl bg-muted p-1',
+            }}
             data-onboarding-anchor="settlement-tabs"
             fullWidth
           >
             <Tab key="unsettled" title={t('settlement.tabs.unsettled')}>
-              <div className="">
-                <UnsettledTransactionList
-                  transactions={unsettledTransactions}
-                  currency={currentAccountBook?.currency ?? null}
-                  onConfirm={() => setIsConfirmOpen(true)}
-                  onEditTransaction={openEditModal}
-                />
-              </div>
+              <UnsettledTransactionList
+                transactions={unsettledTransactions}
+                currency={currentAccountBook?.currency ?? null}
+                onConfirm={() => setIsConfirmOpen(true)}
+                onEditTransaction={openEditModal}
+              />
             </Tab>
             <Tab
               key="records"
@@ -157,26 +165,24 @@ export default function SettlementPage() {
                 <div className="relative inline-flex items-center">
                   <span>{t('settlement.tabs.history')}</span>
                   {pendingRecordsCount > 0 && (
-                    <span className="absolute -right-3.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-white">
+                    <span className="absolute -right-3.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-label font-bold leading-none text-white">
                       {pendingRecordsCount}
                     </span>
                   )}
                 </div>
               }
             >
-              <div className="pt-4">
-                <SettlementRecordList
-                  records={records}
-                  onSelectRecord={(recordId) =>
-                    void router.push(
-                      `/account-books/${accountBookId}/settlement/${recordId}`
-                    )
-                  }
-                />
-              </div>
+              <SettlementRecordList
+                records={records}
+                onSelectRecord={(recordId) =>
+                  void router.push(
+                    `/account-books/${accountBookId}/settlement/${recordId}`
+                  )
+                }
+              />
             </Tab>
           </Tabs>
-        </div>
+        </PageScaffold>
 
         <SettlementConfirmModal
           isOpen={isConfirmOpen}

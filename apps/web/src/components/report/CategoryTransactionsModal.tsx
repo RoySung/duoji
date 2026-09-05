@@ -45,44 +45,44 @@ export default function CategoryTransactionsModal({
   const displayName =
     summary?.displayName === 'Uncategorized'
       ? t('transactions.list.uncategorized')
-      : (summary?.displayName ?? '')
+      : summary?.displayName ?? ''
 
   return (
-    <Drawer
-      isOpen={isOpen}
-      onClose={onClose}
-      placement="right"
-      size="sm"
-    >
-      <DrawerContent>
-        <DrawerHeader className="flex flex-col gap-1 border-b border-border pb-4">
-          <div className="flex items-center gap-3">
+    <Drawer isOpen={isOpen} onClose={onClose} placement="right" size="sm">
+      <DrawerContent className="bg-card text-card-foreground shadow-[0_18px_60px_rgba(20,31,29,0.24)]">
+        <DrawerHeader className="flex flex-col gap-1 border-b border-border px-4 pb-4 pt-5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
             {summary?.imageUrl ? (
               <Avatar
-                className="h-9 w-9 bg-content2"
+                className="h-11 w-11 shrink-0 bg-secondary"
                 name={displayName}
                 src={summary.imageUrl}
               />
             ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-content2 text-muted-foreground">
-                <PiReceiptBold size={16} />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <PiReceiptBold size={14} />
               </div>
             )}
-            <div className="flex flex-col">
-              <span className="text-base font-semibold text-foreground">
+            <div className="flex min-w-0 flex-col">
+              <span className="break-words text-title font-semibold leading-snug text-foreground">
                 {displayName}
               </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {t('report.categoryModal.recordsCount', { count: summary?.transactionCount ?? 0 })} ·{' '}
-                {summary ? formatAmount(summary.totalAmount, currency) : formatAmount(0, currency)}
+              <span className="mt-0.5 break-words text-body font-normal leading-5 text-muted-foreground tabular-nums">
+                {t('report.categoryModal.recordsCount', {
+                  count: summary?.transactionCount ?? 0,
+                })}{' '}
+                ·{' '}
+                {summary
+                  ? formatAmount(summary.totalAmount, currency)
+                  : formatAmount(0, currency)}
               </span>
             </div>
           </div>
         </DrawerHeader>
 
-        <DrawerBody className="px-3 py-4">
+        <DrawerBody className="overflow-y-auto px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-4">
           {transactions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-8 text-center text-sm text-muted-foreground">
+            <div className="rounded-2xl bg-secondary/70 px-4 py-8 text-center text-body text-muted-foreground">
               {t('report.categoryModal.empty')}
             </div>
           ) : (
@@ -90,43 +90,47 @@ export default function CategoryTransactionsModal({
               {transactions.map((tx) => {
                 const category = categoryMap.get(tx.categoryId) ?? null
                 const amountClass =
-                  tx.type === 'expense' ? 'text-danger' : 'text-success'
+                  tx.type === 'expense'
+                    ? 'text-emphasis-foreground'
+                    : 'text-success'
                 const prefix = tx.type === 'income' ? '+' : ''
                 return (
                   <li key={tx.id}>
                     <button
                       type="button"
-                      className="group flex w-full items-start gap-3 rounded-2xl border border-border bg-background px-3 py-3 text-left transition-colors hover:border-primary-200 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70"
+                      className="group flex min-h-14 w-full min-w-0 items-start gap-3 rounded-2xl border border-border bg-background px-3 py-3 text-left transition-colors hover:border-primary/45 hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       onClick={() => onTransactionClick?.(tx.id)}
                     >
                       {category ? (
                         <Avatar
-                          className="mt-0.5 h-9 w-9 bg-content2"
+                          className="mt-0.5 h-9 w-9 shrink-0 bg-secondary"
                           name={category.name}
                           src={category.imageUrl}
                         />
                       ) : (
                         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">
-                          <PiQuestionMark size={16} />
+                          <PiQuestionMark size={14} />
                         </div>
                       )}
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="truncate text-sm font-medium text-foreground group-hover:text-primary-700">
-                            {category?.name ?? t('transactions.list.uncategorized')}
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="grid min-w-0 gap-1 min-[400px]:grid-cols-[minmax(0,1fr)_auto] min-[400px]:gap-3">
+                          <span className="min-w-0 break-words text-body font-medium leading-5 text-foreground group-hover:text-primary">
+                            {category?.name ??
+                              t('transactions.list.uncategorized')}
                           </span>
                           <span
-                            className={`shrink-0 text-sm font-semibold ${amountClass}`}
+                            className={`min-w-0 break-words text-body font-semibold leading-5 tabular-nums min-[400px]:text-right ${amountClass}`}
                           >
                             {prefix}
                             {formatAmount(tx.amount, currency)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="truncate text-xs text-muted-foreground">
-                            {tx.description || t('transactions.list.noDescription')}
+                        <div className="grid min-w-0 gap-1 min-[400px]:grid-cols-[minmax(0,1fr)_auto] min-[400px]:items-end min-[400px]:gap-3">
+                          <p className="min-w-0 break-words text-label leading-5 text-muted-foreground">
+                            {tx.description ||
+                              t('transactions.list.noDescription')}
                           </p>
-                          <span className="shrink-0 text-xs text-muted-foreground">
+                          <span className="shrink-0 text-label leading-5 text-muted-foreground tabular-nums min-[400px]:text-right">
                             {tx.date}
                           </span>
                         </div>

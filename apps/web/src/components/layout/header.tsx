@@ -16,16 +16,27 @@ export default function Header() {
     accountBooks.find((ab) => ab.id === currentId) ?? null
 
   return (
-    <header className="flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-border bg-background px-4 pt-[env(safe-area-inset-top)]">
-      <span className="text-base font-semibold tracking-tight text-foreground">
-        Duoji <span className="text-[10px] text-muted-foreground font-normal ml-1">v{packageJson.version}</span>
-      </span>
-      {isAccountBookRoute && (
-        <AccountBookMenu
-          accountBooks={accountBooks}
-          currentAccountBook={currentAccountBook}
-        />
-      )}
+    <header
+      className="h-[calc(64px+env(safe-area-inset-top))] shrink-0 bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-md"
+      data-testid="app-header"
+    >
+      <div
+        className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between gap-3 px-4 sm:px-6"
+        data-testid="app-header-frame"
+      >
+        <span className="shrink-0 text-lg font-semibold tracking-[-0.03em] text-foreground">
+          Duoji
+          <span className="ml-2 align-middle text-xs font-normal tracking-normal text-primary">
+            v{packageJson.version}
+          </span>
+        </span>
+        {isAccountBookRoute && (
+          <AccountBookMenu
+            accountBooks={accountBooks}
+            currentAccountBook={currentAccountBook}
+          />
+        )}
+      </div>
     </header>
   )
 }

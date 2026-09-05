@@ -20,6 +20,8 @@ import AccountBookNavHeader from '@/components/accountBookSettings/AccountBookNa
 import AddCategoryModal from './AddCategoryModal'
 import CategoryGroupItem from './CategoryGroupItem'
 import DeleteConfirmModal from './DeleteConfirmModal'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
+import { transactionTabsClassNames } from '@/components/TransactionModal/formControlStyles'
 
 type CategorySettingsPageProps = {
   accountBookId: string
@@ -342,7 +344,7 @@ export default function CategorySettingsPage({
         : t('categorySettings.addExpenseGroup')
 
     return (
-      <section className={`flex flex-col gap-3 pt-2 ${isDirty ? 'pb-20' : ''}`}>
+      <section className={`flex flex-col gap-3 pt-2 ${isDirty ? 'pb-24' : ''}`}>
         <Reorder.Group
           as="div"
           axis="y"
@@ -378,11 +380,11 @@ export default function CategorySettingsPage({
         </Reorder.Group>
 
         <button
-          className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/50 py-4 text-sm font-semibold text-primary/70 transition hover:bg-primary/5"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 px-4 py-3 text-body font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           type="button"
           onClick={() => openAddGroup(type)}
         >
-          <PiPlusCircleDuotone className="text-base" /> {addLabel}
+          <PiPlusCircleDuotone size={14} /> {addLabel}
         </button>
       </section>
     )
@@ -398,7 +400,14 @@ export default function CategorySettingsPage({
     : undefined
 
   const content = (
-    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-6">
+    <div
+      className={
+        isModalMode
+          ? 'flex min-h-full w-full flex-col gap-5 px-4 py-5 sm:px-6'
+          : 'page-scaffold'
+      }
+      data-ui={isModalMode ? undefined : 'page-scaffold'}
+    >
       {!isModalMode && (
         <AccountBookNavHeader
           backHref="/settings/account-books"
@@ -408,27 +417,38 @@ export default function CategorySettingsPage({
 
       {accountBook ? (
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="break-words text-headline font-semibold text-foreground text-balance">
             {accountBook.name}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="max-w-[65ch] text-body text-muted-foreground text-pretty">
             {t('categorySettings.pageDescription')}
           </p>
         </div>
       ) : null}
 
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center py-12">
-          <p className="text-sm text-muted-foreground">
+        <SurfaceCard
+          aria-busy="true"
+          aria-live="polite"
+          className="flex flex-1 items-center justify-center px-5 py-12"
+        >
+          <p className="text-body text-muted-foreground">
             {t('categorySettings.loading')}
           </p>
-        </div>
+        </SurfaceCard>
       ) : (
         <Tabs
           aria-label={t('categorySettings.tabsAriaLabel')}
+          className="w-full"
+          classNames={{
+            ...transactionTabsClassNames,
+            base: 'w-full',
+            tabList: 'grid w-full grid-cols-2 rounded-xl bg-muted p-1',
+            panel: 'px-0 pt-3',
+          }}
           color="primary"
           selectedKey={activeTab}
-          variant="underlined"
+          variant="solid"
           onSelectionChange={(key) => setActiveTab(key as TransactionType)}
         >
           <Tab key="expense" title={t('categorySettings.expense')}>
@@ -445,19 +465,25 @@ export default function CategorySettingsPage({
         <div
           className={
             isModalMode
-              ? 'sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-3 shadow-md'
-              : 'fixed bottom-0 left-0 right-0 z-50 flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-3 shadow-md'
+              ? 'sticky bottom-0 z-10 grid grid-cols-2 gap-3 border-t border-border bg-card/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg backdrop-blur sm:px-6'
+              : 'sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-10 grid grid-cols-2 gap-3 rounded-2xl bg-card/95 p-3 shadow-lg backdrop-blur sm:ml-auto sm:w-fit sm:min-w-72'
           }
         >
-          <Button disableRipple variant="flat" onPress={handleDiscard}>
+          <Button
+            className="min-h-11 w-full rounded-xl"
+            disableRipple
+            variant="flat"
+            onPress={handleDiscard}
+          >
             <PiXBold size={14} />
             {t('common.discard')}
           </Button>
           <Button
+            className="min-h-11 w-full rounded-xl"
             color="primary"
             disableRipple
             isLoading={isSaving}
-            startContent={isSaving ? null : <PiFloppyDiskDuotone size={16} />}
+            startContent={isSaving ? null : <PiFloppyDiskDuotone size={14} />}
             onPress={handleSave}
           >
             {t('common.save')}

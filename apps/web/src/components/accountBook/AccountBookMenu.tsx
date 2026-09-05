@@ -9,7 +9,11 @@ import {
 } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { PiBooksBold, PiCaretDownBold, PiPlusCircleDuotone } from 'react-icons/pi'
+import {
+  PiBooksBold,
+  PiCaretDownBold,
+  PiPlusCircleDuotone,
+} from 'react-icons/pi'
 import { AccountBook } from '@/entities/accountBook'
 
 type Props = {
@@ -17,7 +21,10 @@ type Props = {
   currentAccountBook: AccountBook | null
 }
 
-export default function AccountBookMenu({ accountBooks, currentAccountBook }: Props) {
+export default function AccountBookMenu({
+  accountBooks,
+  currentAccountBook,
+}: Props) {
   const t = useTranslations()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
@@ -44,19 +51,26 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
       <Button
         variant="flat"
         size="sm"
-        startContent={<PiBooksBold size={15} />}
+        startContent={<PiBooksBold size={14} />}
         endContent={<PiCaretDownBold size={12} />}
-        className="bg-accent/60 text-foreground"
+        className="min-h-11 max-w-[min(62vw,20rem)] rounded-full bg-card/90 px-4 text-sm text-foreground shadow-sm"
         onPress={() => setIsOpen(true)}
       >
         {isAllBooksView
           ? t('accountBook.menu.allBooks')
-          : (currentAccountBook?.name ?? t('accountBook.menu.selectPlaceholder'))}
+          : currentAccountBook?.name ?? t('accountBook.menu.selectPlaceholder')}
       </Button>
 
-      <Drawer isOpen={isOpen} onOpenChange={setIsOpen} placement="right" size="sm">
+      <Drawer
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        placement="right"
+        size="sm"
+      >
         <DrawerContent>
-          <DrawerHeader className="flex flex-col gap-1">{t('accountBook.menu.drawerTitle')}</DrawerHeader>
+          <DrawerHeader className="flex flex-col gap-1">
+            {t('accountBook.menu.drawerTitle')}
+          </DrawerHeader>
 
           <DrawerBody className="gap-2 px-3 pb-4">
             <article
@@ -109,7 +123,10 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
                       {ab.description}
                     </p>
                   ) : null}
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button
                       size="sm"
                       color="default"
@@ -127,7 +144,8 @@ export default function AccountBookMenu({ accountBooks, currentAccountBook }: Pr
               type="button"
               onClick={handleCreate}
             >
-              <PiPlusCircleDuotone className="text-base" /> {t('accountBook.menu.newAccountBook')}
+              <PiPlusCircleDuotone className="text-sm" />{' '}
+              {t('accountBook.menu.newAccountBook')}
             </button>
           </DrawerBody>
         </DrawerContent>

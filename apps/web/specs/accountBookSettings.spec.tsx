@@ -14,6 +14,7 @@ import Home from '../src/pages/index'
 import Settings from '../src/pages/settings'
 import NewAccountBookRoute from '../src/pages/account-books/new'
 import AccountBookSettingsRoute from '../src/pages/account-books/[id]/settings'
+import AccountBookForm from '../src/components/accountBookSettings/AccountBookForm'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import {
@@ -109,7 +110,9 @@ jest.mock('@heroui/react', () => {
       return (
         <button
           type="button"
-          disabled={disabled ?? isDisabled ?? isLoading}
+          data-color={color}
+          data-variant={variant}
+          disabled={disabled ?? (isDisabled || isLoading)}
           aria-busy={isLoading ? 'true' : undefined}
           onClick={handleClick}
           {...props}
@@ -121,6 +124,9 @@ jest.mock('@heroui/react', () => {
       )
     },
     Input: ({
+      classNames,
+      errorMessage,
+      isInvalid,
       label,
       value,
       onChange,
@@ -138,6 +144,10 @@ jest.mock('@heroui/react', () => {
         <label>
           {label}
           <input
+            aria-invalid={isInvalid || undefined}
+            data-has-class-names={classNames ? 'true' : undefined}
+            data-has-error-message={errorMessage ? 'true' : undefined}
+            required={isRequired}
             value={value}
             onChange={handleChange}
             placeholder={placeholder}
@@ -147,6 +157,7 @@ jest.mock('@heroui/react', () => {
       )
     },
     Textarea: ({
+      classNames,
       label,
       value,
       onChange,
@@ -164,6 +175,8 @@ jest.mock('@heroui/react', () => {
         <label>
           {label}
           <textarea
+            data-has-class-names={classNames ? 'true' : undefined}
+            rows={minRows}
             value={value}
             onChange={handleChange}
             placeholder={placeholder}
@@ -189,9 +202,17 @@ jest.mock('@heroui/react', () => {
     ModalHeader: ({ children }: any) => <div>{children}</div>,
     ModalBody: ({ children }: any) => <div>{children}</div>,
     ModalFooter: ({ children }: any) => <div>{children}</div>,
-    Switch: ({ children, isDisabled, isSelected, onValueChange }: any) => (
-      <label>
+    Switch: ({
+      'aria-label': ariaLabel,
+      children,
+      className,
+      isDisabled,
+      isSelected,
+      onValueChange,
+    }: any) => (
+      <label className={className}>
         <input
+          aria-label={ariaLabel}
           type="checkbox"
           checked={isSelected}
           disabled={isDisabled}
@@ -208,6 +229,7 @@ jest.mock('@heroui/react', () => {
       isDisabled,
       items,
       label,
+      onChange,
       onSelectionChange,
       selectedKeys,
       selectionMode,
@@ -233,6 +255,7 @@ jest.mock('@heroui/react', () => {
                   )
                 : [event.currentTarget.value]
 
+              onChange?.(event)
               onSelectionChange?.(new Set(nextValues.filter(Boolean)))
             }}
           >
@@ -546,6 +569,8 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
 describe('Account book settings pages', () => {
   beforeEach(() => {
     mockedUseRouter.mockReset()
+    window.localStorage.removeItem(THEME_STORAGE_KEY)
+    document.documentElement.classList.remove('dark', 'light')
   })
 
   it('redirects the home page to the first account book when data is initialized', async () => {
@@ -559,10 +584,42 @@ describe('Account book settings pages', () => {
   })
 
   it('renders the settings landing page content', async () => {
+    const { container } = await renderWithProviders(<Settings />)
+
+    const pageHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Personal workspace',
+    })
+    const appearanceHeading = screen.getByRole('heading', {
+      level: 2,
+      name: 'Appearance',
+    })
+    expect(pageHeading.className).toContain('text-headline')
+    expect(appearanceHeading.className).toContain('text-title')
+    expect(container.querySelector('[data-ui="page-scaffold"]')).toBeTruthy()
+    expect(container.querySelectorAll('[data-ui="surface-card"]')).toHaveLength(
+      2
+    )
+  })
+
+  it('restores and persists light and dark theme selection', async () => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, 'dark')
+
     await renderWithProviders(<Settings />)
 
-    expect(screen.getByText('Personal workspace')).toBeTruthy()
-    expect(screen.getByText('Appearance')).toBeTruthy()
+    const themeToggle = screen.getByRole('checkbox', { name: 'Appearance' })
+
+    await waitFor(() => {
+      expect((themeToggle as HTMLInputElement).checked).toBe(true)
+      expect(document.documentElement.classList.contains('dark')).toBe(true)
+    })
+
+    fireEvent.click(themeToggle)
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light')
+      expect(document.documentElement.classList.contains('light')).toBe(true)
+    })
   })
 
   it('keeps the settings navigation active for settings descendant routes', async () => {
@@ -595,6 +652,34 @@ describe('Account book settings pages', () => {
     expect(push).toHaveBeenCalledWith('/account-books/2')
   })
 
+  it('uses semantic account-book form actions while preserving disabled and loading behavior', async () => {
+    await renderWithProviders(
+      <AccountBookForm
+        isSubmitting
+        onSubmit={jest.fn()}
+        onValuesChange={jest.fn()}
+        submitLabel="Save"
+        values={{
+          name: 'Weekend Trip',
+          currency: 'TWD',
+          description: '',
+        }}
+      />
+    )
+
+    const saveButton = screen.getByRole('button', { name: 'Save' })
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' })
+
+    expect(saveButton.getAttribute('data-color')).toBe('primary')
+    expect(saveButton.getAttribute('data-variant')).toBe('solid')
+    expect(saveButton.className).toContain('!text-white')
+    expect(saveButton.hasAttribute('disabled')).toBe(true)
+    expect(saveButton.getAttribute('aria-busy')).toBe('true')
+    expect(cancelButton.getAttribute('data-color')).toBe('default')
+    expect(cancelButton.getAttribute('data-variant')).toBe('light')
+    expect(cancelButton.className).not.toContain('!text-white')
+  })
+
   it('renders the new account book page and creates a new account book', async () => {
     const { back, push, store } = await renderWithProviders(
       <NewAccountBookRoute />,
@@ -603,7 +688,11 @@ describe('Account book settings pages', () => {
       }
     )
 
-    expect(screen.getByText('New account book')).toBeTruthy()
+    const pageHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'New account book',
+    })
+    expect(pageHeading.className).toContain('text-headline')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go back' }))
     expect(back).toHaveBeenCalled()
@@ -632,6 +721,33 @@ describe('Account book settings pages', () => {
       expect(push).toHaveBeenCalledWith(
         expect.stringMatching(/^\/account-books\/.+\/settings$/)
       )
+    })
+  })
+
+  it('preserves a custom currency value when creating an account book', async () => {
+    const { store } = await renderWithProviders(<NewAccountBookRoute />, {
+      pathname: '/account-books/new',
+    })
+
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Digital wallet' },
+    })
+    fireEvent.change(screen.getByLabelText('Currency'), {
+      target: { value: '__custom__' },
+    })
+    fireEvent.change(screen.getByLabelText('Custom currency'), {
+      target: { value: 'btc' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(
+        store
+          .getState()
+          .accountBooks.find(
+            (accountBook) => accountBook.name === 'Digital wallet'
+          )?.currency
+      ).toBe('BTC')
     })
   })
 

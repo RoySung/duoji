@@ -49,53 +49,55 @@ export default function MemberFilterSelector({
                 src={selectedMember.avatarUrl}
                 name={selectedMember.name}
                 size="sm"
-                className="w-4 h-4 text-tiny shrink-0"
+                className="h-4 w-4 shrink-0 text-label"
               />
             ) : (
-              <PiUserBold size={14} className="shrink-0" />
+              <PiUserBold size={12} className="shrink-0" />
             )
           }
-          className="bg-accent/60 text-foreground min-w-[7rem]"
+          className="min-h-11 min-w-[7rem] max-w-full rounded-xl bg-secondary px-3 text-body text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
         >
           {selectedMember
-            ? t('report.memberFilter.triggerSelected', { name: selectedMember.name })
+            ? t('report.memberFilter.triggerSelected', {
+                name: selectedMember.name,
+              })
             : t('report.memberFilter.trigger')}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[min(18rem,calc(100vw-1rem))] rounded-[1.35rem] border border-border/80 bg-card p-0 shadow-[0_18px_44px_-30px_rgba(15,23,42,0.24)]">
-        <div className="flex w-full max-h-[min(24rem,calc(100vh-4.5rem))] flex-col overflow-hidden">
-          <div className="w-full border-b border-border/60 px-4 pb-3 pt-4 sm:px-5 text-left">
-            <span className="text-[15px] font-semibold text-foreground">
+      <PopoverContent className="w-[min(18rem,calc(100vw-1rem))] rounded-2xl bg-popover p-0 text-popover-foreground shadow-[0_8px_24px_rgba(20,31,29,0.18)]">
+        <div className="flex max-h-[min(24rem,calc(100vh-4.5rem))] w-full flex-col overflow-hidden">
+          <div className="w-full border-b border-border px-4 pb-3 pt-4 text-left sm:px-5">
+            <span className="text-title font-semibold text-foreground">
               {t('report.memberFilter.title')}
             </span>
           </div>
 
-          <div className="w-full flex flex-col gap-1 overflow-y-auto px-2 py-2">
+          <div className="flex w-full flex-col gap-1 overflow-y-auto px-2 py-2">
             {/* All Members Option */}
             <button
               type="button"
               onClick={() => handleSelect(null)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70 ${
+              className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selectedMemberId === null
-                  ? 'bg-primary/10 text-foreground font-medium'
-                  : 'hover:bg-muted/30 text-foreground'
+                  ? 'bg-primary/10 font-medium text-foreground'
+                  : 'text-foreground hover:bg-muted'
               }`}
             >
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">
-                <PiUsersBold size={14} />
+                <PiUsersBold size={12} />
               </div>
-              <span className="flex-1 truncate text-sm">
+              <span className="flex-1 truncate text-body">
                 {t('report.memberFilter.allMembers')}
               </span>
               {selectedMemberId === null && (
-                <PiCheckBold size={14} className="text-primary shrink-0" />
+                <PiCheckBold size={12} className="shrink-0 text-primary" />
               )}
             </button>
 
             {/* Individual Members Options */}
             {availableMembers.length === 0 ? (
-              <div className="mx-2 my-1 rounded-xl border border-dashed border-border px-3 py-4 text-xs text-muted-foreground text-center">
+              <div className="mx-2 my-1 rounded-xl bg-muted px-3 py-4 text-center text-label text-muted-foreground">
                 {t('report.memberFilter.empty')}
               </div>
             ) : (
@@ -108,27 +110,30 @@ export default function MemberFilterSelector({
                     key={member.id}
                     type="button"
                     onClick={() => handleSelect(member.id)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70 ${
+                    className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isSelected
-                        ? 'bg-primary/10 text-foreground font-medium'
-                        : 'hover:bg-muted/30 text-foreground'
+                        ? 'bg-primary/10 font-medium text-foreground'
+                        : 'text-foreground hover:bg-muted'
                     }`}
                   >
                     <Avatar
                       src={member.avatarUrl}
                       name={member.name}
                       size="sm"
-                      className="w-6 h-6 text-tiny shrink-0 bg-content2"
+                      className="h-6 w-6 shrink-0 bg-content2 text-label"
                     />
                     <span
-                      className={`flex-1 truncate text-sm ${
+                      className={`flex-1 truncate text-body ${
                         isDeleted ? 'line-through text-muted-foreground' : ''
                       }`}
                     >
                       {member.name}
                     </span>
                     {isSelected && (
-                      <PiCheckBold size={14} className="text-primary shrink-0" />
+                      <PiCheckBold
+                        size={12}
+                        className="shrink-0 text-primary"
+                      />
                     )}
                   </button>
                 )

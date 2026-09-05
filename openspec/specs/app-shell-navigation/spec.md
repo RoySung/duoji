@@ -8,98 +8,180 @@ TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Upd
 
 ### Requirement: The application provides a shared app shell
 
-The web application SHALL provide a shared app shell that wraps primary pages in a consistent layout. The shell SHALL include a top header bar (containing the app title and contextual controls) and a bottom navigation bar.
+The web application SHALL provide a shared app shell that wraps primary pages in a consistent mobile-first layout. The shell SHALL include a top header containing the app identity and contextual controls, a centered content frame no wider than 768px, and a floating bottom navigation bar. The shell SHALL account for top and bottom device safe-area insets and SHALL reserve enough scroll space to keep page content unobstructed.
 
 #### Scenario: Open a primary application page
 
 - **WHEN** a user navigates to a primary page within the web application
 - **THEN** the system SHALL render that page within the shared application shell, with a top header bar visible at the top and the bottom navigation bar visible at the bottom
+- **THEN** the page content SHALL use the centered content frame and shared page gutters
+
+#### Scenario: View the shell on a mobile safe-area device
+
+- **WHEN** a primary page is displayed on a device that reports top or bottom safe-area insets
+- **THEN** the header and bottom navigation SHALL include the corresponding inset spacing
+- **THEN** no label, icon, or interactive target SHALL be clipped by the device edge
+
+#### Scenario: Reach content behind the floating navigation
+
+- **WHEN** a user scrolls a primary page to its end
+- **THEN** the final interactive element SHALL be fully visible and activatable above the floating bottom navigation
+
+#### Scenario: Use the shell on a wide viewport
+
+- **WHEN** the viewport is wider than 768px
+- **THEN** the page content SHALL remain centered at a maximum width of 768px
+- **THEN** the header and bottom navigation SHALL retain the same destination order and interaction model used on mobile
+
+#### Scenario: Identify the active destination
+
+- **WHEN** the user opens the home, settlement, report, or settings destination
+- **THEN** the corresponding bottom-navigation item SHALL expose a visible selected state
+- **THEN** the central create-transaction action SHALL retain its existing enabled or disabled rule for the active account-book context
 
 
 <!-- @trace
-source: add-header-with-account-book-dropdown
-updated: 2026-04-11
+source: redesign-web-ui-from-reference
+updated: 2026-08-31
 code:
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/utils/transactionUtils.ts
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/package.json
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/stores/transaction/index.ts
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - .spectra.yaml
-  - apps/web/src/stores/accountBook/index.ts
-  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/components/calendar/TransactionCalendar.tsx
+  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
+  - apps/web/src/components/settlement/settlementModalStyles.ts
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/login-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/transaction-tablet-dark-chromium-darwin.png
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
+  - apps/web/src/components/TransactionModal/PaidByDetailModal.tsx
+  - apps/web/src/components/settlement/SettlementMarkdownModal.tsx
+  - apps/web/src/components/ui/SurfaceCard.tsx
+  - apps/web/src/pages/index.tsx
+  - apps/web/src/pages/login.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settlement-mobile-dark-chromium-darwin.png
+  - apps/web-e2e/src/helpers/onboarding.ts
+  - apps/web/public/images/ui/duoji-banner-background.webp
+  - apps/web/src/components/calendar/MonthGrid.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-trend-mobile-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-tablet-dark-chromium-darwin.png
+  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
+  - apps/web/src/components/report/ReportEmptyState.tsx
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
+  - apps/web/src/components/layout/navbar.tsx
+  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/transaction-mobile-light-chromium-darwin.png
+  - apps/web/src/components/accountBookSettings/AccountBookNavHeader.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-mobile-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-trend-tablet-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-mobile-dark-chromium-darwin.png
+  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/components/report/ReportSection.tsx
+  - apps/web/src/components/report/ReportSummaryCards.tsx
+  - apps/web/src/components/TransactionModal/amountInputStyles.ts
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/onboarding-mobile-dark-chromium-darwin.png
+  - apps/web/src/pages/styles.css
+  - apps/web/src/components/onboarding/OnboardingTutorial.tsx
+  - apps/web/src/components/report/TimeRangeSelector.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settings-tablet-dark-chromium-darwin.png
+  - apps/web/src/components/onboarding/LanguageStep.tsx
+  - apps/web/src/components/TransactionModal/IncomeForm.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settings-tablet-light-chromium-darwin.png
+  - apps/web/src/components/report/TagFilterSelector.tsx
   - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-tablet-light-chromium-darwin.png
+  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
+  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+  - apps/web/src/components/accountBookSettings/UserSection.tsx
+  - apps/web/src/components/report/BookFilterSelector.tsx
+  - apps/web/src/components/ui/AppButton.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-category-tablet-dark-chromium-darwin.png
+  - apps/web/src/components/TransactionModal/TransactionModal.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-tablet-dark-chromium-darwin.png
+  - apps/web/src/components/settlement/SettlementTransferModal.tsx
+  - apps/web/src/pages/account-books/[id]/index.tsx
+  - apps/web/src/components/TransactionModal/SplitDetailModal.tsx
+  - apps/web/src/pages/onboarding/index.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/login-tablet-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/transaction-mobile-dark-chromium-darwin.png
+  - apps/web/src/components/onboarding/EntryShell.tsx
+  - apps/web/src/components/report/CategoryTransactionsModal.tsx
+  - apps/web/src/components/onboarding/StepShell.tsx
+  - apps/web/src/components/ui/TagInput.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settlement-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-category-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settlement-tablet-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/onboarding-mobile-light-chromium-darwin.png
   - apps/web/src/components/accountBook/AccountBookMenu.tsx
   - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/next.config.js
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - apps/web/src/components/layout/navbar.tsx
-  - .github/skills/spectra-apply/SKILL.md
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - apps/web/src/pages/index.tsx
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/account-books/new.tsx
-  - .github/prompts/spectra-discuss.prompt.md
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - .github/skills/spectra-debug/SKILL.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/skills/spectra-ask/SKILL.md
-  - apps/web/src/hooks/useSettlement.ts
-  - .github/skills/spectra-propose/SKILL.md
-  - apps/web/src/entities/settlement.ts
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
-  - .github/prompts/spectra-debug.prompt.md
-  - CLAUDE.md
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-category-tablet-light-chromium-darwin.png
+  - apps/web/scripts/process-banner-assets.mjs
+  - docs/superpowers/specs/2026-08-29-transaction-hero-calendar-overlap-design.md
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-trend-tablet-light-chromium-darwin.png
   - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - .github/prompts/spectra-ask.prompt.md
-  - AGENTS.md
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - GEMINI.md
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/components/layout/header.tsx
+  - apps/web/src/components/report/MemberFilterSelector.tsx
+  - apps/web/src/components/onboarding/AccountBookStep.tsx
+  - apps/web/src/components/categorySettings/DeleteConfirmModal.tsx
+  - apps/web/src/components/report/ReportMonthlyTrend.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/onboarding-tablet-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-trend-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/transaction-tablet-light-chromium-darwin.png
+  - apps/web/DESIGN.md
+  - apps/web/src/components/TransactionModal/formControlStyles.ts
+  - docs/superpowers/specs/2026-08-30-transaction-hero-parallax-design.md
+  - apps/web/src/components/TransactionModal/CategorySelector.tsx
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/components/TransactionModal/DetailBalanceNotice.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settlement-tablet-light-chromium-darwin.png
+  - apps/web/src/components/calendar/WeekStrip.tsx
+  - apps/web/src/components/ui/PageScaffold.tsx
+  - apps/web/src/pages/settings.tsx
   - apps/web/src/components/settlement/UnsettledTransactionList.tsx
-  - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/.babelrc
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/utils/settlementUtils.ts
-  - .github/skills/spectra-ingest/SKILL.md
-  - .github/prompts/spectra-apply.prompt.md
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
+  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
+  - apps/web/src/components/layout/layout.tsx
+  - apps/web/.impeccable/live/config.json
+  - apps/web/.impeccable/design.json
+  - apps/web/src/components/onboarding/OnboardingWelcomeModal.tsx
+  - apps/web/src/pages/account-books/[id]/report.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-populated-category-mobile-dark-chromium-darwin.png
+  - apps/web/src/components/report/ReportApexChart.tsx
+  - docs/superpowers/specs/2026-08-30-calendar-width-and-touch-target-design.md
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/login-tablet-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/transaction-narrow-light-chromium-darwin.png
+  - apps/web/PRODUCT.md
+  - apps/web/public/images/ui/duoji-banner-travel.webp
+  - docs/superpowers/specs/2026-08-29-report-chart-layout-fix-design.md
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/onboarding-tablet-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settings-mobile-dark-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/settings-mobile-light-chromium-darwin.png
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/report-tablet-light-chromium-darwin.png
+  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/components/accountBookSettings/AccountBookForm.tsx
+  - apps/web/src/components/transaction/TransactionHero.tsx
+  - apps/web/tailwind.config.js
+  - apps/web/src/components/onboarding/ProfileStep.tsx
+  - apps/web-e2e/src/ui-visual-regression.spec.ts-snapshots/login-mobile-dark-chromium-darwin.png
+  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
+  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
 tests:
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
-  - apps/web/specs/accountBookStore.spec.ts
-  - apps/web/specs/transactionStore.spec.ts
+  - apps/web-e2e/src/ui-visual-regression.spec.ts
+  - apps/web/specs/onboardingPresentation.spec.tsx
+  - apps/web/specs/routeFamilyVisualContract.spec.ts
+  - apps/web/specs/settlementModals.spec.tsx
+  - apps/web/specs/categoryMemberPresentation.spec.tsx
+  - apps/web/specs/reportChartsPresentation.spec.tsx
   - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/AppButton.spec.tsx
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
+  - apps/web-e2e/src/transaction-modal-mobile.spec.ts
+  - apps/web/specs/categoryTransactionsModalPresentation.spec.tsx
+  - apps/web/specs/transactionSurfacePresentation.spec.tsx
+  - apps/web/specs/transactionCalendarPresentation.spec.tsx
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/bannerAssets.spec.ts
   - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/settlement.spec.ts
-  - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/transaction.spec.ts
+  - apps/web/specs/transactionHero.spec.tsx
   - apps/web/specs/homeTransactions.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/specs/visualPrimitives.spec.tsx
 -->
 
 ---

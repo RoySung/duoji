@@ -2,6 +2,7 @@ import { Button, Input, addToast } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import StepShell from './StepShell'
+import { compactInputClassNames } from '@/components/TransactionModal/formControlStyles'
 import { useUserStore } from '@/stores/user'
 
 type ProfileStepProps = {
@@ -44,6 +45,7 @@ export default function ProfileStep({ onCreated }: ProfileStepProps) {
       primaryAction={
         <Button
           color="primary"
+          className="min-h-11 rounded-xl px-4 text-body font-medium focus-visible:ring-2 focus-visible:ring-ring"
           isDisabled={!isValid}
           isLoading={isLoading}
           onPress={() => void handleSubmit()}
@@ -58,6 +60,11 @@ export default function ProfileStep({ onCreated }: ProfileStepProps) {
           label={t('onboarding.step2.namePlaceholder')}
           value={name}
           onValueChange={setName}
+          classNames={{
+            ...compactInputClassNames,
+            inputWrapper:
+              'min-h-11 rounded-xl border border-border bg-background shadow-none data-[focus=true]:border-primary data-[focus=true]:ring-2 data-[focus=true]:ring-ring/30',
+          }}
         />
         <Input
           isRequired
@@ -65,6 +72,11 @@ export default function ProfileStep({ onCreated }: ProfileStepProps) {
           label={t('onboarding.step2.emailPlaceholder')}
           value={email}
           onValueChange={setEmail}
+          classNames={{
+            ...compactInputClassNames,
+            inputWrapper:
+              'min-h-11 rounded-xl border border-border bg-background shadow-none data-[focus=true]:border-primary data-[focus=true]:ring-2 data-[focus=true]:ring-ring/30',
+          }}
         />
       </div>
     </StepShell>

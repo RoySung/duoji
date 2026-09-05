@@ -26,6 +26,11 @@ import {
   amountInputClassNames,
   amountInputCurrencyClassName,
 } from './amountInputStyles'
+import {
+  compactDatePickerClassNames,
+  compactInputClassNames,
+  compactSelectClassNames,
+} from './formControlStyles'
 import { useAmountInputValue } from './useAmountInputValue'
 import {
   applyIncomeRecipient,
@@ -129,9 +134,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
       categoryId: nextCategoryId,
     }
 
-    onChange(
-      applyIncomeRecipient(updatedValue, nextRecipientId, activeUsers)
-    )
+    onChange(applyIncomeRecipient(updatedValue, nextRecipientId, activeUsers))
     lastBookIdRef.current = nextAccountBookId
   }, [
     accountBooks,
@@ -158,8 +161,8 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
   )
 
   return (
-    <div className="income-form">
-      <Form className="flex flex-col gap-4">
+    <div className="income-form w-full">
+      <Form className="flex w-full flex-col gap-5">
         <Input
           size="lg"
           isRequired
@@ -196,10 +199,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         <DatePicker
           isRequired
           size="sm"
-          classNames={{
-            selectorButton:
-              'w-10 h-10 -mr-2 text-medium flex items-center justify-center',
-          }}
+          classNames={compactDatePickerClassNames}
           label={t('transactionForm.date')}
           granularity="day"
           value={date}
@@ -212,6 +212,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         />
         <Input
           size="sm"
+          classNames={compactInputClassNames}
           label={t('transactionForm.description')}
           value={value.description}
           isClearable
@@ -225,6 +226,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         />
         <Select
           size="sm"
+          classNames={compactSelectClassNames}
           isRequired
           label={t('transactionForm.paymentMethod')}
           selectedKeys={value.paymentMethod ? [value.paymentMethod] : []}
@@ -259,6 +261,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <Select
           size="sm"
+          classNames={compactSelectClassNames}
           label={t('transactionForm.accountBook')}
           items={accountBooks}
           selectedKeys={value.accountBookId ? [value.accountBookId] : []}
@@ -278,6 +281,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
         </Select>
         <Select
           size="sm"
+          classNames={compactSelectClassNames}
           label={t('transactionForm.receivedBy')}
           items={usersForSelector}
           selectedKeys={value.receivedByUserId ? [value.receivedByUserId] : []}

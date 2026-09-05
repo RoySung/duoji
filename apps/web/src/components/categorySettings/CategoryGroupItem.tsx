@@ -9,6 +9,7 @@ import {
   PiTrashDuotone,
 } from 'react-icons/pi'
 import { Category } from '@/entities/category'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import SubCategoryItem from './SubCategoryItem'
 
 type CategoryGroupItemProps = {
@@ -60,58 +61,61 @@ export default function CategoryGroupItem({
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-black/5">
+    <SurfaceCard className="overflow-hidden shadow-none ring-1 ring-inset ring-border">
       {/* Root row */}
-      <div className="flex w-full items-center gap-2 px-3 py-3">
+      <div className="flex w-full min-w-0 items-center gap-1 px-2 py-2 sm:gap-2 sm:px-3">
         {/* Drag handle */}
         <PiDotsSixVerticalBold
-          className="flex-shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-          size={18}
+          aria-hidden="true"
+          className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+          size={16}
           onPointerDown={(e) => rootDragControls?.start(e)}
         />
 
         {/* Expand toggle (left icon + name + sub-count) */}
         <button
           aria-expanded={isExpanded}
-          className="flex flex-1 items-center gap-3 text-left"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-3"
           type="button"
           onClick={() => setIsExpanded((v) => !v)}
         >
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-            <img alt={root.name} className="h-5 w-5" src={root.imageUrl} />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary">
+            <img alt={root.name} className="size-[18px]" src={root.imageUrl} />
           </div>
-          <div className="flex flex-1 flex-col">
-            <span className="font-semibold text-foreground">{root.name}</span>
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-body font-semibold text-foreground">
+              {root.name}
+            </span>
+            <span className="truncate text-label text-muted-foreground">
               {t('categorySettings.subCategoryCount', {
                 count: subCategories.length,
               })}
             </span>
           </div>
           <PiCaretDownBold
-            className={`flex-shrink-0 text-muted-foreground transition-transform ${
+            className={`shrink-0 text-muted-foreground transition-transform ${
               isExpanded ? 'rotate-180' : ''
             }`}
-            size={16}
+            size={14}
           />
         </button>
 
         {/* Root action buttons */}
         <button
-          aria-label={t('common.edit')}
-          className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-foreground"
+          aria-label={`${t('common.edit')}: ${root.name}`}
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           type="button"
           onClick={() => onEditRoot?.(root)}
         >
-          <PiPencilSimpleDuotone size={16} />
+          <PiPencilSimpleDuotone size={14} />
         </button>
         <button
-          aria-label={t('common.delete')}
-          className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-danger"
+          aria-label={`${t('common.delete')}: ${root.name}`}
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           type="button"
           onClick={() => onDeleteRoot?.(root)}
         >
-          <PiTrashDuotone size={16} />
+          <PiTrashDuotone size={14} />
         </button>
       </div>
 
@@ -136,15 +140,15 @@ export default function CategoryGroupItem({
 
           {/* ADD SUB-CATEGORY */}
           <button
-            className="mx-4 my-2 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 py-2 text-sm font-medium text-primary transition hover:bg-primary/5"
+            className="mx-3 my-3 flex min-h-11 w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 px-3 py-2 text-body font-medium text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             type="button"
             onClick={() => onAddSubCategory(root)}
           >
-            <PiPlusCircleDuotone className="text-base" />{' '}
+            <PiPlusCircleDuotone size={14} />{' '}
             {t('categorySettings.addSubTitle')}
           </button>
         </div>
       ) : null}
-    </div>
+    </SurfaceCard>
   )
 }

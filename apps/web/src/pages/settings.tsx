@@ -14,6 +14,12 @@ import { useTheme } from 'next-themes'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { PiMoonBold, PiSunBold } from 'react-icons/pi'
+import { PageScaffold } from '@/components/ui/PageScaffold'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
+import {
+  compactSelectClassNames,
+  confirmModalClassNames,
+} from '@/components/TransactionModal/formControlStyles'
 import { useSettingsStore } from '@/stores/settings'
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n/config'
 import { resetAllData } from '@/lib/dexie'
@@ -64,33 +70,33 @@ export default function Settings() {
       id="settings-page"
       className="h-full overflow-y-auto bg-background text-foreground"
     >
-      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-8 px-4 py-8">
-        <section className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-[0.3em] text-orange-300">
+      <PageScaffold>
+        <header className="space-y-1.5">
+          <p className="text-label font-medium text-emphasis-foreground">
             {t('settings.title')}
           </p>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              {t('settings.heading')}
-            </h1>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              {t('settings.subheading')}
-            </p>
-          </div>
-        </section>
+          <h1 className="text-headline font-semibold text-foreground text-balance">
+            {t('settings.heading')}
+          </h1>
+          <p className="max-w-[65ch] text-body text-muted-foreground text-pretty">
+            {t('settings.subheading')}
+          </p>
+        </header>
 
-        <section className="rounded-3xl border border-border bg-card p-4 shadow-lg shadow-black/5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <SurfaceCard className="overflow-hidden p-0">
+          <section className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="space-y-1">
-              <h2 className="text-base font-semibold text-foreground">
+              <h2 className="text-title font-semibold text-foreground">
                 {t('settings.appearance.title')}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {t('settings.appearance.description')}
               </p>
             </div>
 
             <Switch
+              aria-label={t('settings.appearance.title')}
+              className="min-h-11 shrink-0"
               isDisabled={!hasHydrated}
               isSelected={resolvedTheme === 'dark'}
               size="lg"
@@ -107,16 +113,16 @@ export default function Settings() {
                 ? t('settings.appearance.dark')
                 : t('settings.appearance.light')}
             </Switch>
-          </div>
-        </section>
+          </section>
 
-        <section className="rounded-3xl border border-border bg-card p-4 shadow-lg shadow-black/5">
-          <div className="flex flex-col gap-3">
+          <div aria-hidden="true" className="h-px bg-border" />
+
+          <section className="flex flex-col gap-4 px-5 py-5 sm:px-6">
             <div className="space-y-1">
-              <h2 className="text-base font-semibold text-foreground">
+              <h2 className="text-title font-semibold text-foreground">
                 {t('settings.language.title')}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {t('settings.language.description')}
               </p>
             </div>
@@ -125,27 +131,33 @@ export default function Settings() {
               label={t('settings.language.label')}
               selectedKeys={[language]}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="max-w-xs"
+              className="w-full sm:max-w-xs"
+              classNames={compactSelectClassNames}
             >
               {SUPPORTED_LOCALES.map((locale) => (
-                <SelectItem key={locale}>{t(`settings.language.options.${locale}`)}</SelectItem>
+                <SelectItem key={locale}>
+                  {t(`settings.language.options.${locale}`)}
+                </SelectItem>
               ))}
             </Select>
-            <p className="text-xs text-muted-foreground">{t('settings.language.helper')}</p>
-          </div>
-        </section>
+            <p className="text-label text-muted-foreground">
+              {t('settings.language.helper')}
+            </p>
+          </section>
+        </SurfaceCard>
 
-        <section className="rounded-3xl border border-danger/40 bg-card p-4 shadow-lg shadow-black/5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <SurfaceCard className="bg-danger/5 p-5 shadow-none ring-1 ring-inset ring-danger/25 sm:p-6">
+          <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-              <h2 className="text-base font-semibold text-danger">
+              <h2 className="text-title font-semibold text-danger">
                 {t('settings.reset.title')}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 {t('settings.reset.description')}
               </p>
             </div>
             <Button
+              className="min-h-11 w-full rounded-xl px-4 text-body sm:w-auto"
               color="danger"
               variant="flat"
               onPress={resetModal.onOpen}
@@ -153,26 +165,33 @@ export default function Settings() {
             >
               {t('settings.reset.action')}
             </Button>
-          </div>
-        </section>
-      </div>
+          </section>
+        </SurfaceCard>
+      </PageScaffold>
 
       <Modal
+        classNames={confirmModalClassNames}
         isOpen={resetModal.isOpen}
         onOpenChange={resetModal.onOpenChange}
         placement="center"
+        scrollBehavior="inside"
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader>{t('settings.reset.confirmTitle')}</ModalHeader>
+              <ModalHeader>
+                <h2 className="text-title font-semibold text-foreground">
+                  {t('settings.reset.confirmTitle')}
+                </h2>
+              </ModalHeader>
               <ModalBody>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body text-muted-foreground text-pretty">
                   {t('settings.reset.confirmDescription')}
                 </p>
               </ModalBody>
               <ModalFooter>
                 <Button
+                  className="min-h-11 rounded-xl text-body"
                   variant="light"
                   onPress={onClose}
                   isDisabled={isResetting}
@@ -180,6 +199,7 @@ export default function Settings() {
                   {t('common.cancel')}
                 </Button>
                 <Button
+                  className="min-h-11 rounded-xl text-body"
                   color="danger"
                   onPress={handleReset}
                   isLoading={isResetting}

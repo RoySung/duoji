@@ -28,25 +28,24 @@ export default function AccountBookNavHeader({
   }
 
   return (
-    <header className="flex flex-col gap-4 border-b border-border/70 pb-4 md:flex-row md:items-start md:justify-between">
+    <header className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
         <Button
           aria-label="Go back"
-          className="border border-border bg-background text-foreground hover:bg-muted"
+          className="min-h-11 min-w-11 shrink-0 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
           disableRipple
           isIconOnly
-          radius="full"
           variant="flat"
           onPress={handleBack}
         >
-          <PiArrowLeftBold size={18} />
+          <PiArrowLeftBold size={16} />
         </Button>
-        <div className="min-w-0 space-y-1.5 pt-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+        <div className="min-w-0 space-y-1 pt-1">
+          <h1 className="break-words text-headline font-semibold text-foreground text-balance">
             {title}
           </h1>
           {subtitle ? (
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="max-w-[65ch] text-body text-muted-foreground text-pretty">
               {subtitle}
             </p>
           ) : null}

@@ -23,35 +23,42 @@ export default function SubCategoryItem({
   const t = useTranslations()
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2">
+    <div className="flex min-w-0 items-center gap-1 px-2 py-2 sm:gap-2 sm:px-3">
       {/* Drag handle */}
       <PiDotsSixVerticalBold
-        className="flex-shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        size={16}
+        aria-hidden="true"
+        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+        size={14}
         onPointerDown={(e) => dragControls?.start(e)}
       />
 
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-        <img alt={category.name} className="h-4 w-4" src={category.imageUrl} />
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary">
+        <img
+          alt={category.name}
+          className="size-[14px]"
+          src={category.imageUrl}
+        />
       </div>
-      <span className="flex-1 text-sm text-foreground">{category.name}</span>
+      <span className="min-w-0 flex-1 truncate text-body text-foreground">
+        {category.name}
+      </span>
 
       {/* Action buttons */}
       <button
-        aria-label={t('common.edit')}
-        className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-foreground"
+        aria-label={`${t('common.edit')}: ${category.name}`}
+        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         type="button"
         onClick={onEdit}
       >
-        <PiPencilSimpleDuotone size={16} />
+        <PiPencilSimpleDuotone size={14} />
       </button>
       <button
-        aria-label={t('common.delete')}
-        className="flex-shrink-0 rounded p-1 text-muted-foreground transition hover:text-danger"
+        aria-label={`${t('common.delete')}: ${category.name}`}
+        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         type="button"
         onClick={onDelete}
       >
-        <PiTrashDuotone size={16} />
+        <PiTrashDuotone size={14} />
       </button>
     </div>
   )

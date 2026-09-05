@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { PiCaretRightBold } from 'react-icons/pi'
 import { useAccountBookStore } from '@/stores/accountBook'
+import { PageScaffold } from '@/components/ui/PageScaffold'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import {
   AccountBookFormValues,
   buildAccountBookUpdates,
@@ -38,7 +40,6 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
 
   useEffect(() => {
     setFormValues(toAccountBookFormValues(accountBook))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountBookId])
 
   function toErrorMessage(error: unknown) {
@@ -57,8 +58,12 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
     }
 
     try {
-      const updated = await updateAccountBook(accountBookId, buildAccountBookUpdates(formValues))
-      if (!updated) throw new Error('Unable to update the selected account book.')
+      const updated = await updateAccountBook(
+        accountBookId,
+        buildAccountBookUpdates(formValues)
+      )
+      if (!updated)
+        throw new Error('Unable to update the selected account book.')
       addToast({
         title: t('accountBook.toast.updatedTitle'),
         color: 'success',
@@ -80,14 +85,18 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
       addToast({
         title: t('accountBook.toast.deleteFailTitle'),
         color: 'danger',
-        description: t('accountBook.toast.deleteFailDesc', { name: accountBook.name }),
+        description: t('accountBook.toast.deleteFailDesc', {
+          name: accountBook.name,
+        }),
       })
       return
     }
     addToast({
       title: t('accountBook.toast.deletedTitle'),
       color: 'success',
-      description: t('accountBook.toast.deletedDesc', { name: accountBook.name }),
+      description: t('accountBook.toast.deletedDesc', {
+        name: accountBook.name,
+      }),
     })
     setIsDeleteOpen(false)
     const remaining = accountBooks.filter((ab) => ab.id !== accountBookId)
@@ -101,7 +110,7 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
   return (
     <>
       <div className="h-full overflow-y-auto bg-background text-foreground">
-        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-6 md:px-6">
+        <PageScaffold>
           <AccountBookNavHeader
             title={accountBook?.name ?? t('accountBook.editFallback')}
             subtitle={t('accountBook.editSubtitle')}
@@ -112,7 +121,9 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
             <AccountBookForm
               cancelLabel={t('common.cancel')}
               isSubmitting={isLoading}
-              onCancel={() => void router.push(`/account-books/${accountBookId}`)}
+              onCancel={() =>
+                void router.push(`/account-books/${accountBookId}`)
+              }
               onSubmit={() => void handleSubmit()}
               onValuesChange={setFormValues}
               submitLabel={t('common.save')}
@@ -124,35 +135,44 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
             <UserSection accountBookId={accountBookId} />
           </div>
 
-          <section
-            className="rounded-3xl border border-border bg-card p-5 shadow-lg shadow-black/5"
+          <SurfaceCard
+            className="p-5 sm:p-6"
             data-onboarding-anchor="manage-categories"
           >
             <div className="space-y-1">
-              <h2 className="text-lg font-semibold text-foreground">{t('accountBook.categoriesHeading')}</h2>
+              <h2 className="text-title font-semibold text-foreground">
+                {t('accountBook.categoriesHeading')}
+              </h2>
             </div>
             <Button
-              className="mt-3 h-auto w-full justify-between rounded-2xl bg-accent px-4 py-4 text-left text-foreground hover:bg-accent/80"
+              className="mt-4 min-h-11 h-auto w-full justify-between rounded-xl bg-secondary px-4 py-3 text-left text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
               disableRipple
-              endContent={<PiCaretRightBold className="text-muted-foreground" />}
+              endContent={
+                <PiCaretRightBold className="text-muted-foreground" size={14} />
+              }
               variant="light"
               onPress={() => setIsCategoryModalOpen(true)}
             >
-              <div className="flex flex-1 flex-col items-start gap-1">
-                <span className="text-base font-semibold">{t('accountBook.manageCategories')}</span>
+              <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                <span className="break-words text-body font-semibold">
+                  {t('accountBook.manageCategories')}
+                </span>
               </div>
             </Button>
-          </section>
+          </SurfaceCard>
 
-          <section className="rounded-3xl border border-danger/20 bg-danger/5 p-5 shadow-lg shadow-black/5">
+          <SurfaceCard className="bg-danger/5 p-5 shadow-none ring-1 ring-inset ring-danger/25 sm:p-6">
             <div className="space-y-1">
-              <h2 className="text-lg font-semibold text-danger">{t('accountBook.deleteSection.title')}</h2>
-              <p className="text-sm text-danger-700/80">
+              <h2 className="text-title font-semibold text-danger">
+                {t('accountBook.deleteSection.title')}
+              </h2>
+              <p className="text-body text-muted-foreground text-pretty">
                 {t('accountBook.deleteSection.description')}
               </p>
             </div>
             <div className="mt-4 flex justify-end">
               <Button
+                className="min-h-11 w-full rounded-xl px-4 text-body sm:w-auto"
                 color="danger"
                 disableRipple
                 variant="flat"
@@ -161,8 +181,8 @@ export default function AccountBookEditPage({ accountBookId }: Props) {
                 {t('accountBook.deleteSection.button')}
               </Button>
             </div>
-          </section>
-        </div>
+          </SurfaceCard>
+        </PageScaffold>
       </div>
 
       <CategorySettingsModal

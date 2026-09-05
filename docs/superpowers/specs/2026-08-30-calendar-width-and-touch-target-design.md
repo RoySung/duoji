@@ -51,4 +51,3 @@ Out of scope:
 - Deterministic browser checks compare calendar and history bounding boxes at 390×844 and 768×1024.
 - Existing touch-target assertions use 24×24 as the minimum and continue accepting larger controls.
 - Run the focused transaction tests, the full web test suite, the production build, and relevant Chromium visual regression cases.
-

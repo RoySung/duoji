@@ -13,6 +13,11 @@ import {
 } from '@heroui/react'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import {
+  compactInputClassNames,
+  bottomSheetClassNames,
+} from './formControlStyles'
+import { DetailBalanceNotice } from './DetailBalanceNotice'
 
 type Props = {
   isOpen: boolean
@@ -46,10 +51,7 @@ export default function PaidByDetailModal({
     setCurrentPaidByDetail((list) => {
       if (checked) {
         if (list.some((item) => item.userId === user.id)) return list
-        return [
-          ...list,
-          { userId: user.id, userType: user.type, amount: 0 },
-        ]
+        return [...list, { userId: user.id, userType: user.type, amount: 0 }]
       } else {
         return list.filter((item) => item.userId !== user.id)
       }
@@ -71,10 +73,7 @@ export default function PaidByDetailModal({
           item.userId === user.id ? { ...item, amount } : item
         )
       } else {
-        return [
-          ...prev,
-          { userId: user.id, userType: user.type, amount },
-        ]
+        return [...prev, { userId: user.id, userType: user.type, amount }]
       }
     })
   }
@@ -100,17 +99,7 @@ export default function PaidByDetailModal({
     setIsOpen(false)
   }
 
-  const NoticeInFooter = () => {
-    const diff = currentTotalAmount - amount
-    if (diff === 0) return <div className="h-8" />
-    return (
-      <div className="text-right h-8">
-        <span className={diff > 0 ? 'text-green-500' : 'text-red-500'}>
-          {diff > 0 ? `+${diff}` : diff}
-        </span>
-      </div>
-    )
-  }
+  const difference = currentTotalAmount - amount
 
   return (
     <Modal
@@ -118,57 +107,71 @@ export default function PaidByDetailModal({
       onOpenChange={setIsOpen}
       placement="bottom"
       scrollBehavior="inside"
+      classNames={bottomSheetClassNames}
     >
       <ModalContent>
         <ModalHeader>
-          <div className="flex flex-col gap-2 items-center w-full">
-            <h2>{t('transactionForm.paidByDetailTitle')}</h2>
+          <div className="flex w-full flex-col items-center gap-2">
+            <h2 className="text-title font-semibold text-foreground">
+              {t('transactionForm.paidByDetailTitle')}
+            </h2>
           </div>
         </ModalHeader>
         <ModalBody>
-          <div className="user-option-list flex gap-2 flex-col">
+          <div className="user-option-list flex flex-col gap-3">
             {users.map((user) => {
               const selected = checkIsUserSelected(user)
-              const isDeleted = user.type === 'virtual' && !!(user as VirtualUser).deletedAt
+              const isDeleted =
+                user.type === 'virtual' &&
+                Boolean((user as VirtualUser).deletedAt)
               const isCheckboxDisabled = isDeleted && !selected
               return (
                 <div
                   key={user.id}
-                  className={`user-option-list__item flex items-center gap-2 ${
-                    !selected ? 'opacity-50' : ''
+                  className={`user-option-list__item grid grid-cols-1 items-center gap-3 rounded-xl bg-muted/60 p-3 min-[360px]:grid-cols-[minmax(0,1fr)_minmax(7.5rem,0.9fr)] ${
+                    !selected ? 'opacity-60' : ''
                   }`}
                 >
                   <Checkbox
                     id={`user-${user.id}`}
-                    className="flex-1"
+                    className="min-w-0"
                     isSelected={selected}
                     isDisabled={isCheckboxDisabled}
                     onChange={(e) =>
                       handleUserCheckboxChange(user, e.target.checked)
                     }
                   >
-                    <div className="flex gap-2 items-center">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Avatar
                         src={user.avatarUrl}
                         name={user.name}
                         size="sm"
-                        className="w-5 h-5 text-tiny"
+                        className="h-6 w-6 shrink-0 text-tiny"
                       />
-                      <div className={`w-24 truncate${isDeleted ? ' line-through' : ''}`}>{user.name}</div>
+                      <div
+                        className={`min-w-0 flex-1 truncate text-body text-foreground${
+                          isDeleted ? ' line-through' : ''
+                        }`}
+                      >
+                        {user.name}
+                      </div>
                     </div>
                   </Checkbox>
                   <Input
                     size="sm"
+                    classNames={compactInputClassNames}
                     label={t('transactionForm.amount')}
                     type="number"
                     inputMode="decimal"
                     isClearable
                     onClear={() => updateAmountByUser(user, 0)}
                     placeholder="0"
-                    className="flex-1"
+                    className="min-w-0"
                     startContent={
                       <div className="pointer-events-none flex items-center">
-                        <span className="text-default-400 text-small">$</span>
+                        <span className="text-body text-muted-foreground">
+                          $
+                        </span>
                       </div>
                     }
                     value={getAmountByUser(user)}
@@ -184,11 +187,17 @@ export default function PaidByDetailModal({
           </div>
         </ModalBody>
         <ModalFooter>
-          <div>
-            <NoticeInFooter />
-            <div className="flex gap-2">
-              <Button onPress={handleCancel}>{t('common.cancel')}</Button>
+          <div className="w-full">
+            <DetailBalanceNotice difference={difference} />
+            <div className="flex justify-end gap-2">
               <Button
+                className="min-h-11 rounded-xl text-body"
+                onPress={handleCancel}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                className="min-h-11 rounded-xl text-body"
                 color="primary"
                 onPress={handleSave}
                 isDisabled={isSaveDisabled}

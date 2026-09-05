@@ -17,17 +17,24 @@ export default function ReportEmptyState({
   return (
     <div
       className={cn(
-        'rounded-3xl border border-dashed border-border bg-background px-5 py-12 text-center',
+        'rounded-2xl bg-secondary/70 px-5 py-10 text-center',
         className
       )}
     >
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary-300">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
         {icon}
       </div>
       {title ? (
-        <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
+        <h3 className="mt-4 text-title font-semibold leading-snug text-foreground text-balance">
+          {title}
+        </h3>
       ) : null}
-      <p className={cn('text-sm text-muted-foreground', title ? 'mt-2' : 'mt-4')}>
+      <p
+        className={cn(
+          'mx-auto max-w-[65ch] text-body text-muted-foreground text-pretty',
+          title ? 'mt-2' : 'mt-4'
+        )}
+      >
         {description}
       </p>
     </div>

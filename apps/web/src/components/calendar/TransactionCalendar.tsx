@@ -117,8 +117,8 @@ export default function TransactionCalendar({
   }
 
   return (
-    <div>
-      <div className="flex justify-end">
+    <div className="w-full" data-testid="transaction-calendar">
+      <div className="mb-1 flex justify-end">
         <button
           type="button"
           aria-label={
@@ -131,13 +131,17 @@ export default function TransactionCalendar({
               ? t('calendar.toggleDisplay.showAmountsTitle')
               : t('calendar.toggleDisplay.showDotsTitle')
           }
-          className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+          className="flex size-6 p-1 items-center justify-center rounded-full bg-secondary text-secondary-foreground outline-none transition-colors hover:bg-accent/25 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           onClick={toggleDisplayMode}
         >
           {displayMode === 'dot' ? (
-            <PiCurrencyDollarBold size={14} />
+            <PiCurrencyDollarBold aria-hidden="true" size={24} />
           ) : (
-            <PiCircleFill size={10} />
+            <PiCircleFill
+              aria-hidden="true"
+              className="text-emphasis"
+              size={24}
+            />
           )}
         </button>
       </div>
@@ -149,6 +153,7 @@ export default function TransactionCalendar({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
           >
             <WeekStrip
               selectedDate={selectedDate}
@@ -166,6 +171,7 @@ export default function TransactionCalendar({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
           >
             <MonthGrid
               currency={currency}
@@ -180,7 +186,7 @@ export default function TransactionCalendar({
         )}
       </AnimatePresence>
 
-      <div className="flex justify-center pt-1">
+      <div className="flex justify-center pt-2">
         <button
           type="button"
           aria-label={
@@ -188,13 +194,14 @@ export default function TransactionCalendar({
               ? t('calendar.toggleView.expandAria')
               : t('calendar.toggleView.collapseAria')
           }
-          className="flex h-8 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+          aria-expanded={viewMode === 'month'}
+          className="flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground outline-none transition-colors hover:bg-accent/25 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           onClick={toggleViewMode}
         >
           {viewMode === 'week' ? (
-            <PiCaretDownBold size={12} />
+            <PiCaretDownBold aria-hidden="true" size={12} />
           ) : (
-            <PiCaretUpBold size={12} />
+            <PiCaretUpBold aria-hidden="true" size={12} />
           )}
         </button>
       </div>

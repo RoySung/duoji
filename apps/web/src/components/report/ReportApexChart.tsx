@@ -13,22 +13,39 @@ type ReportApexChartProps = {
   width?: number | string
 }
 
-/**
- * Resolve `hsl(var(--some-var))` strings to actual computed color values so
- * ApexCharts (which doesn't natively parse CSS variables) gets real colors.
- * Falls back to the original string on SSR or if the variable is not found.
+/** ApexCharts does not consistently resolve CSS variables, including nested
+ * axis, grid, and legend colors. Convert semantic token references without
+ * mutating the caller's options so a theme change can rebuild the chart.
  */
-function resolveColors(colors: string[] | undefined): string[] | undefined {
-  if (!colors || typeof document === 'undefined') return colors
+function resolveSemanticColor(value: string): string {
+  if (typeof document === 'undefined') return value
+
   const style = getComputedStyle(document.documentElement)
-  return colors.map((color) => {
-    const match = color.match(/^hsl\(var\((--[\w-]+)\)\)$/)
-    if (match) {
-      const value = style.getPropertyValue(match[1]).trim()
-      return value ? `hsl(${value})` : color
-    }
-    return color
-  })
+  const match = value.match(/^hsl\(var\((--[\w-]+)\)(?:\s*\/\s*([^)]+))?\)$/)
+  if (!match) return value
+
+  const tokenValue = style.getPropertyValue(match[1]).trim()
+  if (!tokenValue) return value
+
+  return `hsl(${tokenValue}${match[2] ? ` / ${match[2].trim()}` : ''})`
+}
+
+function resolveSemanticColors<T>(value: T): T {
+  if (typeof value === 'string') {
+    return resolveSemanticColor(value) as T
+  }
+  if (Array.isArray(value)) {
+    return value.map(resolveSemanticColors) as T
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        resolveSemanticColors(nestedValue),
+      ])
+    ) as T
+  }
+  return value
 }
 
 export default function ReportApexChart({
@@ -42,32 +59,37 @@ export default function ReportApexChart({
 
   const themedOptions = useMemo<ApexOptions>(() => {
     const mode: 'light' | 'dark' = resolvedTheme === 'dark' ? 'dark' : 'light'
-    return {
+    return resolveSemanticColors({
       ...options,
-      // Resolve CSS-variable color strings so ApexCharts receives real values.
-      // This runs whenever the theme changes, so dark/light colors update correctly.
-      colors: resolveColors(options.colors),
       theme: { ...(options.theme ?? {}), mode },
       chart: {
         ...(options.chart ?? {}),
         background: 'transparent',
-        foreColor: 'hsl(var(--foreground))',
+        foreColor: 'hsl(var(--muted-foreground))',
         toolbar: { show: false, ...(options.chart?.toolbar ?? {}) },
       },
       tooltip: {
         ...(options.tooltip ?? {}),
         theme: mode,
       },
-    }
+    })
   }, [options, resolvedTheme])
 
+  const mode = resolvedTheme === 'dark' ? 'dark' : 'light'
+
   return (
-    <Chart
-      options={themedOptions}
-      series={series}
-      type={type}
-      height={height}
-      width={width}
-    />
+    <div
+      className="h-full min-w-0 overflow-hidden"
+      data-report-chart=""
+      data-chart-theme={mode}
+    >
+      <Chart
+        options={themedOptions}
+        series={series}
+        type={type}
+        height={height}
+        width={width}
+      />
+    </div>
   )
 }

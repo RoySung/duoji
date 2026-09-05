@@ -4,7 +4,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Button,
   Tabs,
   Tab,
   addToast,
@@ -33,6 +32,12 @@ import {
   changeTransactionDraftType,
   createTransactionDraft,
 } from '@/utils/transactionUtils'
+import {
+  confirmModalClassNames,
+  transactionModalClassNames,
+  transactionTabsClassNames,
+} from './formControlStyles'
+import { AppButton } from '@/components/ui/AppButton'
 
 type Props = {
   isOpen: boolean
@@ -397,7 +402,9 @@ export default function TransactionModal({
         title: t('transactionModal.toast.deleteFailTitle'),
         color: 'danger',
         description:
-          error instanceof Error ? error.message : t('transactionModal.toast.unknownError'),
+          error instanceof Error
+            ? error.message
+            : t('transactionModal.toast.unknownError'),
       })
     }
   }
@@ -413,29 +420,27 @@ export default function TransactionModal({
         isDismissable={!isOnboardingActive}
         isKeyboardDismissDisabled={isOnboardingActive}
         hideCloseButton={isOnboardingActive}
-        classNames={{
-          base: 'mx-0 mt-auto mb-0 w-full max-w-none rounded-t-[28px] sm:mx-4 sm:my-16 sm:max-w-[calc(100%-2rem)]',
-          wrapper: 'items-end sm:items-center',
-        }}
+        classNames={transactionModalClassNames}
       >
         <ModalContent
           style={modalViewportStyle}
-          className="flex min-h-0 max-h-[calc(100vh-env(safe-area-inset-top))] flex-col overflow-hidden overscroll-contain sm:max-h-[calc(100vh-4rem)] pb-[calc(100vh-100dvh+env(safe-area-inset-bottom)+var(--transaction-modal-keyboard-inset))] sm:pb-0"
+          className="flex min-h-0 max-h-[calc(100vh-env(safe-area-inset-top))] flex-col overflow-hidden overscroll-contain bg-card pb-[calc(100vh-100dvh+env(safe-area-inset-bottom)+var(--transaction-modal-keyboard-inset))] text-card-foreground sm:max-h-[calc(100vh-4rem)] sm:pb-0"
         >
-          <ModalHeader className="shrink-0">
-            <div className="flex flex-col gap-2 items-center w-full">
-              <h2>
+          <ModalHeader className="shrink-0 border-b border-border px-5 py-4 sm:px-6">
+            <div className="flex w-full flex-col items-center gap-3">
+              <h2 className="text-title font-semibold text-foreground">
                 {modalMode === 'edit'
                   ? t('transactionModal.titleEdit')
                   : modalMode === 'view'
-                    ? t('transactionModal.titleView')
-                    : t('transactionModal.titleCreate')}
+                  ? t('transactionModal.titleView')
+                  : t('transactionModal.titleCreate')}
               </h2>
               <Tabs
                 fullWidth
                 aria-label={t('transactionModal.typeAriaLabel')}
                 selectedKey={draft.type}
                 size="md"
+                classNames={transactionTabsClassNames}
                 onSelectionChange={(key) => {
                   setDraft((currentDraft) =>
                     changeTransactionDraftType(
@@ -448,13 +453,16 @@ export default function TransactionModal({
                   )
                 }}
               >
-                <Tab key="expense" title={t('transactionModal.tabExpense')}></Tab>
+                <Tab
+                  key="expense"
+                  title={t('transactionModal.tabExpense')}
+                ></Tab>
                 <Tab key="income" title={t('transactionModal.tabIncome')}></Tab>
               </Tabs>
             </div>
           </ModalHeader>
           <ModalBody
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain touch-pan-y pb-4 [-webkit-overflow-scrolling:touch]"
+            className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-5 py-5 [-webkit-overflow-scrolling:touch] sm:px-6"
             onFocusCapture={handleModalBodyFocusCapture}
           >
             <div className="flex flex-col gap-4">
@@ -464,44 +472,71 @@ export default function TransactionModal({
                 isEditMode={isEditMode}
               />
               {modalMode === 'edit' ? (
-                <div className="rounded-large border border-danger-200 bg-danger-50 px-4 py-3">
+                <div className="rounded-xl bg-danger-50 px-4 py-4 ring-1 ring-danger-200 dark:bg-danger-50/10 dark:ring-danger-400/30">
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-sm font-semibold text-danger">
+                      <h3 className="text-body font-semibold text-danger">
                         {t('transactionModal.delete.heading')}
                       </h3>
-                      <p className="text-sm text-danger-700">
+                      <p className="text-body text-danger-700 dark:text-danger-300">
                         {t('transactionModal.delete.warning')}
                       </p>
                     </div>
                     <div className="flex justify-end">
-                      <Button
-                        color="danger"
+                      <AppButton
+                        className="min-h-11 rounded-xl text-body"
+                        tone="danger"
                         isDisabled={isDeleteDisabled}
                         onPress={() => setIsDeleteConfirmOpen(true)}
                       >
                         {t('common.delete')}
-                      </Button>
+                      </AppButton>
                     </div>
                   </div>
                 </div>
               ) : null}
             </div>
           </ModalBody>
-          <ModalFooter className="shrink-0">
+          <ModalFooter
+            className={`shrink-0 border-t border-border bg-card px-5 py-4 sm:px-6 ${
+              modalMode === 'view'
+                ? 'flex justify-end'
+                : 'grid grid-cols-2 gap-3'
+            }`}
+          >
             {modalMode === 'view' ? (
-              <Button onPress={handleClose}>{t('common.close')}</Button>
+              <AppButton
+                className="min-h-11 rounded-xl px-5 text-body"
+                appearance="flat"
+                tone="neutral"
+                onPress={handleClose}
+              >
+                {t('common.close')}
+              </AppButton>
             ) : (
               <>
-                <Button onPress={handleClose}>{t('common.cancel')}</Button>
-                <span data-onboarding-anchor="transaction-form-submit">
-                  <Button
-                    color="primary"
+                <AppButton
+                  className="min-h-11 w-full rounded-xl text-body"
+                  appearance="flat"
+                  tone="neutral"
+                  onPress={handleClose}
+                >
+                  {t('common.cancel')}
+                </AppButton>
+                <span
+                  className="block w-full"
+                  data-onboarding-anchor="transaction-form-submit"
+                >
+                  <AppButton
+                    className="min-h-11 w-full rounded-xl text-body"
+                    tone="primary"
                     isDisabled={isSaveDisabled}
                     onPress={handleSave}
                   >
-                    {modalMode === 'edit' ? t('common.save') : t('common.create')}
-                  </Button>
+                    {modalMode === 'edit'
+                      ? t('common.save')
+                      : t('common.create')}
+                  </AppButton>
                 </span>
               </>
             )}
@@ -512,29 +547,36 @@ export default function TransactionModal({
       <Modal
         isOpen={isDeleteConfirmOpen}
         onOpenChange={(open) => setIsDeleteConfirmOpen(open)}
+        classNames={confirmModalClassNames}
       >
         <ModalContent>
           <ModalHeader>
-            <h3>{t('transactionModal.delete.confirmTitle')}</h3>
+            <h3 className="text-title font-semibold text-foreground">
+              {t('transactionModal.delete.confirmTitle')}
+            </h3>
           </ModalHeader>
           <ModalBody>
             <p>{t('transactionModal.delete.confirmBody1')}</p>
             <p>{t('transactionModal.delete.confirmBody2')}</p>
           </ModalBody>
           <ModalFooter>
-            <Button
+            <AppButton
+              className="min-h-11 rounded-xl text-body"
+              appearance="flat"
+              tone="neutral"
               isDisabled={isSubmitting}
               onPress={() => setIsDeleteConfirmOpen(false)}
             >
               {t('transactionModal.delete.keep')}
-            </Button>
-            <Button
-              color="danger"
+            </AppButton>
+            <AppButton
+              className="min-h-11 rounded-xl text-body"
+              tone="danger"
               isDisabled={isDeleteDisabled}
               onPress={handleDelete}
             >
               {t('transactionModal.delete.confirm')}
-            </Button>
+            </AppButton>
           </ModalFooter>
         </ModalContent>
       </Modal>

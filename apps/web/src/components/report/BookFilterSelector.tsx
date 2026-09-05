@@ -51,35 +51,55 @@ export default function BookFilterSelector({
       <Button
         variant="flat"
         size="sm"
-        startContent={<PiFunnelBold size={14} />}
+        startContent={<PiFunnelBold size={12} />}
         endContent={
           excludedCount > 0 ? (
-            <Chip size="sm" color="warning" variant="flat" className="h-5 px-2">
+            <Chip
+              size="sm"
+              color="warning"
+              variant="flat"
+              className="h-5 bg-emphasis/15 px-2 text-label text-emphasis-foreground"
+            >
               {excludedCount}
             </Chip>
           ) : null
         }
-        className="bg-accent/60 text-foreground"
+        className="min-h-11 rounded-xl bg-secondary px-3 text-body text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
         onPress={() => setIsOpen(true)}
       >
         {t('report.bookFilter.trigger')}
       </Button>
 
-      <Drawer isOpen={isOpen} onOpenChange={setIsOpen} placement="right" size="sm">
-        <DrawerContent>
-          <DrawerHeader className="flex flex-col gap-1">
-            <span>{t('report.bookFilter.title')}</span>
-            <span className="text-xs font-normal text-muted-foreground">
+      <Drawer
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        placement="right"
+        size="sm"
+      >
+        <DrawerContent className="bg-card text-card-foreground">
+          <DrawerHeader className="flex flex-col gap-1 text-title font-semibold">
+            <span className="text-balance">{t('report.bookFilter.title')}</span>
+            <span className="max-w-[65ch] text-body font-normal text-muted-foreground text-pretty">
               {t('report.bookFilter.description')}
             </span>
           </DrawerHeader>
 
-          <DrawerBody className="gap-2 px-3 pb-4">
-            <div className="flex gap-2 px-1 pb-2">
-              <Button size="sm" variant="bordered" onPress={includeAll}>
+          <DrawerBody className="gap-2 px-3 pb-4 sm:px-4">
+            <div className="flex flex-wrap gap-2 pb-2">
+              <Button
+                size="sm"
+                variant="bordered"
+                onPress={includeAll}
+                className="min-h-11 rounded-xl border-border text-body text-foreground"
+              >
                 {t('report.bookFilter.includeAll')}
               </Button>
-              <Button size="sm" variant="bordered" onPress={excludeAll}>
+              <Button
+                size="sm"
+                variant="bordered"
+                onPress={excludeAll}
+                className="min-h-11 rounded-xl border-border text-body text-foreground"
+              >
                 {t('report.bookFilter.excludeAll')}
               </Button>
             </div>
@@ -88,23 +108,23 @@ export default function BookFilterSelector({
               return (
                 <label
                   key={ab.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-colors ${
+                  className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-colors ${
                     isIncluded
-                      ? 'border-primary/30 bg-primary/5'
-                      : 'border-border bg-card/80 hover:bg-muted/35'
+                      ? 'border-primary/40 bg-primary/10'
+                      : 'border-border bg-background hover:bg-muted'
                   }`}
                 >
                   <Checkbox
                     isSelected={isIncluded}
                     onValueChange={() => toggle(ab.id)}
                   />
-                  <span className="flex-1 truncate text-sm font-semibold text-foreground">
+                  <span className="flex-1 truncate text-body font-semibold text-foreground">
                     {ab.name}
                   </span>
                   <Chip
                     size="sm"
                     variant="flat"
-                    className="shrink-0 bg-muted text-muted-foreground"
+                    className="shrink-0 bg-secondary text-label text-secondary-foreground"
                   >
                     {ab.currency}
                   </Chip>
@@ -114,7 +134,11 @@ export default function BookFilterSelector({
           </DrawerBody>
 
           <DrawerFooter>
-            <Button color="primary" onPress={() => setIsOpen(false)}>
+            <Button
+              color="primary"
+              onPress={() => setIsOpen(false)}
+              className="min-h-11 rounded-xl text-body"
+            >
               {t('report.tagFilter.done')}
             </Button>
           </DrawerFooter>

@@ -31,17 +31,17 @@ export default function WeekStrip({
   const days = getWeekDays(currentWeekDate)
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 sm:gap-1">
       <button
         type="button"
         aria-label="Previous week"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-accent/25 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         onClick={() => onChangeWeek(currentWeekDate.subtract(7, 'day'))}
       >
-        <PiCaretLeftBold size={14} />
+        <PiCaretLeftBold aria-hidden="true" size={14} />
       </button>
 
-      <div className="grid flex-1 grid-cols-7 gap-1">
+      <div className="grid min-w-0 flex-1 grid-cols-7 gap-0.5 sm:gap-1">
         {days.map((day, i) => {
           const dateStr = formatCalendarDate(day)
           const isSelected = selectedDate === dateStr
@@ -53,31 +53,34 @@ export default function WeekStrip({
             <button
               key={dateStr}
               type="button"
-              className="flex flex-col items-center gap-1 rounded-xl py-2 hover:bg-accent"
+              aria-pressed={isSelected}
+              className="flex min-h-[76px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 outline-none transition-colors hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
               onClick={() => onSelectDate(isSelected ? null : dateStr)}
             >
-              <span className="text-xs text-muted-foreground">
+              <span className="text-label font-medium text-muted-foreground">
                 {DAY_LABELS[i]}
               </span>
               <span
-                className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
+                className={`flex size-9 items-center justify-center rounded-full text-body font-semibold transition-colors max-[359px]:size-7 ${
                   isSelected
-                    ? 'bg-primary text-primary-foreground'
+                    ? '!bg-emphasis !text-emphasis-contrast'
                     : today
-                    ? 'ring-2 ring-primary/50'
+                    ? 'ring-2 ring-primary/60 ring-offset-2 ring-offset-card'
                     : ''
                 }`}
               >
                 {day.date()}
               </span>
-              <span className="flex h-3 items-center justify-center text-[10px] font-medium leading-3 text-primary">
-                {displayMode === 'amount'
-                  ? hasTransaction
-                    ? `$${formatCompactAmount(summary.totalAmount)}`
-                    : ''
-                  : hasTransaction && (
-                      <span className="size-1 rounded-full bg-primary" />
-                    )}
+              <span className="flex h-3 max-w-full items-center justify-center truncate text-label font-semibold leading-3 text-emphasis-foreground">
+                {displayMode === 'amount' ? (
+                  hasTransaction ? (
+                    `$${formatCompactAmount(summary.totalAmount)}`
+                  ) : (
+                    ''
+                  )
+                ) : hasTransaction ? (
+                  <span className="size-1.5 rounded-full bg-emphasis" />
+                ) : null}
               </span>
             </button>
           )
@@ -100,10 +103,10 @@ export default function WeekStrip({
       <button
         type="button"
         aria-label="Next week"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-accent/25 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         onClick={() => onChangeWeek(currentWeekDate.add(7, 'day'))}
       >
-        <PiCaretRightBold size={14} />
+        <PiCaretRightBold aria-hidden="true" size={14} />
       </button>
     </div>
   )

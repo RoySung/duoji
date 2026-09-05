@@ -837,6 +837,17 @@ function resolveMockRouterTarget(
       }
     }
 
+    const reportMatch = pathWithoutQuery.match(
+      /^\/account-books\/([^/]+)\/report$/
+    )
+
+    if (reportMatch) {
+      return {
+        pathname: '/account-books/[id]/report',
+        query: { id: reportMatch[1]!, ...nextQuery },
+      }
+    }
+
     const settlementMatch = pathWithoutQuery.match(
       /^\/account-books\/([^/]+)\/settlement$/
     )
@@ -1190,10 +1201,7 @@ async function renderWithProviders(options: RenderOptions = {}) {
 }
 
 function deselectCalendarDay() {
-  const selectedSpan = document.body.querySelector(
-    'button span.bg-primary.text-primary-foreground'
-  )
-  const button = selectedSpan?.closest('button')
+  const button = document.body.querySelector('button[aria-pressed="true"]')
   if (!button) {
     throw new Error('No selected calendar day button found')
   }
@@ -1228,6 +1236,78 @@ describe('Home transaction history', () => {
     jest.useRealTimers()
   })
 
+  it('renders a centered five-item navigation with touch targets and route state', async () => {
+    const { router } = await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+    })
+
+    const navigation = screen.getByTestId('bottom-navigation')
+    const surface = screen.getByTestId('bottom-navigation-surface')
+    const home = screen.getByRole('button', { name: 'Home' })
+    const settlement = screen.getByRole('button', { name: 'Settlement' })
+    const create = screen.getByRole('button', { name: 'New Transaction' })
+    const reports = screen.getByRole('button', { name: 'Reports' })
+    const settings = screen.getByRole('button', { name: 'Settings' })
+
+    expect(navigation.classList.contains('sm:px-6')).toBe(true)
+    expect(surface.classList.contains('max-w-3xl')).toBe(true)
+    expect(surface.classList.contains('grid-cols-5')).toBe(true)
+    expect(home.getAttribute('aria-current')).toBe('page')
+    expect([home, settlement, create, reports, settings]).toHaveLength(5)
+    expect(home.classList.contains('min-h-11')).toBe(true)
+    expect(settlement.classList.contains('min-w-11')).toBe(true)
+    expect(create.classList.contains('h-14')).toBe(true)
+    expect(home.querySelector('span')?.classList.contains('text-[20px]')).toBe(
+      true
+    )
+    expect(create.querySelector('svg')?.getAttribute('width')).toBe('24')
+
+    fireEvent.click(reports)
+
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith('/account-books/book-1/report')
+      expect(
+        screen
+          .getByRole('button', { name: 'Reports' })
+          .getAttribute('aria-current')
+      ).toBe('page')
+    })
+  })
+
+  it('keeps the calendar in flow while raising it across the hero edge', async () => {
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+    })
+
+    const group = screen.getByTestId('transaction-hero-calendar-group')
+    const hero = screen.getByTestId('transaction-hero')
+    const calendar = screen.getByTestId('transaction-calendar-surface')
+
+    expect(group.classList.contains('flex-col')).toBe(true)
+    expect(Array.from(group.children)).toEqual([hero, calendar])
+    expect(hero.classList.contains('h-[200px]')).toBe(true)
+    expect(hero.classList.contains('sm:h-[220px]')).toBe(true)
+    expect(hero.classList.contains('h-[220px]')).toBe(false)
+    expect(hero.classList.contains('h-[clamp(220px,39vw,300px)]')).toBe(false)
+    expect(calendar.classList.contains('relative')).toBe(true)
+    expect(calendar.classList.contains('z-20')).toBe(true)
+    expect(calendar.classList.contains('w-full')).toBe(true)
+    expect(calendar.classList.contains('mx-2')).toBe(false)
+    expect(calendar.classList.contains('sm:mx-4')).toBe(false)
+    expect(calendar.classList.contains('-mt-7')).toBe(true)
+    expect(calendar.classList.contains('min-[360px]:-mt-11')).toBe(true)
+
+    await waitFor(() => {
+      const transactionContent =
+        screen.queryByTestId('transaction-list') ??
+        screen.queryByTestId('transaction-history-empty')
+      expect(transactionContent).toBeTruthy()
+      expect(transactionContent?.classList.contains('mt-6')).toBe(false)
+    })
+  })
+
   it('renders routed account-book transactions in a flat list with summary metadata', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
@@ -1254,10 +1334,14 @@ describe('Home transaction history', () => {
       )
     ).toBeTruthy()
     expect(
-      screen.getByTestId('transaction-row-tx-1').querySelector('[data-name="Roy"]')
+      screen
+        .getByTestId('transaction-row-tx-1')
+        .querySelector('[data-name="Roy"]')
     ).toBeTruthy()
     expect(
-      screen.getByTestId('transaction-row-tx-2').querySelector('[data-name="Patty"]')
+      screen
+        .getByTestId('transaction-row-tx-2')
+        .querySelector('[data-name="Patty"]')
     ).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-2')).queryByText(
@@ -1324,7 +1408,9 @@ describe('Home transaction history', () => {
         .length
     ).toBeGreaterThan(0)
     expect(
-      screen.getByTestId('transaction-row-tx-3').querySelector('[data-name="Roy"]')
+      screen
+        .getByTestId('transaction-row-tx-3')
+        .querySelector('[data-name="Roy"]')
     ).toBeTruthy()
     expect(screen.queryByText('Breakfast with friends')).toBeNull()
   })
@@ -1715,7 +1801,9 @@ describe('Home transaction history', () => {
     )
 
     expect(
-      screen.getByTestId('transaction-row-tx-3').querySelector('[data-name="Patty"]')
+      screen
+        .getByTestId('transaction-row-tx-3')
+        .querySelector('[data-name="Patty"]')
     ).toBeTruthy()
   })
 

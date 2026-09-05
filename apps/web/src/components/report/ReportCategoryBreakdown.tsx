@@ -8,6 +8,7 @@ import {
   PiReceiptBold,
 } from 'react-icons/pi'
 import type { ApexOptions } from 'apexcharts'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import { formatAmount } from '@/utils/amountUtils'
 import CategoryTransactionsModal from './CategoryTransactionsModal'
 import ReportApexChart from './ReportApexChart'
@@ -71,6 +72,7 @@ function buildDonutOptions(
             total: {
               show: true,
               label: totalLabel,
+              fontSize: '12px',
               formatter: (w) => {
                 const total = w.globals.seriesTotals.reduce(
                   (sum: number, value: number) => sum + value,
@@ -108,60 +110,68 @@ function BreakdownList({
 }) {
   const t = useTranslations()
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-2.5">
       {summaries.map((summary) => {
         const isExcluded = excludedKeys.has(summary.key)
         const dotColor = colorMap.get(summary.key) ?? CHART_COLORS[0]
         return (
-          <li key={summary.key} className="group flex items-center gap-1.5">
+          <li
+            key={summary.key}
+            className="group grid min-w-0 grid-cols-[minmax(0,1fr)_2.75rem] items-stretch gap-2"
+          >
             <button
               type="button"
               onClick={() => onToggle(summary.key)}
               aria-pressed={!isExcluded}
-              title={isExcluded ? t('report.breakdown.clickToInclude') : t('report.breakdown.clickToExclude')}
-              className={`relative flex flex-1 items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+              title={
                 isExcluded
-                  ? 'border-border bg-card/50 opacity-40'
-                  : 'border-border bg-background hover:border-primary-200 hover:bg-accent/50'
+                  ? t('report.breakdown.clickToInclude')
+                  : t('report.breakdown.clickToExclude')
+              }
+              className={`relative grid min-h-14 min-w-0 grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-2xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card min-[440px]:grid-cols-[auto_auto_minmax(0,1fr)_auto] ${
+                isExcluded
+                  ? 'border-border bg-card/60 opacity-60'
+                  : 'border-border bg-card hover:border-primary/45 hover:bg-accent/10'
               }`}
             >
               {/* Color dot — flips to eye-slash icon on hover to signal it's a toggle */}
               <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
                 <span
                   aria-hidden
-                  className={`absolute h-2.5 w-2.5 rounded-full transition-opacity duration-150 ${
+                  className={`absolute h-2.5 w-2.5 rounded-full transition-opacity ${
                     isExcluded
-                      ? 'opacity-100'
+                      ? 'opacity-0'
                       : 'opacity-100 group-hover:opacity-0'
                   }`}
                   style={{ backgroundColor: dotColor }}
                 />
                 <span
                   aria-hidden
-                  className={`absolute text-muted-foreground transition-opacity duration-150 ${
+                  className={`absolute text-muted-foreground transition-opacity ${
                     isExcluded
-                      ? 'opacity-0'
+                      ? 'opacity-100'
                       : 'opacity-0 group-hover:opacity-100'
                   }`}
                 >
-                  {isExcluded ? <PiEye size={14} /> : <PiEyeSlash size={14} />}
+                  {isExcluded ? <PiEye size={12} /> : <PiEyeSlash size={12} />}
                 </span>
               </span>
 
               {summary.imageUrl ? (
                 <Avatar
                   className="h-8 w-8 bg-content2"
+                  classNames={{ img: 'p-1' }}
                   name={summary.displayName}
                   src={summary.imageUrl}
                 />
               ) : (
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">
-                  <PiChartPieFill size={14} />
+                  <PiChartPieFill size={12} />
                 </div>
               )}
-              <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex min-w-0 flex-col">
                 <span
-                  className={`truncate text-sm font-medium transition-colors ${
+                  className={`truncate text-body font-medium transition-colors ${
                     isExcluded
                       ? 'text-muted-foreground line-through'
                       : 'text-foreground'
@@ -169,12 +179,14 @@ function BreakdownList({
                 >
                   {summary.displayName}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {t('report.categoryModal.recordsCount', { count: summary.transactionCount })} ·{' '}
-                  {summary.percentage.toFixed(1)}%
+                <span className="text-label text-muted-foreground">
+                  {t('report.categoryModal.recordsCount', {
+                    count: summary.transactionCount,
+                  })}{' '}
+                  · {summary.percentage.toFixed(1)}%
                 </span>
               </div>
-              <span className="shrink-0 text-sm font-semibold text-foreground">
+              <span className="col-start-3 min-w-0 break-words text-body font-semibold leading-tight text-foreground tabular-nums min-[440px]:col-start-4 min-[440px]:row-start-1 min-[440px]:self-center min-[440px]:text-right">
                 {formatAmount(summary.totalAmount, currency)}
               </span>
             </button>
@@ -183,11 +195,13 @@ function BreakdownList({
             <button
               type="button"
               onClick={() => onSelect(summary)}
-              aria-label={t('report.breakdown.viewTransactionsFor', { name: summary.displayName })}
+              aria-label={t('report.breakdown.viewTransactionsFor', {
+                name: summary.displayName,
+              })}
               title={t('report.breakdown.viewTransactions')}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-300/70"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/45 hover:bg-accent/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <PiReceiptBold size={15} />
+              <PiReceiptBold size={14} />
             </button>
           </li>
         )
@@ -237,7 +251,7 @@ function BreakdownPanel({
   if (summaries.length === 0) {
     return (
       <ReportEmptyState
-        icon={<PiChartPieFill size={22} />}
+        icon={<PiChartPieFill size={18} />}
         description={emptyLabel}
         className="py-10"
       />
@@ -245,21 +259,24 @@ function BreakdownPanel({
   }
 
   return (
-    <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:items-center">
+    <div className="grid min-w-0 gap-5 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-center">
       {activeSummaries.length === 0 ? (
         <ReportEmptyState
-          icon={<PiChartPieFill size={22} />}
+          icon={<PiChartPieFill size={18} />}
           description={emptyLabel}
           className="py-10"
         />
       ) : (
         /* Donut chart — visual only; BreakdownList below is the accessible equivalent */
-        <div className="min-h-[260px]" aria-hidden="true">
+        <div
+          className="mx-auto h-[220px] w-full min-w-0 max-w-[19rem] overflow-hidden sm:h-[240px]"
+          aria-hidden="true"
+        >
           <ReportApexChart
             type="donut"
             options={donutOptions}
             series={series}
-            height={260}
+            height="100%"
           />
         </div>
       )}
@@ -282,7 +299,9 @@ export default function ReportCategoryBreakdown({
   excludedKeys,
   onToggleKey,
   onEditTransaction,
-}: ReportCategoryBreakdownProps & { onEditTransaction?: (id: string) => void }) {
+}: ReportCategoryBreakdownProps & {
+  onEditTransaction?: (id: string) => void
+}) {
   const t = useTranslations()
   const [activeTab, setActiveTab] = useState<TransactionType>('expense')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -294,13 +313,16 @@ export default function ReportCategoryBreakdown({
   )
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold text-foreground">
+    <SurfaceCard
+      className="min-w-0 space-y-5 bg-secondary/45 p-4 shadow-none sm:p-5"
+      data-testid="category-breakdown-surface"
+    >
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-title font-semibold leading-snug text-foreground">
             {t('report.breakdown.title')}
           </h3>
-          <p className="text-xs text-muted-foreground">
+          <p className="mt-1 text-body leading-5 text-muted-foreground">
             {t('report.breakdown.description')}
           </p>
         </div>
@@ -311,6 +333,14 @@ export default function ReportCategoryBreakdown({
           size="sm"
           variant="solid"
           onSelectionChange={(key) => setActiveTab(key as TransactionType)}
+          className="w-full sm:w-auto"
+          classNames={{
+            tabList: 'grid w-full grid-cols-2 rounded-xl bg-card p-1',
+            tab: 'min-h-11 px-3 text-body',
+            cursor: 'bg-emphasis shadow-none',
+            tabContent:
+              'text-muted-foreground group-data-[selected=true]:text-emphasis-contrast',
+          }}
         >
           <Tab key="expense" title={t('categorySettings.expense')} />
           <Tab key="income" title={t('categorySettings.income')} />
@@ -344,6 +374,6 @@ export default function ReportCategoryBreakdown({
         onClose={() => setSelectedKey(null)}
         onTransactionClick={onEditTransaction}
       />
-    </div>
+    </SurfaceCard>
   )
 }

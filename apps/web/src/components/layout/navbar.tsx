@@ -1,89 +1,82 @@
-import { useState, useEffect, ReactNode, CSSProperties } from 'react'
-import { Button, Tooltip } from '@heroui/react'
-import styled from '@emotion/styled'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { Tooltip } from '@heroui/react'
+import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/router'
 import {
-  PiHouseFill,
-  PiListPlusFill,
-  PiGearFill,
   PiArrowsLeftRight,
   PiChartPieSliceFill,
+  PiGearFill,
+  PiHouseFill,
+  PiListPlusFill,
 } from 'react-icons/pi'
-import { useRouter } from 'next/router'
-import { useTranslations } from 'next-intl'
-// @ts-expect-error 暫時忽略，不影響功能
-import tailwindConfig from '../../../tailwind.config' // 根據你的路徑調整
+
 import { useAccountBookStore } from '@/stores/accountBook'
+import { cn } from '@/lib/utils'
 
-const resolvedConfig = require('tailwindcss/resolveConfig')
-const themeConfig = resolvedConfig(tailwindConfig)
+type NavigationItemProps = {
+  children: ReactNode
+  disabled?: boolean
+  inputId: 'home' | 'report' | 'settings' | 'settlement'
+  label: string
+  onClick?: () => void
+  selected?: boolean
+}
 
-const StyledWrapper = styled.div`
-  section {
-    --col-orange: ${themeConfig.theme.colors.orange[400]};
-    --col-dark: #0c0f14;
-    --col-darkGray: #52555a;
-    --col-gray: #aeaeae;
-
-    width: fit-content;
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
-    background-color: var(--col-dark);
-    border-radius: 30px;
-  }
-  .label {
-    padding: 8px 4px;
-    transition: all 200ms;
-    display: inline-block;
-    position: relative;
-  }
-
-  .label input[type='radio'] {
-    display: none;
-  }
-  .label > svg {
-    transition: all 200ms;
-    fill: var(--col-gray);
-    width: 42px;
-  }
-  .label:hover:not(:has(input:checked)) > svg {
-    fill: var(--col-orange);
-    opacity: 0.6;
-  }
-  .label::before {
-    content: '';
-    display: block;
-    width: 20px;
-    height: 2px;
-    border-radius: 2px;
-    position: absolute;
-    left: 50%;
-    bottom: 4px;
-    transform: translateX(-50%) scaleX(0);
-    background: var(--col-orange);
-    transition: transform 200ms ease;
-    transform-origin: center;
-  }
-  .label > svg {
-    transition: 300ms;
-    fill: var(--col-darkGray);
-    margin-top: 0;
-  }
-  .label:has(input:checked) > svg {
-    fill: var(--col-orange);
-    scale: 1.2;
-    margin-top: 0;
-  }
-
-  .label:has(input:checked)::before {
-    transform: translateX(-50%) scaleX(1);
-  }
-`
+function NavigationItem({
+  children,
+  disabled = false,
+  inputId,
+  label,
+  onClick,
+  selected = false,
+}: NavigationItemProps) {
+  return (
+    <div className="relative flex items-center justify-center">
+      <input
+        aria-hidden="true"
+        checked={selected}
+        disabled={disabled}
+        hidden
+        id={inputId}
+        name="page"
+        tabIndex={-1}
+        type="radio"
+        onChange={onClick}
+      />
+      <button
+        aria-current={selected ? 'page' : undefined}
+        aria-label={label}
+        className={cn(
+          'group relative flex min-h-11 min-w-11 items-center justify-center rounded-xl text-muted-foreground outline-none transition-colors',
+          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+          selected && 'bg-emphasis/10 text-emphasis',
+          !selected && !disabled && 'hover:bg-primary/10 hover:text-primary',
+          disabled && 'pointer-events-none opacity-45'
+        )}
+        disabled={disabled}
+        title={label}
+        type="button"
+        onClick={onClick}
+      >
+        <span aria-hidden="true" className="text-[20px]">
+          {children}
+        </span>
+        <span
+          aria-hidden="true"
+          className={cn(
+            'absolute bottom-1 h-0.5 w-5 rounded-full bg-emphasis transition-opacity',
+            selected ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+      </button>
+    </div>
+  )
+}
 
 function ProhibitionMask() {
   return (
     <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <span className="h-[2px] w-[14px] rotate-45 rounded-full bg-orange-400/60" />
+      <span className="h-0.5 w-4 rotate-45 rounded-full bg-emphasis/75" />
     </span>
   )
 }
@@ -103,22 +96,24 @@ function DisabledWithTooltip({
 
   useEffect(() => {
     if (!mobileOpen) return
-    const t = setTimeout(() => setMobileOpen(false), 2000)
-    return () => clearTimeout(t)
+    const timeout = window.setTimeout(() => setMobileOpen(false), 2000)
+    return () => window.clearTimeout(timeout)
   }, [mobileOpen])
 
   return (
     <Tooltip
       content={message}
-      showArrow
-      placement="top"
       isOpen={mobileOpen || undefined}
-      onOpenChange={(open) => { if (!open) setMobileOpen(false) }}
+      placement="top"
+      showArrow
+      onOpenChange={(open) => {
+        if (!open) setMobileOpen(false)
+      }}
     >
       <div
-        className={`relative cursor-default ${className ?? ''}`}
+        className={cn('relative flex items-center justify-center', className)}
         style={style}
-        onClick={() => setMobileOpen((s) => !s)}
+        onClick={() => setMobileOpen((current) => !current)}
       >
         {children}
       </div>
@@ -153,9 +148,7 @@ export default function NavBar() {
   }
 
   function handleAddTransaction() {
-    if (isAggregateView) {
-      return
-    }
+    if (isAggregateView) return
 
     const onboardingParam =
       typeof router.query.onboarding === 'string'
@@ -167,82 +160,91 @@ export default function NavBar() {
   }
 
   return (
-    <div className="navbar flex h-[calc(72px+env(safe-area-inset-bottom))] shrink-0 w-full items-center justify-center px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <StyledWrapper>
-        <section>
-          <label title={t('navbar.home')} htmlFor="home" className="label">
-            <input
-              id="home"
-              name="page"
-              type="radio"
-              checked={isHome}
-              onChange={handleHomeNavigation}
-            />
-            <PiHouseFill></PiHouseFill>
-          </label>
-          {isAggregateView ? (
-            <DisabledWithTooltip message={t('navbar.notAvailableAllBooks')}>
-              <label title={t('navbar.settlement')} className="label" aria-disabled style={{ position: 'relative' }}>
-                <input id="settlement" name="page" type="radio" checked={false} onChange={() => {}} disabled /> {/* eslint-disable-line @typescript-eslint/no-empty-function */}
-                <PiArrowsLeftRight />
-                <ProhibitionMask />
-              </label>
-            </DisabledWithTooltip>
-          ) : (
-            <label title={t('navbar.settlement')} htmlFor="settlement" className="label">
-              <input
-                id="settlement"
-                name="page"
-                type="radio"
-                checked={isSettlement}
-                onChange={() => void router.push(`/account-books/${accountBookId}/settlement`)}
-              />
-              <PiArrowsLeftRight />
-            </label>
-          )}
-          {isAggregateView ? (
-            <DisabledWithTooltip message={t('navbar.notAvailableAllBooks')} className="relative mx-2" style={{ transform: 'scale(1.2)' }}>
-              <Button className="bg-gray-600/75 text-white" isIconOnly isDisabled>
-                <PiListPlusFill size={28} />
-              </Button>
-              <ProhibitionMask />
-            </DisabledWithTooltip>
-          ) : (
-            <Button
-              aria-label={t('navbar.newTransaction')}
-              className="bg-gray-600/75 text-white mx-2"
-              data-onboarding-anchor="create-transaction"
-              isIconOnly
-              style={{ transform: 'scale(1.2)' }}
-              onPress={handleAddTransaction}
+    <div
+      className="navbar h-[calc(88px+env(safe-area-inset-bottom))] w-full px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2 sm:px-6"
+      data-testid="bottom-navigation"
+    >
+      <nav
+        className="mx-auto grid h-16 w-full max-w-3xl grid-cols-5 items-center rounded-[2rem] bg-card/95 px-2 shadow-[0_18px_50px_-22px_hsl(var(--surface-shadow)/0.55)] backdrop-blur-md dark:bg-card"
+        data-testid="bottom-navigation-surface"
+      >
+        <NavigationItem
+          inputId="home"
+          label={t('navbar.home')}
+          selected={isHome}
+          onClick={handleHomeNavigation}
+        >
+          <PiHouseFill />
+        </NavigationItem>
+
+        {isAggregateView ? (
+          <DisabledWithTooltip message={t('navbar.notAvailableAllBooks')}>
+            <NavigationItem
+              disabled
+              inputId="settlement"
+              label={t('navbar.settlement')}
             >
-              <PiListPlusFill size={28} />
-            </Button>
-          )}
-          <label title={t('navbar.reports')} htmlFor="report" className="label">
-            <input
-              id="report"
-              name="page"
-              type="radio"
-              checked={isReport}
-              onChange={() =>
-                router.push(`/account-books/${accountBookId ?? 'all'}/report`)
-              }
-            />
-            <PiChartPieSliceFill />
-          </label>
-          <label title={t('navbar.settings')} htmlFor="settings" className="label">
-            <input
-              id="settings"
-              name="page"
-              type="radio"
-              checked={isSettings}
-              onChange={() => router.push('/settings')}
-            />
-            <PiGearFill></PiGearFill>
-          </label>
-        </section>
-      </StyledWrapper>
+              <PiArrowsLeftRight />
+            </NavigationItem>
+            <ProhibitionMask />
+          </DisabledWithTooltip>
+        ) : (
+          <NavigationItem
+            inputId="settlement"
+            label={t('navbar.settlement')}
+            selected={isSettlement}
+            onClick={() =>
+              void router.push(`/account-books/${accountBookId}/settlement`)
+            }
+          >
+            <PiArrowsLeftRight />
+          </NavigationItem>
+        )}
+
+        {isAggregateView ? (
+          <DisabledWithTooltip message={t('navbar.notAvailableAllBooks')}>
+            <button
+              aria-label={t('navbar.newTransaction')}
+              className="pointer-events-none relative flex h-14 w-14 -translate-y-2 items-center justify-center rounded-2xl bg-muted text-muted-foreground opacity-60 shadow-lg"
+              disabled
+              type="button"
+            >
+              <PiListPlusFill aria-hidden="true" size={24} />
+              <ProhibitionMask />
+            </button>
+          </DisabledWithTooltip>
+        ) : (
+          <button
+            aria-label={t('navbar.newTransaction')}
+            className="relative flex h-14 w-14 -translate-y-2 items-center justify-center justify-self-center rounded-2xl bg-primary text-primary-foreground shadow-[0_14px_28px_-14px_hsl(var(--primary)/0.9)] outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+            data-onboarding-anchor="create-transaction"
+            type="button"
+            onClick={handleAddTransaction}
+          >
+            <PiListPlusFill aria-hidden="true" size={24} />
+          </button>
+        )}
+
+        <NavigationItem
+          inputId="report"
+          label={t('navbar.reports')}
+          selected={isReport}
+          onClick={() =>
+            void router.push(`/account-books/${accountBookId ?? 'all'}/report`)
+          }
+        >
+          <PiChartPieSliceFill />
+        </NavigationItem>
+
+        <NavigationItem
+          inputId="settings"
+          label={t('navbar.settings')}
+          selected={isSettings}
+          onClick={() => void router.push('/settings')}
+        >
+          <PiGearFill />
+        </NavigationItem>
+      </nav>
     </div>
   )
 }

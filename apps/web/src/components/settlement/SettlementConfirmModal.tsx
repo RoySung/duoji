@@ -16,6 +16,14 @@ import {
 import { SharedWalletSummary } from '@/utils/settlementUtils'
 import { useUserStore } from '@/stores/user'
 import { formatAmount } from '@/utils/amountUtils'
+import {
+  settlementModalActionClassName,
+  settlementModalBodyClassName,
+  settlementModalClassNames,
+  settlementModalContentClassName,
+  settlementModalFooterClassName,
+  settlementModalHeaderClassName,
+} from './settlementModalStyles'
 
 type Props = {
   isOpen: boolean
@@ -58,16 +66,27 @@ export default function SettlementConfirmModal({
   const userMap = new Map(allUsers.map((u) => [u.id, u]))
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()} placement="bottom" scrollBehavior="inside">
-      <ModalContent>
-        <ModalHeader>{t('settlement.confirm.title')}</ModalHeader>
-        <ModalBody>
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      placement="bottom"
+      scrollBehavior="inside"
+      classNames={settlementModalClassNames}
+    >
+      <ModalContent className={settlementModalContentClassName}>
+        <ModalHeader className={settlementModalHeaderClassName}>
+          <h2 className="text-title font-semibold leading-snug text-foreground">
+            {t('settlement.confirm.title')}
+          </h2>
+        </ModalHeader>
+        <ModalBody className={settlementModalBodyClassName}>
           <div className="space-y-5">
-            <div className="flex items-center justify-between rounded-2xl border border-border bg-accent/40 px-4 py-3">
-              <span className="text-sm font-medium text-foreground">
+            <div className="flex min-h-14 items-center justify-between gap-4 rounded-xl bg-secondary px-4 py-2">
+              <span className="min-w-0 text-body font-medium leading-5 text-foreground">
                 {t('settlement.unsettled.autoRound')}
               </span>
               <Switch
+                className="min-h-11 min-w-11 shrink-0 justify-end"
                 isSelected={autoRound}
                 onValueChange={handleAutoRoundChange}
                 size="sm"
@@ -76,10 +95,10 @@ export default function SettlementConfirmModal({
             </div>
 
             <section>
-              <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              <h3 className="mb-2 text-body font-semibold leading-5 text-foreground">
                 {t('settlement.confirm.balances')}
               </h3>
-              <div className="space-y-2">
+              <div className="divide-y divide-border overflow-hidden rounded-xl bg-secondary/70">
                 {memberStatuses.map((ms) => {
                   const name = userMap.get(ms.userId)?.name ?? ms.userId
                   const isCreditor = ms.netAmount > 0
@@ -88,18 +107,18 @@ export default function SettlementConfirmModal({
                   return (
                     <div
                       key={ms.userId}
-                      className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3"
+                      className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
                     >
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="min-w-0 break-words text-body font-medium leading-5 text-foreground">
                         {name}
                       </p>
                       <p
-                        className={`text-sm font-semibold ${
+                        className={`max-w-[48vw] break-words text-right text-body font-semibold leading-5 tabular-nums sm:max-w-none ${
                           isZero
                             ? 'text-muted-foreground'
                             : isCreditor
-                              ? 'text-success'
-                              : 'text-danger'
+                            ? 'text-success'
+                            : 'text-danger'
                         }`}
                       >
                         {isCreditor ? '+' : isZero ? '' : '-'}
@@ -115,25 +134,26 @@ export default function SettlementConfirmModal({
 
             {transferSuggestions.length > 0 && (
               <section>
-                <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                <h3 className="mb-2 text-body font-semibold leading-5 text-foreground">
                   {t('settlement.confirm.transfers')}
                 </h3>
-                <div className="space-y-2">
+                <div className="divide-y divide-border overflow-hidden rounded-xl bg-secondary/70">
                   {transferSuggestions.map((transfer, i) => {
                     const fromName =
-                      userMap.get(transfer.fromUserId)?.name ?? transfer.fromUserId
+                      userMap.get(transfer.fromUserId)?.name ??
+                      transfer.fromUserId
                     const toName =
                       userMap.get(transfer.toUserId)?.name ?? transfer.toUserId
 
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3"
+                        className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
                       >
-                        <p className="text-sm text-foreground">
+                        <p className="min-w-0 break-words text-body leading-5 text-foreground">
                           {fromName} → {toName}
                         </p>
-                        <p className="text-sm font-semibold text-foreground">
+                        <p className="max-w-[48vw] break-words text-right text-body font-semibold leading-5 text-foreground tabular-nums sm:max-w-none">
                           {formatAmount(transfer.suggestedAmount, currency, {
                             roundMode: autoRound ? 'ceil' : 'none',
                           })}
@@ -147,52 +167,59 @@ export default function SettlementConfirmModal({
 
             {sharedWalletSummary && sharedWalletSummary.totalExpense > 0 && (
               <section>
-                <h3 className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                <h3 className="mb-2 text-body font-semibold leading-5 text-foreground">
                   {t('settlement.sharedWallet.title')}
                 </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
-                    <p className="text-sm text-foreground">
+                <div className="divide-y divide-border overflow-hidden rounded-xl bg-secondary/70">
+                  <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+                    <p className="min-w-0 break-words text-body leading-5 text-foreground">
                       {t('settlement.sharedWallet.total')}
                     </p>
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-right text-body font-semibold leading-5 text-foreground tabular-nums">
                       {formatAmount(sharedWalletSummary.totalExpense, currency)}
                     </p>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
-                    <p className="text-sm text-foreground">
+                  <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+                    <p className="min-w-0 break-words text-body leading-5 text-foreground">
                       {t('settlement.sharedWallet.average')}
                     </p>
-                    <p className="text-sm font-semibold text-foreground">
-                      {formatAmount(sharedWalletSummary.averagePerPerson, currency, {
-                        roundMode: autoRound ? 'ceil' : 'none',
-                      })}
+                    <p className="text-right text-body font-semibold leading-5 text-foreground tabular-nums">
+                      {formatAmount(
+                        sharedWalletSummary.averagePerPerson,
+                        currency,
+                        {
+                          roundMode: autoRound ? 'ceil' : 'none',
+                        }
+                      )}
                     </p>
                   </div>
 
                   {sharedWalletSummary.borrowings.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                    <div className="border-t border-border">
+                      <p className="px-4 pb-2 pt-3 text-label font-medium leading-5 text-muted-foreground">
                         {t('settlement.sharedWallet.borrowings')}
                       </p>
-                      {sharedWalletSummary.borrowings.map((b, i) => {
-                        const name = userMap.get(b.userId)?.name ?? b.userId
-                        return (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3"
-                          >
-                            <p className="text-sm text-foreground">
-                              {name}
-                            </p>
-                            <p className="text-sm font-semibold text-danger">
-                              -{formatAmount(b.amount, currency, {
-                                roundMode: autoRound ? 'ceil' : 'none',
-                              })}
-                            </p>
-                          </div>
-                        )
-                      })}
+                      <div>
+                        {sharedWalletSummary.borrowings.map((b, i) => {
+                          const name = userMap.get(b.userId)?.name ?? b.userId
+                          return (
+                            <div
+                              key={i}
+                              className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-border px-4 py-2"
+                            >
+                              <p className="min-w-0 break-words text-body leading-5 text-foreground">
+                                {name}
+                              </p>
+                              <p className="text-right text-body font-semibold leading-5 text-danger tabular-nums">
+                                -
+                                {formatAmount(b.amount, currency, {
+                                  roundMode: autoRound ? 'ceil' : 'none',
+                                })}
+                              </p>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -200,11 +227,16 @@ export default function SettlementConfirmModal({
             )}
           </div>
         </ModalBody>
-        <ModalFooter>
-          <Button isDisabled={isSubmitting} onPress={onClose}>
+        <ModalFooter className={settlementModalFooterClassName}>
+          <Button
+            className={settlementModalActionClassName}
+            isDisabled={isSubmitting}
+            onPress={onClose}
+          >
             {t('common.cancel')}
           </Button>
           <Button
+            className={settlementModalActionClassName}
             color="primary"
             isDisabled={isSubmitting}
             isLoading={isSubmitting}

@@ -1,0 +1,7 @@
+## 1. Category icon presentation
+
+- [x] 1.1 Apply Avatar image padding locally so category images have a consistent 2px inset in targeted transaction and report surfaces: give the transaction selector root and child Avatar image slots and report breakdown image Avatar slot `p-0.5`, while preserving their root dimensions, sources, fallbacks, and interactions; verify with the focused `transactionSurfacePresentation.spec.tsx` and `reportCategoryBreakdown.spec.tsx` assertions and `pnpm --filter web test -- --runInBand specs/transactionSurfacePresentation.spec.tsx specs/reportCategoryBreakdown.spec.tsx`.
+
+- [x] 1.2 Assert image-slot presentation in existing component tests by exposing Avatar `classNames.img` and checking `p-0.5` for transaction root, transaction child, and report image categories while retaining the report no-image fallback assertion; verify with `pnpm --filter web test -- --runInBand specs/transactionSurfacePresentation.spec.tsx specs/reportCategoryBreakdown.spec.tsx`.
+
+- [x] 1.3 Apply Avatar image padding locally so category images have a consistent targeted inset in transaction and report surfaces: change only the report category breakdown image slot from `p-0.5` to `p-1` so report category images have a 4px inset while transaction category images retain their completed 2px inset; update the report presentation assertion and verify with `pnpm nx test web -- --runInBand --watch=false specs/transactionSurfacePresentation.spec.tsx specs/reportCategoryBreakdown.spec.tsx`.

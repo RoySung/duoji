@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import LanguageStep from '@/components/onboarding/LanguageStep'
 import ProfileStep from '@/components/onboarding/ProfileStep'
 import AccountBookStep from '@/components/onboarding/AccountBookStep'
+import EntryShell from '@/components/onboarding/EntryShell'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useSettingsStore } from '@/stores/settings'
 
@@ -125,4 +126,8 @@ export default function OnboardingPage() {
   }
 
   return null
+}
+
+OnboardingPage.getLayout = function getLayout(page: React.ReactNode) {
+  return <EntryShell>{page}</EntryShell>
 }

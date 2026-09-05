@@ -51,3 +51,7 @@ out
 test-output
 .spectra/
 openspec/.vector-search.db*
+
+# Local package-manager and design-session runtime state
+/.pnpm-store/
+/.superpowers/

@@ -2,6 +2,7 @@ import { PiArrowRightBold, PiReceiptBold } from 'react-icons/pi'
 import { Chip } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { SettlementRecord } from '@/entities/settlement'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 
 type Props = {
   records: SettlementRecord[]
@@ -18,22 +19,25 @@ export default function SettlementRecordList({
 
   if (sorted.length === 0) {
     return (
-      <div className="mt-6 rounded-3xl border border-dashed border-border bg-background px-5 py-10 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-400/15 text-orange-300">
-          <PiReceiptBold size={22} />
+      <SurfaceCard
+        className="px-5 py-9 text-center"
+        data-testid="settlement-records-empty-state"
+      >
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-peach/70 text-emphasis-foreground dark:bg-peach/15 dark:text-peach-foreground">
+          <PiReceiptBold size={18} />
         </div>
-        <h3 className="mt-4 text-lg font-semibold text-foreground">
+        <h3 className="mt-4 text-title font-semibold text-foreground">
           {t('settlement.list.emptyTitle')}
         </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-body text-muted-foreground">
           {t('settlement.list.emptyDescription')}
         </p>
-      </div>
+      </SurfaceCard>
     )
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-testid="settlement-record-list">
       {sorted.map((record, index) => {
         const sequenceNumber = sorted.length - index
         const date = new Date(record.createdAt).toLocaleDateString('en-CA', {
@@ -47,40 +51,51 @@ export default function SettlementRecordList({
         const isCompleted = completedCount === record.transfers.length
 
         return (
-          <button
-            key={record.id}
-            className="block w-full rounded-2xl border border-border bg-background px-4 py-4 text-left transition hover:border-orange-200 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300/70"
-            type="button"
-            onClick={() => onSelectRecord(record.id)}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-base font-semibold text-foreground">
-                    {t('settlement.detail.title', { sequenceNumber })}
-                  </p>
-                  <Chip
-                    className={
-                      isCompleted
-                        ? 'bg-success/10 text-success'
-                        : 'bg-warning/10 text-warning'
-                    }
-                    size="sm"
-                    variant="flat"
-                  >
-                    {isCompleted
-                      ? t('settlement.detail.settled')
-                      : t('settlement.detail.pending')}
-                  </Chip>
+          <article key={record.id}>
+            <SurfaceCard className="overflow-hidden transition-colors hover:bg-card">
+              <button
+                className="block min-h-11 w-full rounded-2xl px-4 py-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                data-testid={`settlement-record-${record.id}`}
+                type="button"
+                onClick={() => onSelectRecord(record.id)}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex flex-col items-start gap-2 min-[360px]:flex-row min-[360px]:items-center">
+                      <h2 className="break-words text-title font-semibold text-foreground">
+                        {t('settlement.detail.title', { sequenceNumber })}
+                      </h2>
+                      <Chip
+                        className={
+                          isCompleted
+                            ? 'bg-success/10 text-label text-success-700 dark:text-success-400'
+                            : 'bg-warning/10 text-label text-warning-700 dark:text-warning-400'
+                        }
+                        size="sm"
+                        variant="flat"
+                      >
+                        {isCompleted
+                          ? t('settlement.detail.settled')
+                          : t('settlement.detail.pending')}
+                      </Chip>
+                    </div>
+                    <p className="text-body text-muted-foreground">{date}</p>
+                    <p className="text-label leading-5 text-muted-foreground">
+                      {t('settlement.list.transfersDone', {
+                        completedCount,
+                        totalCount: record.transfers.length,
+                      })}
+                    </p>
+                  </div>
+                  <PiArrowRightBold
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground"
+                    size={14}
+                  />
                 </div>
-                <p className="text-sm text-muted-foreground">{date}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('settlement.list.transfersDone', { completedCount, totalCount: record.transfers.length })}
-                </p>
-              </div>
-              <PiArrowRightBold className="shrink-0 text-muted-foreground" />
-            </div>
-          </button>
+              </button>
+            </SurfaceCard>
+          </article>
         )
       })}
     </div>

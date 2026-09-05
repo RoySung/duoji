@@ -10,6 +10,14 @@ import {
 } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { PiCopyBold, PiCheckBold } from 'react-icons/pi'
+import {
+  settlementModalActionClassName,
+  settlementModalBodyClassName,
+  settlementModalClassNames,
+  settlementModalContentClassName,
+  settlementModalFooterClassName,
+  settlementModalHeaderClassName,
+} from './settlementModalStyles'
 
 type Props = {
   markdown: string
@@ -29,7 +37,10 @@ export default function SettlementMarkdownModal({
     try {
       await navigator.clipboard.writeText(markdown)
       setCopied(true)
-      addToast({ title: t('settlement.markdown.copiedToast'), color: 'success' })
+      addToast({
+        title: t('settlement.markdown.copiedToast'),
+        color: 'success',
+      })
       setTimeout(() => setCopied(false), 2000)
     } catch {
       addToast({
@@ -47,31 +58,50 @@ export default function SettlementMarkdownModal({
       placement="bottom"
       scrollBehavior="inside"
       size="2xl"
+      classNames={settlementModalClassNames}
     >
-      <ModalContent>
-        <ModalHeader>{t('settlement.markdown.title', { sequenceNumber })}</ModalHeader>
-        <ModalBody>
-          <p className="text-xs text-muted-foreground">
+      <ModalContent className={settlementModalContentClassName}>
+        <ModalHeader className={settlementModalHeaderClassName}>
+          <h2 className="break-words text-title font-semibold leading-snug text-foreground">
+            {t('settlement.markdown.title', { sequenceNumber })}
+          </h2>
+        </ModalHeader>
+        <ModalBody className={settlementModalBodyClassName}>
+          <p className="max-w-[70ch] text-body leading-6 text-muted-foreground">
             {t('settlement.markdown.helper')}
           </p>
           <pre
             aria-live="polite"
-            className="whitespace-pre-wrap break-words rounded-xl bg-content2 p-4 font-mono text-sm text-foreground overflow-y-auto max-h-[50vh]"
+            className="max-h-[min(50dvh,30rem)] whitespace-pre-wrap break-words !overflow-auto !rounded-xl !bg-secondary !p-4 font-mono text-body leading-6 !text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            tabIndex={0}
           >
             {markdown}
           </pre>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+        <ModalFooter className={settlementModalFooterClassName}>
+          <Button
+            className={settlementModalActionClassName}
+            variant="light"
+            onPress={onClose}
+          >
             {t('common.close')}
           </Button>
           <Button
-            aria-label={copied ? t('settlement.markdown.copiedAria') : t('settlement.markdown.copyAria')}
+            className={settlementModalActionClassName}
+            aria-label={
+              copied
+                ? t('settlement.markdown.copiedAria')
+                : t('settlement.markdown.copyAria')
+            }
             color="primary"
-            startContent={copied ? <PiCheckBold /> : <PiCopyBold />}
+            startContent={
+              copied ? <PiCheckBold size={14} /> : <PiCopyBold size={14} />
+            }
             onPress={handleCopy}
           >
-            {copied ? t('settlement.markdown.copied') : t('settlement.markdown.copy')}
+            {copied
+              ? t('settlement.markdown.copied')
+              : t('settlement.markdown.copy')}
           </Button>
         </ModalFooter>
       </ModalContent>

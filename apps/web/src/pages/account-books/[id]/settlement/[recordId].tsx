@@ -10,6 +10,8 @@ import SettlementRecordDetail from '@/components/settlement/SettlementRecordDeta
 import { TransactionModalMode } from '@/entities/transaction'
 import { TransactionModal } from '@/components/TransactionModal'
 import { useSettlementRecordTransactions } from '@/hooks/useSettlementRecordTransactions'
+import { PageScaffold } from '@/components/ui/PageScaffold'
+import { SurfaceCard } from '@/components/ui/SurfaceCard'
 
 export default function SettlementRecordDetailPage() {
   const router = useRouter()
@@ -49,7 +51,6 @@ export default function SettlementRecordDetailPage() {
     void initializeCategories(accountBookId)
   }, [accountBookId, initializeCategories])
 
-
   function openViewModal(transactionId: string) {
     setSelectedTransactionId(transactionId)
     setIsModalOpen(true)
@@ -67,16 +68,24 @@ export default function SettlementRecordDetailPage() {
   if (!record) {
     return (
       <div className="h-full overflow-y-auto bg-background text-foreground">
-        <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col items-center justify-center gap-8 px-4 py-8">
-          <p className="text-muted-foreground">{t('settlement.recordPage.notFound')}</p>
-          <Button
-            onPress={() =>
-              void router.push(`/account-books/${accountBookId}/settlement`)
-            }
+        <PageScaffold className="items-center justify-center">
+          <SurfaceCard
+            className="w-full px-6 py-12 text-center sm:px-8 sm:py-14"
+            role="status"
           >
-            {t('settlement.recordPage.back')}
-          </Button>
-        </div>
+            <p className="text-body leading-6 text-muted-foreground">
+              {t('settlement.recordPage.notFound')}
+            </p>
+            <Button
+              className="mt-5 min-h-11 rounded-xl bg-primary px-4 text-body text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              onPress={() =>
+                void router.push(`/account-books/${accountBookId}/settlement`)
+              }
+            >
+              {t('settlement.recordPage.back')}
+            </Button>
+          </SurfaceCard>
+        </PageScaffold>
       </div>
     )
   }
@@ -108,12 +117,12 @@ export default function SettlementRecordDetailPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6 px-4 py-8">
+      <PageScaffold data-testid="settlement-record-page">
         <Button
-          className="self-start"
+          className="min-h-11 self-start rounded-xl px-3 text-body text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
           size="sm"
           variant="light"
-          startContent={<PiArrowLeftBold />}
+          startContent={<PiArrowLeftBold size={14} />}
           onPress={() =>
             void router.push(`/account-books/${accountBookId}/settlement`)
           }
@@ -129,7 +138,7 @@ export default function SettlementRecordDetailPage() {
           onCompleteTransfer={handleCompleteTransfer}
           onViewTransaction={openViewModal}
         />
-      </div>
+      </PageScaffold>
 
       <TransactionModal
         isOpen={isModalOpen}

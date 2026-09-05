@@ -48,31 +48,36 @@ export default function TagFilterSelector({
         <Button
           variant="flat"
           size="sm"
-          startContent={<PiFunnelBold size={14} />}
+          startContent={<PiFunnelBold size={12} />}
           endContent={
             selectedCount > 0 ? (
-              <Chip size="sm" color="warning" variant="flat" className="h-5 px-2">
+              <Chip
+                size="sm"
+                color="warning"
+                variant="flat"
+                className="h-5 bg-emphasis/15 px-2 text-label text-emphasis-foreground"
+              >
                 {selectedCount}
               </Chip>
             ) : null
           }
-          className="bg-accent/60 text-foreground"
+          className="min-h-11 rounded-xl bg-secondary px-3 text-body text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
         >
           {t('report.tagFilter.trigger')}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[min(23rem,calc(100vw-1rem))] rounded-[1.35rem] border border-border/80 bg-card p-0 shadow-[0_18px_44px_-30px_rgba(15,23,42,0.24)]">
-        <div className="flex w-full max-h-[min(24rem,calc(100vh-4.5rem))] flex-col overflow-hidden">
-          <div className="w-full border-b border-border/60 px-4 pb-3 pt-4 sm:px-5 text-left">
-            <span className="text-[15px] font-semibold text-foreground">
+      <PopoverContent className="w-[min(23rem,calc(100vw-1rem))] rounded-2xl bg-popover p-0 text-popover-foreground shadow-[0_8px_24px_rgba(20,31,29,0.18)]">
+        <div className="flex max-h-[min(24rem,calc(100vh-4.5rem))] w-full flex-col overflow-hidden">
+          <div className="w-full border-b border-border px-4 pb-3 pt-4 text-left sm:px-5">
+            <span className="text-title font-semibold text-foreground">
               {t('report.tagFilter.title')}
             </span>
           </div>
 
-          <div className="w-full flex flex-wrap items-center justify-start gap-1.5 overflow-y-auto px-4 py-3 sm:px-5">
+          <div className="flex w-full flex-wrap items-center justify-start gap-2 overflow-y-auto px-4 py-3 sm:px-5">
             {allTags.length === 0 ? (
-              <div className="w-full rounded-[1.25rem] border border-dashed border-border px-4 py-5 text-sm leading-6 text-muted-foreground text-left">
+              <div className="w-full rounded-2xl bg-muted px-4 py-5 text-left text-body leading-6 text-muted-foreground">
                 {t('report.tagFilter.empty')}
               </div>
             ) : (
@@ -82,17 +87,17 @@ export default function TagFilterSelector({
                   <label
                     key={tag}
                     className={clsx(
-                      'flex min-h-9 w-fit cursor-pointer items-center gap-2 rounded-[1rem] border px-2.5 py-1.5 transition-colors',
+                      'flex min-h-11 max-w-full cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 transition-colors focus-within:ring-2 focus-within:ring-ring',
                       isSelected
-                        ? 'border-primary/30 bg-primary/10 text-foreground'
-                        : 'border-border/70 bg-background text-foreground hover:border-primary/20 hover:bg-muted/30'
+                        ? 'border-primary/40 bg-primary/10 text-foreground'
+                        : 'border-border bg-background text-foreground hover:border-primary/40 hover:bg-muted'
                     )}
                   >
                     <Checkbox
                       isSelected={isSelected}
                       onValueChange={() => toggle(tag)}
                     />
-                    <span className="truncate text-[12px] font-medium text-left leading-4">
+                    <span className="max-w-[15rem] truncate text-left text-body font-medium leading-5">
                       {tag}
                     </span>
                   </label>

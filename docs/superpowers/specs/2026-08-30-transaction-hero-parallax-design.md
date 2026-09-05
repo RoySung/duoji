@@ -6,8 +6,8 @@
 
 ## Approved Design
 
-- Use the existing `react-use` dependency's `useWindowScroll()` hook inside `TransactionHero`; do not add a dependency or a global bespoke scroll listener.
-- Derive a clamped local scroll progress from the Hero's position and the current window scroll position. The effect only changes decorative image transforms; it does not alter the Hero's document geometry.
+- Use the existing `react-use` dependency's `useScroll()` hook with the transaction page's existing scroll-container ref; do not add a dependency, alter the page's scrolling architecture, or add a global bespoke scroll listener.
+- Derive a clamped local scroll progress from that container. The effect only changes decorative image transforms; it does not alter the Hero's document geometry.
 - Apply GPU-friendly `translate3d` transforms: the geometric background moves by at most 24px and the travel illustration by at most 10px. Below the `sm` breakpoint, use 60% of those distances.
 - Keep the transaction label, account-book name, refresh action, record-count chip, gradient scrim, Hero height, and normal-flow calendar overlap fixed in place.
 - When `prefers-reduced-motion: reduce` matches, render both decorative layers at their resting transforms. Existing image-load fallback continues to remove only the failed decorative image while live content remains available.

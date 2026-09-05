@@ -8,6 +8,7 @@ import AddCategoryModal from '@/components/categorySettings/AddCategoryModal'
 import { CategoryIconKey, CATEGORY_ICONS } from '@/constants/categoryIcons'
 import { TransactionType } from '@/entities/transaction'
 import { useTranslations } from 'next-intl'
+import { transactionTabsClassNames } from './formControlStyles'
 
 type Props = {
   selectedCategoryId: string
@@ -110,17 +111,21 @@ export default function CategorySelector({
 
   return (
     <div className="category-selector w-full">
-      {selectedCategoryId === '' && (
-        <div className="mb-2 flex items-center gap-1.5 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-700">
-          <PiWarning size={16} className="shrink-0" />
+      {selectedCategoryId === '' ? (
+        <div
+          className="mb-3 flex min-h-11 items-center gap-2 rounded-xl bg-warning-50 px-3 py-2 text-body leading-5 text-warning-800 ring-1 ring-warning-200 dark:bg-warning-50/10 dark:text-warning-300 dark:ring-warning-400/30"
+          role="alert"
+        >
+          <PiWarning size={14} className="shrink-0" />
           <span>Please select a category</span>
         </div>
-      )}
+      ) : null}
       <Tabs
         variant="solid"
         selectedKey={selectedRootCategoryId}
         onSelectionChange={(key) => setSelectedRootCategoryId(key as string)}
         className="w-full overflow-auto"
+        classNames={transactionTabsClassNames}
       >
         {rootCategories.map((category) => {
           const childCategories = getChildCategories(category.id, categoryList)
@@ -131,36 +136,46 @@ export default function CategorySelector({
               title={
                 <div className="flex items-center gap-2">
                   <Avatar
-                    isBordered
-                    color="secondary"
                     src={category.imageUrl}
                     alt={category.name}
-                    className="w-4 h-4"
+                    className="h-5 w-5 shrink-0 bg-primary/15"
+                    classNames={{ img: 'p-0.5' }}
                   />
-                  <span className="text-default-800">{category.name}</span>
+                  <span className="max-w-32 truncate text-foreground">
+                    {category.name}
+                  </span>
                 </div>
               }
               className="w-fit max-w-full"
             >
-              <div className="grid grid-rows-2 grid-flow-col gap-1 overflow-auto">
+              <div className="grid grid-flow-col grid-rows-2 gap-2 overflow-auto py-2">
                 {childCategories.map((child) => (
                   <div
                     key={child.id}
-                    className={clsx({
-                      'flex items-center gap-2 cursor-pointer hover:bg-default-100 p-2 rounded':
-                        true,
-                      '!bg-primary/80': child.id === selectedCategoryId,
-                    })}
+                    aria-pressed={child.id === selectedCategoryId}
+                    role="button"
+                    tabIndex={0}
+                    className={clsx(
+                      'flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-body text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                      child.id === selectedCategoryId
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'bg-muted/60'
+                    )}
                     onClick={() => onSelectCategory(child)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        onSelectCategory(child)
+                      }
+                    }}
                   >
                     <Avatar
-                      isBordered
-                      color="secondary"
                       src={child.imageUrl}
                       alt={child.name}
-                      className="w-4 h-4"
+                      className="h-5 w-5 shrink-0 bg-card/80"
+                      classNames={{ img: 'p-0.5' }}
                     />
-                    <span className="text-default-800 w-[max-content]">
+                    <span className="w-[max-content] max-w-40 truncate text-inherit">
                       {child.name}
                     </span>
                   </div>
@@ -169,7 +184,7 @@ export default function CategorySelector({
                 <div
                   role="button"
                   tabIndex={0}
-                  className="flex items-center gap-1.5 cursor-pointer p-2 rounded border border-dashed border-default-300 text-default-500 hover:border-primary hover:text-primary transition-colors focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2 text-body text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                   onClick={() => handleOpenAddSubModal(category)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -178,8 +193,10 @@ export default function CategorySelector({
                     }
                   }}
                 >
-                  <PiPlus size={14} />
-                  <span className="text-xs w-[max-content]">{t('categorySettings.addSubTitle')}</span>
+                  <PiPlus size={12} />
+                  <span className="w-[max-content]">
+                    {t('categorySettings.addSubTitle')}
+                  </span>
                 </div>
               </div>
             </Tab>
@@ -187,7 +204,7 @@ export default function CategorySelector({
         })}
       </Tabs>
 
-      {addSubParent && (
+      {addSubParent ? (
         <AddCategoryModal
           isOpen={addSubModalOpen}
           parentType={addSubParent.type}
@@ -197,7 +214,7 @@ export default function CategorySelector({
           }}
           onSubmit={handleAddSubSubmit}
         />
-      )}
+      ) : null}
     </div>
   )
 }

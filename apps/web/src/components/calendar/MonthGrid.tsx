@@ -36,33 +36,36 @@ export default function MonthGrid({
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <button
           type="button"
           aria-label="Previous month"
-          className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-accent/25 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           onClick={() => onChangeMonth(displayMonth.subtract(1, 'month'))}
         >
-          <PiCaretLeftBold size={14} />
+          <PiCaretLeftBold aria-hidden="true" size={14} />
         </button>
-        <span className="text-sm font-semibold text-foreground">
+        <time
+          className="min-w-0 truncate text-body font-semibold text-foreground"
+          dateTime={displayMonth.format('YYYY-MM')}
+        >
           {displayMonth.format('MMMM YYYY')}
-        </span>
+        </time>
         <button
           type="button"
           aria-label="Next month"
-          className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-accent/25 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           onClick={() => onChangeMonth(displayMonth.add(1, 'month'))}
         >
-          <PiCaretRightBold size={14} />
+          <PiCaretRightBold aria-hidden="true" size={14} />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {DAY_LABELS.map((label) => (
           <div
             key={label}
-            className="py-1 text-center text-xs text-muted-foreground"
+            className="py-1 text-center text-label font-medium text-muted-foreground"
           >
             {label}
           </div>
@@ -80,30 +83,33 @@ export default function MonthGrid({
             <button
               key={dateStr}
               type="button"
-              className={`flex flex-col items-center gap-0.5 rounded-xl py-1 hover:bg-accent ${
-                !inMonth ? 'text-muted-foreground/40' : ''
+              aria-pressed={isSelected}
+              className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 outline-none transition-colors hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset ${
+                !inMonth ? 'text-muted-foreground/50' : ''
               }`}
               onClick={() => onSelectDate(isSelected ? null : dateStr)}
             >
               <span
-                className={`flex size-8 items-center justify-center rounded-full text-sm font-medium ${
+                className={`flex size-8 items-center justify-center rounded-full text-body font-semibold transition-colors ${
                   isSelected
-                    ? 'bg-primary text-primary-foreground'
+                    ? '!bg-emphasis !text-emphasis-contrast'
                     : today
-                    ? 'ring-2 ring-primary/50'
+                    ? 'ring-2 ring-primary/60 ring-offset-2 ring-offset-card'
                     : ''
                 }`}
               >
                 {day.date()}
               </span>
-              <span className="flex h-3 items-center justify-center text-[10px] font-medium leading-3 text-primary">
-                {displayMode === 'amount'
-                  ? hasTransaction
-                    ? `$${formatCompactAmount(summary.totalAmount)}`
-                    : ''
-                  : hasTransaction && (
-                      <span className="size-1 rounded-full bg-primary" />
-                    )}
+              <span className="flex h-3 max-w-full items-center justify-center truncate text-label font-semibold leading-3 text-emphasis-foreground">
+                {displayMode === 'amount' ? (
+                  hasTransaction ? (
+                    `$${formatCompactAmount(summary.totalAmount)}`
+                  ) : (
+                    ''
+                  )
+                ) : hasTransaction ? (
+                  <span className="size-1.5 rounded-full bg-emphasis" />
+                ) : null}
               </span>
             </button>
           )

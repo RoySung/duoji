@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { HeroUIProvider } from '@heroui/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { HeroUIProvider, addToast } from '@heroui/react'
 import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/router'
 import SettlementRecordDetailPage from '../src/pages/account-books/[id]/settlement/[recordId]'
@@ -41,20 +41,6 @@ jest.mock('../src/repositories/settlementRepo', () => ({
   SettlementLocalRepo: jest.fn().mockImplementation(() => mockSettlementRepo),
 }))
 
-jest.mock('../src/components/settlement/SettlementRecordDetail', () => ({
-  __esModule: true,
-  default: function MockSettlementRecordDetail({ transactions }: any) {
-    return (
-      <div>
-        <div data-testid="transaction-count">{transactions.length}</div>
-        {transactions.map((transaction: Transaction) => (
-          <div key={transaction.id}>{transaction.description}</div>
-        ))}
-      </div>
-    )
-  },
-}))
-
 jest.mock('../src/components/TransactionModal', () => ({
   __esModule: true,
   TransactionModal: () => null,
@@ -66,9 +52,20 @@ jest.mock('@heroui/react', () => {
   return {
     ...actual,
     addToast: jest.fn(),
-    Button: ({ children, onClick, onPress, startContent, ...props }: any) => {
+    Button: ({
+      children,
+      disabled,
+      disableRipple,
+      isDisabled,
+      isLoading,
+      onClick,
+      onPress,
+      startContent,
+      ...props
+    }: any) => {
       const {
         onClick: _ignoredOnClick,
+        disableRipple: _ignoredDisableRipple,
         startContent: _ignoredStartContent,
         ...restProps
       } = props
@@ -76,6 +73,8 @@ jest.mock('@heroui/react', () => {
       return (
         <button
           type="button"
+          aria-busy={isLoading ? 'true' : undefined}
+          disabled={disabled ?? isDisabled}
           onClick={(event) => {
             if (typeof onPress === 'function') {
               onPress(event)
@@ -93,6 +92,30 @@ jest.mock('@heroui/react', () => {
         </button>
       )
     },
+    Input: ({
+      classNames: _classNames,
+      label,
+      value,
+      isRequired,
+      onValueChange,
+      ...props
+    }: any) => (
+      <label>
+        {label}
+        <input
+          required={isRequired}
+          value={value}
+          onChange={(event) => onValueChange?.(event.target.value)}
+          {...props}
+        />
+      </label>
+    ),
+    Modal: ({ children, isOpen }: any) =>
+      isOpen ? <div role="dialog">{children}</div> : null,
+    ModalContent: ({ children }: any) => <div>{children}</div>,
+    ModalHeader: ({ children }: any) => <div>{children}</div>,
+    ModalBody: ({ children }: any) => <div>{children}</div>,
+    ModalFooter: ({ children }: any) => <div>{children}</div>,
   }
 })
 
@@ -243,6 +266,7 @@ class InMemorySettlementRepo implements SettlementRepo {
 }
 
 const baseTimestamp = 1710000000000
+const mockPush = jest.fn()
 
 function createAccountBookFixture(
   overrides: Partial<AccountBook> = {}
@@ -391,7 +415,7 @@ function renderPage() {
         <AccountBookStoreProvider store={accountBookStore}>
           <CategoryStoreProvider store={categoryStore}>
             <UserStoreProvider store={userStore}>
-                <SettlementRecordDetailPage />
+              <SettlementRecordDetailPage />
             </UserStoreProvider>
           </CategoryStoreProvider>
         </AccountBookStoreProvider>
@@ -404,11 +428,13 @@ describe('Settlement record detail page', () => {
   beforeEach(() => {
     ;(useRouter as jest.Mock).mockReturnValue({
       query: { id: 'book-1', recordId: 'record-1' },
-      push: jest.fn(),
+      push: mockPush,
     })
 
     mockTransactionRepo = createMockTransactionRepo()
-    mockSettlementRepo = new InMemorySettlementRepo([createSettlementRecordFixture()])
+    mockSettlementRepo = new InMemorySettlementRepo([
+      createSettlementRecordFixture(),
+    ])
   })
 
   afterEach(() => {
@@ -418,14 +444,53 @@ describe('Settlement record detail page', () => {
   it('loads only transactions for the settlement record', async () => {
     renderPage()
 
-    await waitFor(() => {
-      expect(screen.getByTestId('transaction-count').textContent).toBe('1')
-    })
+    expect(
+      (await screen.findByRole('heading', { name: 'Settlement #1' })).className
+    ).toContain('text-headline')
+    expect(screen.getByTestId('settlement-record-page').dataset.ui).toBe(
+      'page-scaffold'
+    )
+    expect(screen.getByTestId('settlement-record-detail')).toBeTruthy()
+    expect(screen.getByText('Member balances').className).toContain(
+      'text-title'
+    )
+    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
 
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Covered transactions (1)' })
+    )
     expect(screen.getByText('Breakfast with friends')).toBeTruthy()
     expect(mockTransactionRepo.findBySettlementRecordId).toHaveBeenCalledWith(
       'record-1'
     )
     expect(mockTransactionRepo.findByAccountBookId).not.toHaveBeenCalled()
+
+    const backButton = screen.getByRole('button', {
+      name: 'Back to settlements',
+    })
+    expect(backButton.className).toContain('min-h-11')
+    fireEvent.click(backButton)
+    expect(mockPush).toHaveBeenCalledWith('/account-books/book-1/settlement')
+  })
+
+  it('keeps transfer completion wired through the record detail surface', async () => {
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark done' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+
+    await waitFor(async () => {
+      const record = await mockSettlementRepo.findById('record-1')
+      expect(record?.transfers[0]).toMatchObject({
+        actualAmount: 60,
+        note: '',
+        status: 'completed',
+      })
+    })
+    expect(addToast).toHaveBeenCalledWith({
+      title: 'Transfer marked as done',
+      color: 'success',
+    })
+    expect(await screen.findByText('Done')).toBeTruthy()
   })
 })

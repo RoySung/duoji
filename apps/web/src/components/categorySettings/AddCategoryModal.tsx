@@ -17,6 +17,11 @@ import {
   DEFAULT_CATEGORY_ICON_KEY,
 } from '@/constants/categoryIcons'
 import { TransactionType } from '@/entities/transaction'
+import {
+  compactInputClassNames,
+  compactSelectClassNames,
+  transactionModalClassNames,
+} from '@/components/TransactionModal/formControlStyles'
 
 const ICON_KEYS = Object.keys(CATEGORY_ICONS) as CategoryIconKey[]
 
@@ -101,15 +106,24 @@ export default function AddCategoryModal({
       : t('categorySettings.expense')
   }
 
-
-
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
-      <ModalContent>
-        <ModalHeader>{resolveTitle()}</ModalHeader>
+    <Modal
+      classNames={transactionModalClassNames}
+      isOpen={isOpen}
+      placement="bottom"
+      scrollBehavior="inside"
+      onClose={handleClose}
+    >
+      <ModalContent className="max-h-[calc(100dvh-env(safe-area-inset-top))] overflow-hidden sm:max-h-[calc(100dvh-4rem)]">
+        <ModalHeader className="border-b border-border px-5 py-4 sm:px-6">
+          <h2 className="text-title font-semibold text-foreground">
+            {resolveTitle()}
+          </h2>
+        </ModalHeader>
 
-        <ModalBody className="flex flex-col gap-4">
+        <ModalBody className="flex min-h-0 flex-col gap-5 overflow-y-auto px-5 py-5 sm:px-6">
           <Input
+            classNames={compactInputClassNames}
             isRequired
             errorMessage={nameError}
             isInvalid={!!nameError}
@@ -123,10 +137,10 @@ export default function AddCategoryModal({
           />
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-foreground-600">
+            <span className="text-body font-medium text-foreground">
               {t('categorySettings.icon')}
             </span>
-            <div className="grid grid-cols-6 gap-2 max-h-[160px] overflow-y-auto p-2 border border-default-200 rounded-medium bg-default-50">
+            <div className="grid max-h-[11.5rem] grid-cols-5 gap-2 overflow-y-auto rounded-xl bg-secondary p-2 sm:grid-cols-6">
               {ICON_KEYS.map((key) => {
                 const isSelected = iconKey === key
                 const labelText = t(`categorySettings.iconOptions.${key}`)
@@ -136,16 +150,17 @@ export default function AddCategoryModal({
                     type="button"
                     title={labelText}
                     aria-label={labelText}
-                    className={`flex items-center justify-center p-2 rounded-medium border-2 transition-all ${
+                    aria-pressed={isSelected}
+                    className={`flex min-h-11 min-w-11 items-center justify-center rounded-xl border-2 p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       isSelected
-                        ? 'border-primary bg-primary-50/50'
-                        : 'border-transparent hover:bg-default-100'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-transparent bg-card/70 hover:bg-card'
                     }`}
                     onClick={() => setIconKey(key)}
                   >
                     <img
                       alt={labelText}
-                      className="size-6 shrink-0"
+                      className="size-5 shrink-0"
                       src={CATEGORY_ICONS[key]}
                     />
                   </button>
@@ -157,18 +172,19 @@ export default function AddCategoryModal({
           {/* Type indicator/selector — hidden in edit mode */}
           {!isEditMode &&
             (parentType ? (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-label text-muted-foreground">
                 {t('categorySettings.typeLabel')}{' '}
                 <span className="font-medium">{typeDisplay(parentType)}</span>{' '}
                 {t('categorySettings.typeInherited')}
               </p>
             ) : sectionType ? (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-label text-muted-foreground">
                 {t('categorySettings.typeLabel')}{' '}
                 <span className="font-medium">{typeDisplay(sectionType)}</span>
               </p>
             ) : (
               <Select
+                classNames={compactSelectClassNames}
                 label={t('categorySettings.type')}
                 selectedKeys={[type]}
                 onSelectionChange={(keys) => {
@@ -192,11 +208,21 @@ export default function AddCategoryModal({
             ))}
         </ModalBody>
 
-        <ModalFooter>
-          <Button disableRipple variant="flat" onPress={handleClose}>
+        <ModalFooter className="grid grid-cols-2 gap-3 border-t border-border px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-4">
+          <Button
+            className="min-h-11 w-full rounded-xl text-body"
+            disableRipple
+            variant="flat"
+            onPress={handleClose}
+          >
             {t('common.cancel')}
           </Button>
-          <Button color="primary" disableRipple onPress={handleSubmit}>
+          <Button
+            className="min-h-11 w-full rounded-xl text-body"
+            color="primary"
+            disableRipple
+            onPress={handleSubmit}
+          >
             {isEditMode ? t('common.save') : t('common.add')}
           </Button>
         </ModalFooter>

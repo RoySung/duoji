@@ -14,6 +14,11 @@ import { clsx } from 'clsx'
 import { Transaction } from '@/entities/transaction'
 import { User, VirtualUser } from '@/entities/user'
 import { useTranslations } from 'next-intl'
+import {
+  compactInputClassNames,
+  bottomSheetClassNames,
+} from './formControlStyles'
+import { DetailBalanceNotice } from './DetailBalanceNotice'
 
 type Props = {
   isOpen: boolean
@@ -76,23 +81,7 @@ export default function SplitDetailModal({
     0
   )
 
-  const NoticeInFooter = () => {
-    const diff = currentTotalAmount - amount
-    if (diff === 0) return <div className="h-8" />
-    return (
-      <div className="text-right h-8">
-        <span
-          className={clsx({
-            'text-green-500': diff > 0,
-            'text-red-500': diff < 0,
-          })}
-        >
-          {diff > 0 ? `+${diff}` : diff}
-        </span>
-      </div>
-    )
-  }
-
+  const difference = currentTotalAmount - amount
   const isSaveDisabled = currentTotalAmount !== amount
 
   function setIsOpen(open: boolean) {
@@ -115,25 +104,31 @@ export default function SplitDetailModal({
       onOpenChange={setIsOpen}
       placement="bottom"
       scrollBehavior="inside"
+      classNames={bottomSheetClassNames}
     >
       <ModalContent>
         <ModalHeader>
-          <div className="flex flex-col gap-2 items-center w-full">
-            <h2>{t('transactionForm.splitDetailTitle')}</h2>
+          <div className="flex w-full flex-col items-center gap-2">
+            <h2 className="text-title font-semibold text-foreground">
+              {t('transactionForm.splitDetailTitle')}
+            </h2>
           </div>
         </ModalHeader>
         <ModalBody>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {users.map((user) => {
               const selected = checkIsUserSelected(user)
-              const isDeleted = user.type === 'virtual' && !!(user as VirtualUser).deletedAt
+              const isDeleted =
+                user.type === 'virtual' &&
+                Boolean((user as VirtualUser).deletedAt)
               const isCheckboxDisabled = isDeleted && !selected
               return (
                 <div
                   key={user.id}
-                  className={clsx('flex items-center gap-2', {
-                    'opacity-50': !selected,
-                  })}
+                  className={clsx(
+                    'grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl bg-muted/60 p-3 min-[360px]:grid-cols-[auto_minmax(0,1fr)_minmax(7.5rem,0.9fr)]',
+                    { 'opacity-60': !selected }
+                  )}
                 >
                   <Checkbox
                     isSelected={selected}
@@ -146,22 +141,29 @@ export default function SplitDetailModal({
                     src={user.avatarUrl}
                     name={user.name}
                     size="sm"
-                    className="w-5 h-5 text-tiny shrink-0"
+                    className="h-6 w-6 shrink-0 text-tiny"
                   />
-                  <div className={clsx('w-24 truncate', { 'line-through': isDeleted })}>{user.name}</div>
+                  <div
+                    className={clsx(
+                      'min-w-0 truncate text-body text-foreground',
+                      { 'line-through': isDeleted }
+                    )}
+                  >
+                    {user.name}
+                  </div>
                   <Input
                     size="sm"
+                    classNames={compactInputClassNames}
                     label={t('transactionForm.amount')}
                     type="number"
                     inputMode="decimal"
                     isClearable
                     onClear={() => handleAmountChange(user, 0)}
                     placeholder="0"
-                    className="flex-1"
+                    className="col-span-2 min-w-0 min-[360px]:col-span-1"
                     value={(
-                      currentSplitDetail.find(
-                        (item) => item.userId === user.id
-                      )?.amount ?? 0
+                      currentSplitDetail.find((item) => item.userId === user.id)
+                        ?.amount ?? 0
                     ).toString()}
                     onChange={(e) => {
                       const v = parseFloat(e.target.value)
@@ -175,11 +177,17 @@ export default function SplitDetailModal({
           </div>
         </ModalBody>
         <ModalFooter>
-          <div>
-            <NoticeInFooter />
-            <div className="flex gap-2">
-              <Button onPress={handleCancel}>{t('common.cancel')}</Button>
+          <div className="w-full">
+            <DetailBalanceNotice difference={difference} />
+            <div className="flex justify-end gap-2">
               <Button
+                className="min-h-11 rounded-xl text-body"
+                onPress={handleCancel}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                className="min-h-11 rounded-xl text-body"
                 color="primary"
                 variant="solid"
                 onPress={handleSave}

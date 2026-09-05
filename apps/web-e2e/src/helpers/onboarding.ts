@@ -50,7 +50,10 @@ export async function completeProfileStep(
   await expect(page).toHaveURL(/step=3/)
 }
 
-export async function createFirstAccountBook(page: Page, accountBookName: string) {
+export async function createFirstAccountBook(
+  page: Page,
+  accountBookName: string
+) {
   const nameInput = page.getByLabel(/name|名稱/i).last()
   await expect(nameInput).toBeVisible()
   await nameInput.focus()
@@ -64,8 +67,13 @@ export async function createFirstAccountBook(page: Page, accountBookName: string
 
 export async function skipInitialOnboarding(page: Page) {
   for (const step of ['3', '4', '5', '6', '7', '8']) {
-    await expect(page).toHaveURL(new RegExp(`onboarding=${step}`))
-    await page.getByRole('button', { name: /^Skip$/ }).last().click()
+    await expect(page).toHaveURL(new RegExp(`onboarding=${step}`), {
+      timeout: 15_000,
+    })
+    await page
+      .getByRole('button', { name: /^Skip$/ })
+      .last()
+      .click()
   }
 }
 

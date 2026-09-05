@@ -1,7 +1,18 @@
-import { Button, Modal, ModalBody, ModalContent, ModalFooter } from '@heroui/react'
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+} from '@heroui/react'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
-import { PiChartPieSlice, PiNotePencil, PiSparkle, PiUsersThree } from 'react-icons/pi'
+import {
+  PiChartPieSlice,
+  PiNotePencil,
+  PiSparkle,
+  PiUsersThree,
+} from 'react-icons/pi'
 import type { ComponentType } from 'react'
 import { useSettingsStore } from '@/stores/settings'
 
@@ -40,11 +51,9 @@ export default function OnboardingWelcomeModal() {
   async function handleClose() {
     await markOnboardingComplete()
     const { onboarding: _omit, ...rest } = router.query
-    void router.replace(
-      { pathname: router.pathname, query: rest },
-      undefined,
-      { shallow: true }
-    )
+    void router.replace({ pathname: router.pathname, query: rest }, undefined, {
+      shallow: true,
+    })
   }
 
   return (
@@ -57,38 +66,40 @@ export default function OnboardingWelcomeModal() {
       size="md"
       scrollBehavior="inside"
       classNames={{
-        base: 'mx-4 sm:mx-auto',
+        backdrop: 'bg-foreground/45',
+        base: 'mx-4 max-h-[calc(100dvh-2rem)] rounded-2xl border border-border bg-card text-card-foreground shadow-[0_8px_24px_hsl(var(--surface-shadow)/0.3)] sm:mx-auto',
+        body: 'overflow-y-auto',
       }}
     >
       <ModalContent>
-        <ModalBody className="px-6 pt-8 pb-2 sm:px-8 sm:pt-10">
-          <div className="flex flex-col items-center text-center gap-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <PiSparkle className="h-8 w-8" aria-hidden />
+        <ModalBody className="px-5 pb-2 pt-6 sm:px-8 sm:pt-8">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-peach text-emphasis-foreground">
+              <PiSparkle className="size-6" aria-hidden />
             </div>
-            <p className="text-xs font-medium uppercase tracking-[0.25em] text-primary">
+            <p className="text-label font-medium text-emphasis-foreground">
               {t('onboarding.welcome.eyebrow')}
             </p>
-            <h2 className="text-2xl font-semibold leading-tight">
+            <h2 className="text-title font-semibold">
               {t('onboarding.welcome.title')}
             </h2>
-            <p className="text-sm text-muted-foreground whitespace-pre-line">
+            <p className="whitespace-pre-line break-words text-body text-muted-foreground">
               {t('onboarding.welcome.description')}
             </p>
           </div>
 
-          <ul className="mt-6 flex flex-col gap-3">
+          <ul className="mt-6 divide-y divide-border rounded-2xl bg-secondary/70 px-3">
             {HIGHLIGHTS.map(({ icon: Icon, titleKey, descriptionKey }) => (
               <li
                 key={titleKey}
-                className="flex items-start gap-3 rounded-xl border border-default-100 bg-default-50/60 p-3"
+                className="flex min-w-0 items-start gap-3 py-3"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" aria-hidden />
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-card text-primary">
+                  <Icon className="size-4" aria-hidden />
                 </span>
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-sm font-medium">{t(titleKey)}</p>
-                  <p className="text-xs text-muted-foreground">
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="text-body font-medium">{t(titleKey)}</p>
+                  <p className="break-words text-label leading-5 text-muted-foreground">
                     {t(descriptionKey)}
                   </p>
                 </div>
@@ -96,11 +107,11 @@ export default function OnboardingWelcomeModal() {
             ))}
           </ul>
         </ModalBody>
-        <ModalFooter className="px-6 pb-6 pt-4 sm:px-8">
+        <ModalFooter className="px-5 pb-5 pt-4 sm:px-8 sm:pb-7">
           <Button
             color="primary"
             onPress={handleClose}
-            className="w-full"
+            className="min-h-11 w-full rounded-xl px-4 text-body font-medium focus-visible:ring-2 focus-visible:ring-ring"
             size="lg"
           >
             {t('onboarding.welcome.cta')}

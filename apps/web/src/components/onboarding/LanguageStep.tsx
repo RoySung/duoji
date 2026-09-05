@@ -36,6 +36,7 @@ export default function LanguageStep({ onAdvance }: LanguageStepProps) {
       primaryAction={
         <Button
           color="primary"
+          className="min-h-11 rounded-xl px-4 text-body font-medium focus-visible:ring-2 focus-visible:ring-ring"
           isLoading={submitting}
           onPress={() => void handleConfirm()}
         >
@@ -49,13 +50,16 @@ export default function LanguageStep({ onAdvance }: LanguageStepProps) {
             key={locale}
             type="button"
             onClick={() => setSelected(locale)}
-            className={`rounded-2xl border px-4 py-3 text-left transition ${
+            aria-pressed={selected === locale}
+            className={`min-h-11 rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
               selected === locale
-                ? 'border-orange-300 bg-orange-300/10'
-                : 'border-border bg-background hover:border-orange-300/60'
+                ? 'border-emphasis bg-emphasis/10 text-foreground'
+                : 'border-border bg-background text-foreground hover:border-primary/60 hover:bg-secondary/60'
             }`}
           >
-            <span className="text-base font-medium">{t(`settings.language.options.${locale}`)}</span>
+            <span className="text-body font-medium">
+              {t(`settings.language.options.${locale}`)}
+            </span>
           </button>
         ))}
       </div>
