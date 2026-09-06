@@ -54,7 +54,15 @@ jobs:
 
       - name: Build web for GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: npx nx run web:build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /duoji
+        run: npx nx run web:build --skip-nx-cache
+
+      - name: Verify GitHub Pages asset paths
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          grep -qE '(href|src)="/duoji/_next/' "$BUILD_PATH/index.html"
+          ! grep -qE '(href|src)="/_next/' "$BUILD_PATH/index.html"
 
       - name: Upload build output
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
