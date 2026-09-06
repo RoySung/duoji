@@ -5,6 +5,11 @@ module.exports = async function () {
 
   // Stop the server process initiated in globalSetup
   if (globalThis.__SERVER_PROCESS__) {
-    globalThis.__SERVER_PROCESS__.kill()
+    const server = globalThis.__SERVER_PROCESS__
+
+    if (server.exitCode === null) {
+      server.kill()
+      await new Promise<void>((resolve) => server.once('exit', resolve))
+    }
   }
 }

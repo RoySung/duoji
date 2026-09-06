@@ -6,8 +6,7 @@ var __TEARDOWN_MESSAGE__: string
 module.exports = async function () {
   console.log('\nSetting up...\n')
 
-  const server = spawn('nx', ['dev', 'backend'], {
-    shell: true,
+  const server = spawn(process.execPath, ['apps/backend/dist/main.js'], {
     stdio: 'pipe',
   })
 
