@@ -1308,6 +1308,53 @@ describe('Home transaction history', () => {
     })
   })
 
+  it('changes the calendar view only through its explicit control', async () => {
+    await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+    })
+
+    const calendar = screen.getByTestId('transaction-calendar-surface')
+    const scrollContainer = calendar.closest('[data-ui="page-scaffold"]')
+      ?.parentElement
+
+    if (!scrollContainer) {
+      throw new Error('Expected the calendar to be inside the page scroll container')
+    }
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Expand to month view' })
+    )
+    expect(
+      screen.getByRole('button', { name: 'Collapse to week view' })
+    ).toBeTruthy()
+
+    fireEvent.wheel(scrollContainer, { deltaY: 100 })
+    fireEvent.touchStart(scrollContainer, {
+      touches: [{ clientY: 100 }],
+    })
+    fireEvent.touchMove(scrollContainer, {
+      touches: [{ clientY: 10 }],
+    })
+    expect(
+      screen.getByRole('button', { name: 'Collapse to week view' })
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Collapse to week view' })
+    )
+    fireEvent.wheel(scrollContainer, { deltaY: -500 })
+    fireEvent.touchStart(scrollContainer, {
+      touches: [{ clientY: 100 }],
+    })
+    fireEvent.touchMove(scrollContainer, {
+      touches: [{ clientY: 150 }],
+    })
+    expect(
+      screen.getByRole('button', { name: 'Expand to month view' })
+    ).toBeTruthy()
+  })
+
   it('renders routed account-book transactions in a flat list with summary metadata', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',

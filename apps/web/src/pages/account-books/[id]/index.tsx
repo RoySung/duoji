@@ -54,76 +54,6 @@ export default function AccountBookPage() {
     'week'
   )
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const touchStartYRef = useRef<number | null>(null)
-  const wheelPullDeltaRef = useRef(0)
-  const wheelPullResetTimerRef = useRef<number | null>(null)
-  const lastNonTopWheelTsRef = useRef(0)
-
-  const handleScrollContainerWheel = useCallback(
-    (event: React.WheelEvent<HTMLDivElement>) => {
-      const now = event.timeStamp
-      if (scrollContainerRef.current?.scrollTop !== 0) {
-        wheelPullDeltaRef.current = 0
-        lastNonTopWheelTsRef.current = now
-        return
-      }
-      if (event.deltaY < 0 && calendarViewMode === 'week') {
-        if (now - lastNonTopWheelTsRef.current < 250) {
-          wheelPullDeltaRef.current = 0
-          return
-        }
-        wheelPullDeltaRef.current += event.deltaY
-        if (wheelPullResetTimerRef.current !== null) {
-          window.clearTimeout(wheelPullResetTimerRef.current)
-        }
-        wheelPullResetTimerRef.current = window.setTimeout(() => {
-          wheelPullDeltaRef.current = 0
-          wheelPullResetTimerRef.current = null
-        }, 200)
-        if (wheelPullDeltaRef.current < -400) {
-          setCalendarViewMode('month')
-          wheelPullDeltaRef.current = 0
-        }
-      } else if (event.deltaY > 0 && calendarViewMode === 'month') {
-        setCalendarViewMode('week')
-        wheelPullDeltaRef.current = 0
-      }
-    },
-    [calendarViewMode]
-  )
-
-  const handleScrollContainerTouchStart = useCallback(
-    (event: React.TouchEvent<HTMLDivElement>) => {
-      touchStartYRef.current = event.touches[0]?.clientY ?? null
-    },
-    []
-  )
-
-  const handleScrollContainerTouchMove = useCallback(
-    (event: React.TouchEvent<HTMLDivElement>) => {
-      if (
-        touchStartYRef.current === null ||
-        scrollContainerRef.current?.scrollTop !== 0
-      ) {
-        return
-      }
-      const currentY = event.touches[0]?.clientY
-      if (currentY === undefined) return
-      const delta = currentY - touchStartYRef.current
-      if (delta > 40 && calendarViewMode === 'week') {
-        setCalendarViewMode('month')
-        touchStartYRef.current = null
-      } else if (delta < -40 && calendarViewMode === 'month') {
-        setCalendarViewMode('week')
-        touchStartYRef.current = null
-      }
-    },
-    [calendarViewMode]
-  )
-
-  const handleScrollContainerTouchEnd = useCallback(() => {
-    touchStartYRef.current = null
-  }, [])
 
   const {
     summariesByDate,
@@ -319,10 +249,6 @@ export default function AccountBookPage() {
       <div
         ref={scrollContainerRef}
         className="h-full overflow-y-auto bg-background text-foreground"
-        onWheel={handleScrollContainerWheel}
-        onTouchStart={handleScrollContainerTouchStart}
-        onTouchMove={handleScrollContainerTouchMove}
-        onTouchEnd={handleScrollContainerTouchEnd}
       >
         <PageScaffold>
           <div
