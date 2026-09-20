@@ -248,6 +248,9 @@
     "refreshing": "Refreshing...",
     "refreshAria": "Refresh transactions",
     "records": "{count} records",
+    "recordsDay": "{period}: {count} records",
+    "recordsWeek": "{period}: {count} records",
+    "recordsMonth": "{period}: {count} records",
     "emptyOnDate": "No transactions on this date",
     "list": {
       "loading": "Loading transactions...",

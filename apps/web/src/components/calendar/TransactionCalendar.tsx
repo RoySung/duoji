@@ -27,6 +27,7 @@ type Props = {
   onSelectDate: (date: string | null) => void
   calendarSummaries: Record<string, TransactionCalendarSummary>
   onVisibleRangeChange?: (range: TransactionCalendarVisibleRange) => void
+  onDisplayWeekRangeChange?: (range: TransactionCalendarVisibleRange) => void
   onQueryRangeChange?: (range: TransactionCalendarVisibleRange) => void
   onDisplayMonthChange?: (month: string) => void
   viewMode?: 'week' | 'month'
@@ -39,6 +40,7 @@ export default function TransactionCalendar({
   onSelectDate,
   calendarSummaries,
   onVisibleRangeChange,
+  onDisplayWeekRangeChange,
   onQueryRangeChange,
   onDisplayMonthChange,
   viewMode: controlledViewMode,
@@ -88,6 +90,10 @@ export default function TransactionCalendar({
   useEffect(() => {
     onDisplayMonthChange?.(formatCalendarDate(displayMonth.startOf('month')))
   }, [displayMonth, onDisplayMonthChange])
+
+  useEffect(() => {
+    onDisplayWeekRangeChange?.(getWeekVisibleRange(displayMonth))
+  }, [displayMonth, onDisplayWeekRangeChange])
 
   function handleChangeWeek(weekDate: dayjs.Dayjs) {
     setDisplayMonth(weekDate)

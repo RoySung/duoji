@@ -7,6 +7,7 @@ import TransactionCalendar from '@/components/calendar/TransactionCalendar'
 import {
   formatCalendarDate,
   getMonthGridVisibleRange,
+  getWeekVisibleRange,
   parseCalendarDate,
 } from '@/components/calendar/calendarUtils'
 import TransactionList from '@/components/transaction/TransactionList'
@@ -50,6 +51,10 @@ export default function AccountBookPage() {
   )
   const [displayMonthRange, setDisplayMonthRange] =
     useState<TransactionCalendarVisibleRange>(() => buildMonthRange(dayjs()))
+  const [calendarVisibleRange, setCalendarVisibleRange] =
+    useState<TransactionCalendarVisibleRange>(() =>
+      getWeekVisibleRange(dayjs())
+    )
   const [calendarViewMode, setCalendarViewMode] = useState<'week' | 'month'>(
     'week'
   )
@@ -82,6 +87,42 @@ export default function AccountBookPage() {
   const transactions = selectedDate
     ? transactionsByDate[selectedDate] ?? []
     : monthTransactions
+
+  const recordCountText = useMemo(() => {
+    if (selectedDate) {
+      const count = rangeTransactions.filter(
+        (transaction) => transaction.date === selectedDate
+      ).length
+      return t('transactions.recordsDay', { count, period: selectedDate })
+    }
+
+    if (calendarViewMode === 'week') {
+      const count = rangeTransactions.filter(
+        (transaction) =>
+          transaction.date >= calendarVisibleRange.startDate &&
+          transaction.date <= calendarVisibleRange.endDate
+      ).length
+      return t('transactions.recordsWeek', {
+        count,
+        period: `${calendarVisibleRange.startDate}–${calendarVisibleRange.endDate}`,
+      })
+    }
+
+    const count = monthTransactions.length
+    return t('transactions.recordsMonth', {
+      count,
+      period: displayMonthRange.startDate.slice(0, 7),
+    })
+  }, [
+    calendarViewMode,
+    calendarVisibleRange.endDate,
+    calendarVisibleRange.startDate,
+    displayMonthRange.startDate,
+    monthTransactions.length,
+    rangeTransactions,
+    selectedDate,
+    t,
+  ])
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<TransactionModalMode>('create')
@@ -139,6 +180,22 @@ export default function AccountBookPage() {
       })
     },
     [buildMonthRange]
+  )
+
+  const handleDisplayWeekRangeChange = useCallback(
+    (range: TransactionCalendarVisibleRange) => {
+      setCalendarVisibleRange((currentRange) => {
+        if (
+          currentRange.startDate === range.startDate &&
+          currentRange.endDate === range.endDate
+        ) {
+          return currentRange
+        }
+
+        return range
+      })
+    },
+    []
   )
 
   useEffect(() => {
@@ -263,9 +320,7 @@ export default function AccountBookPage() {
               }
               isRefreshDisabled={isLoading}
               isRefreshing={isRefreshing}
-              recordCount={t('transactions.records', {
-                count: transactions.length,
-              })}
+              recordCount={recordCountText}
               refreshLabel={t('transactions.refreshAria')}
               refreshingLabel={t('transactions.refreshing')}
               sectionLabel={t('transactions.label')}
@@ -285,6 +340,7 @@ export default function AccountBookPage() {
                 onSelectDate={setSelectedDate}
                 calendarSummaries={summariesByDate}
                 onDisplayMonthChange={handleDisplayMonthChange}
+                onDisplayWeekRangeChange={handleDisplayWeekRangeChange}
                 onQueryRangeChange={handleQueryRangeChange}
                 viewMode={calendarViewMode}
                 onViewModeChange={setCalendarViewMode}

@@ -1,0 +1,13 @@
+## 1. Implement scoped hero counts
+
+- [x] 1.1 Apply the **Derive the count from calendar state and loaded range transactions** and **Give selected date precedence over calendar view mode** decisions in apps/web/src/pages/account-books/[id]/index.tsx so **Account-book hero reports the selected date count**, **Account-book hero reports the displayed week count without a selection**, and **Account-book hero reports the displayed month count without a selection** from the selected date, calendar visible range, calendar view mode, and loaded range transactions; verify with the hero record-count test id that day selection overrides either view and that week and month boundaries exclude out-of-scope transactions.
+- [x] [P] 1.2 Apply the **Expose semantic labels through existing message catalogs** decision in apps/web/src/i18n/messages/zh-TW.json and apps/web/src/i18n/messages/en-US.json so the hero has localized day, week, and month labels, including exact Traditional Chinese strings `該日共 {count} 筆`, `該週共 {count} 筆`, and `該月共 {count} 筆`; verify all message keys resolve through the account-book route without a missing-translation error.
+- [x] 1.3 Apply the **Include the concrete date scope in record-count labels** decision to supersede the completed semantic-only copy: render zero-padded `YYYY/MM`, `YYYY/MM/DD–YYYY/MM/DD`, or `YYYY/MM/DD` scope text through the existing locale catalogs while preserving the current count rules; verify focused route tests cover all three exact Traditional Chinese formats and the week-range en dash.
+
+## 2. Verify calendar interactions
+
+- [x] 2.1 Extend apps/web-e2e/src/transactions.spec.ts with deterministic account-book transactions across a selected day, displayed week, displayed month, and adjacent month so **Account-book hero reports the selected date count**, **Account-book hero reports the displayed week count without a selection**, and **Account-book hero reports the displayed month count without a selection** are asserted through `[data-testid="transaction-hero-record-count"]`; verify `pnpm exec nx e2e web-e2e` passes with assertions for exact `YYYY/MM/DD 共 X 筆`, `YYYY/MM/DD–YYYY/MM/DD 共 X 筆`, and `YYYY/MM 共 X 筆` output.
+
+## 3. Run regression checks
+
+- [x] 3.1 Confirm the scoped count implementation preserves calendar navigation, transaction-list filtering, and existing hero refresh behavior as defined by the **Implementation Contract** and **Risks / Trade-offs**; verify `pnpm exec nx build web` succeeds and manually toggle week/month mode, navigate to another week with no selection, then select a date and confirm the label scope and count update correctly.

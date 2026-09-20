@@ -248,6 +248,9 @@
     "refreshing": "重新整理中…",
     "refreshAria": "重新整理交易",
     "records": "{count} 筆紀錄",
+    "recordsDay": "{period} 共 {count} 筆",
+    "recordsWeek": "{period} 共 {count} 筆",
+    "recordsMonth": "{period} 共 {count} 筆",
     "emptyOnDate": "這一天沒有交易紀錄",
     "list": {
       "loading": "載入交易中…",

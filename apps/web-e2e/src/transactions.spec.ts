@@ -79,4 +79,238 @@ test.describe('Transactions', () => {
     await expect(transactionList).toBeVisible()
     await expect(transactionList).toContainText('200')
   })
+
+  test('scoped hero record count across day, week, and month', async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(new Date('2026-09-12T12:00:00'))
+
+    await createAccountBookAndSkipOnboarding(
+      page,
+      '測試帳本',
+      { name: '測試者', email: 'test-zh@example.com' },
+      'zh-TW'
+    )
+
+    const heroRecordCount = page.locator(
+      '[data-testid="transaction-hero-record-count"]'
+    )
+    await expect(heroRecordCount).toBeVisible()
+
+    // Derive the fixed calendar's visible ranges so every seeded boundary is
+    // guaranteed to be represented by the UI under test.
+    const dates = await page.evaluate(() => {
+      function pad(n: number) {
+        return n < 10 ? '0' + n : String(n)
+      }
+      function format(d: Date) {
+        return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
+      }
+
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = now.getMonth()
+      const date = now.getDate()
+
+      const dayOfWeek = now.getDay()
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+      const monday = new Date(year, month, date + diffToMonday)
+
+      const weekDateStrs: string[] = []
+      for (let i = 0; i < 7; i++) {
+        weekDateStrs.push(
+          format(
+            new Date(
+              monday.getFullYear(),
+              monday.getMonth(),
+              monday.getDate() + i
+            )
+          )
+        )
+      }
+
+      const todayStr = format(now)
+      const otherDayInWeekStr = weekDateStrs.find((s) => s !== todayStr)!
+
+      const nextWeekStart = new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 7
+      )
+      const nextWeekEnd = new Date(
+        nextWeekStart.getFullYear(),
+        nextWeekStart.getMonth(),
+        nextWeekStart.getDate() + 6
+      )
+
+      const monthStart = new Date(year, month, 1)
+      const monthStartDay = monthStart.getDay()
+      const diffToGridMonday = monthStartDay === 0 ? -6 : 1 - monthStartDay
+      const adjacentMonthStr = format(
+        new Date(year, month, 1 + diffToGridMonday)
+      )
+
+      return {
+        todayStr,
+        weekStartStr: weekDateStrs[0],
+        weekEndStr: weekDateStrs[weekDateStrs.length - 1],
+        otherDayInWeekStr,
+        nextWeekStartStr: format(nextWeekStart),
+        nextWeekEndStr: format(nextWeekEnd),
+        otherDayInNextWeekStr: format(
+          new Date(
+            nextWeekStart.getFullYear(),
+            nextWeekStart.getMonth(),
+            nextWeekStart.getDate() + 1
+          )
+        ),
+        adjacentMonthStr,
+      }
+    })
+
+    const accountBookId = page
+      .url()
+      .split('/account-books/')[1]
+      ?.split(/[?#]/)[0]
+    expect(accountBookId).toBeTruthy()
+
+    // Seed deterministic transactions directly into DuojiDB
+    await page.evaluate(
+      async ({
+        accountBookId,
+        todayStr,
+        otherDayInWeekStr,
+        nextWeekStartStr,
+        otherDayInNextWeekStr,
+        adjacentMonthStr,
+      }) => {
+        const req = indexedDB.open('DuojiDB')
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          req.onsuccess = () => resolve(req.result)
+          req.onerror = () => reject(req.error)
+        })
+
+        const seedItems = [
+          { date: todayStr, amount: 100, description: 'Today expense 1' },
+          { date: todayStr, amount: 150, description: 'Today expense 2' },
+          {
+            date: otherDayInWeekStr,
+            amount: 200,
+            description: 'Other day in week',
+          },
+          {
+            date: nextWeekStartStr,
+            amount: 300,
+            description: 'Next week expense 1',
+          },
+          {
+            date: otherDayInNextWeekStr,
+            amount: 350,
+            description: 'Next week expense 2',
+          },
+          {
+            date: adjacentMonthStr,
+            amount: 400,
+            description: 'Adjacent month expense',
+          },
+        ]
+
+        const tx = db.transaction(['transactions'], 'readwrite')
+        const store = tx.objectStore('transactions')
+        for (const item of seedItems) {
+          store.put({
+            id: crypto.randomUUID(),
+            type: 'expense',
+            accountBookId,
+            categoryId: '1-1',
+            amount: item.amount,
+            date: item.date,
+            description: item.description,
+            paymentMethod: 'Cash',
+            receivedByUserId: null,
+            settlementRecordId: '__unsettled__',
+            tags: [],
+            paidByDetail: [],
+            splitDetail: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            deletedAt: null,
+          })
+        }
+
+        await new Promise<void>((resolve, reject) => {
+          tx.oncomplete = () => resolve()
+          tx.onerror = () => reject(tx.error)
+        })
+        db.close()
+      },
+      {
+        accountBookId,
+        todayStr: dates.todayStr,
+        otherDayInWeekStr: dates.otherDayInWeekStr,
+        nextWeekStartStr: dates.nextWeekStartStr,
+        otherDayInNextWeekStr: dates.otherDayInNextWeekStr,
+        adjacentMonthStr: dates.adjacentMonthStr,
+      }
+    )
+
+    // Refresh the active range query without reloading the statically exported
+    // dynamic route, which would restart onboarding on the test server.
+    await page.getByRole('button', { name: '重新整理交易' }).click()
+
+    // 1. On load, today is selected and the hero names that date.
+    await expect(heroRecordCount).toHaveText(`${dates.todayStr} 共 2 筆`)
+
+    // 2. Deselect the date in week view:
+    const activeDayButton = page.locator('button[aria-pressed="true"]')
+    await activeDayButton.click()
+
+    // Now in week view without selection, the hero names both week boundaries.
+    await expect(heroRecordCount).toHaveText(
+      `${dates.weekStartStr}–${dates.weekEndStr} 共 3 筆`
+    )
+
+    // 3. Navigate to the next week and verify both boundaries and count update.
+    await page.getByRole('button', { name: 'Next week', exact: true }).click()
+    await expect(heroRecordCount).toHaveText(
+      `${dates.nextWeekStartStr}–${dates.nextWeekEndStr} 共 2 筆`
+    )
+
+    // Return to the current week before expanding the current month.
+    await page
+      .getByRole('button', { name: 'Previous week', exact: true })
+      .click()
+
+    // 4. Switch to month view
+    const viewToggle = page.locator('button[aria-expanded]')
+    await viewToggle.click()
+
+    // Now in month view without selection, the hero names the displayed month.
+    // (Adjacent month transaction is excluded!)
+    await expect(heroRecordCount).toHaveText(
+      `${dates.todayStr.slice(0, 7)} 共 5 筆`
+    )
+
+    // 5. Select today while in month view: day selection overrides month view.
+    const calendarSurface = page.getByTestId('transaction-calendar-surface')
+    const todayDayNumber = String(parseInt(dates.todayStr.split('/')[2], 10))
+    const todayBtn = calendarSurface
+      .getByText(todayDayNumber, { exact: true })
+      .locator('..')
+    await todayBtn.click()
+    await expect(heroRecordCount).toHaveText(`${dates.todayStr} 共 2 筆`)
+
+    // 6. Select a known empty day in the fixed current month.
+    const emptyDayCandidate = '6'
+
+    const emptyDayBtn = calendarSurface
+      .getByText(emptyDayCandidate, { exact: true })
+      .locator('..')
+    await emptyDayBtn.click()
+    const emptyDate = `${dates.todayStr.slice(
+      0,
+      8
+    )}${emptyDayCandidate.padStart(2, '0')}`
+    await expect(heroRecordCount).toHaveText(`${emptyDate} 共 0 筆`)
+  })
 })

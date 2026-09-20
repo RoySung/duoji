@@ -30,9 +30,9 @@ export async function clearLocalData(page: Page) {
 export async function completeWelcomeModal(page: Page) {
   await expect(page).toHaveURL(/account-books\/[^/?]+\?onboarding=welcome/)
   await expect(
-    page.getByRole('heading', { name: /Welcome to DuoJi!/ })
+    page.getByRole('heading', { name: /Welcome to DuoJi!|歡迎加入 DuoJi！/ })
   ).toBeVisible()
-  await page.getByRole('button', { name: /Log my first expense/ }).click()
+  await page.getByRole('button', { name: /Log my first expense|開始記第一筆/ }).click()
   await expect(page).toHaveURL(/account-books\/[^/?]+$/)
 }
 
@@ -71,7 +71,7 @@ export async function skipInitialOnboarding(page: Page) {
       timeout: 15_000,
     })
     await page
-      .getByRole('button', { name: /^Skip$/ })
+      .getByRole('button', { name: /^Skip$|^略過$/ })
       .last()
       .click()
   }
@@ -83,12 +83,17 @@ export async function createAccountBookAndSkipOnboarding(
   profile: { name: string; email: string } = {
     name: 'Test User',
     email: 'test@example.com',
-  }
+  },
+  locale: 'en-US' | 'zh-TW' = 'en-US'
 ) {
   await page.goto('/')
-  // Select Language -> Next
-  await page.getByRole('button', { name: /English/ }).click()
-  await page.getByRole('button', { name: /Next/ }).click()
+  if (locale === 'zh-TW') {
+    await page.getByRole('button', { name: /繁體中文/ }).click()
+    await page.getByRole('button', { name: /下一步|Next/ }).click()
+  } else {
+    await page.getByRole('button', { name: /English/ }).click()
+    await page.getByRole('button', { name: /Next/ }).click()
+  }
 
   await completeProfileStep(page, profile)
   await createFirstAccountBook(page, accountBookName)

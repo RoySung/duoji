@@ -1367,7 +1367,9 @@ describe('Home transaction history', () => {
     })
 
     expect(screen.getByText('Daily Life')).toBeTruthy()
-    expect(screen.getByText('2 records')).toBeTruthy()
+    expect(
+      screen.getByText('2026/03/16–2026/03/22: 2 records')
+    ).toBeTruthy()
     expect(screen.getByTestId('transaction-list')).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-1')).getByText('2026/03/19')
@@ -1431,7 +1433,9 @@ describe('Home transaction history', () => {
       ).toBeTruthy()
     })
 
-    expect(screen.getByText('1 records')).toBeTruthy()
+    expect(
+      screen.getByText('2026/03/16–2026/03/22: 1 records')
+    ).toBeTruthy()
     expect(screen.getByText('Current month lunch')).toBeTruthy()
     expect(screen.queryByText('Previous month dinner')).toBeNull()
     expect(screen.queryByText('Next month coffee')).toBeNull()
@@ -1449,7 +1453,9 @@ describe('Home transaction history', () => {
     })
 
     expect(screen.getByText('Travel Fund')).toBeTruthy()
-    expect(screen.getByText('1 records')).toBeTruthy()
+    expect(
+      screen.getByText('2026/03/16–2026/03/22: 1 records')
+    ).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-3')).getAllByText('Bonus')
         .length
@@ -1640,7 +1646,9 @@ describe('Home transaction history', () => {
     })
 
     expect(screen.queryByTestId('transaction-row-tx-1')).toBeNull()
-    expect(screen.getByText('1 records')).toBeTruthy()
+    expect(
+      screen.getByText('2026/03/16–2026/03/22: 1 records')
+    ).toBeTruthy()
   })
 
   it('prefills new transaction drafts with Cash as the default payment method', async () => {
@@ -1806,7 +1814,9 @@ describe('Home transaction history', () => {
     const transactionRow = descriptionElement.closest('article')
 
     expect(transactionRow).not.toBeNull()
-    expect(screen.getByText('2 records')).toBeTruthy()
+    expect(
+      screen.getByText('2026/03/16–2026/03/22: 2 records')
+    ).toBeTruthy()
     expect(
       (transactionRow as HTMLElement).querySelector('[data-name="Roy"]')
     ).toBeTruthy()
@@ -1986,5 +1996,157 @@ describe('Home transaction history', () => {
     }) as HTMLButtonElement
 
     expect(saveButton.disabled).toBe(true)
+  })
+
+  describe('Scoped hero record count', () => {
+    it('reports selected date count in week view and month view', async () => {
+      await renderWithProviders({
+        currentAccountBookId: 'book-1',
+        routeAccountBookId: 'book-1',
+        transactions: [
+          createTransactionFixture({
+            id: 'tx-day-1',
+            accountBookId: 'book-1',
+            date: '2026/03/18',
+            description: 'Breakfast',
+          }),
+          createTransactionFixture({
+            id: 'tx-day-2',
+            accountBookId: 'book-1',
+            date: '2026/03/18',
+            description: 'Lunch',
+          }),
+          createTransactionFixture({
+            id: 'tx-other-day',
+            accountBookId: 'book-1',
+            date: '2026/03/19',
+            description: 'Dinner next day',
+          }),
+        ],
+      })
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('transaction-hero-record-count').textContent
+        ).toBe('2026/03/18: 2 records')
+      })
+
+      // Switch to month view while keeping the date selected
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Expand to month view' })
+      )
+      expect(
+        screen.getByTestId('transaction-hero-record-count').textContent
+      ).toBe('2026/03/18: 2 records')
+    })
+
+    it('reports 0 count when a date with no transactions is selected in month view', async () => {
+      await renderWithProviders({
+        currentAccountBookId: 'book-1',
+        routeAccountBookId: 'book-1',
+        transactions: [
+          createTransactionFixture({
+            id: 'tx-19',
+            accountBookId: 'book-1',
+            date: '2026/03/19',
+            description: 'Dinner next day',
+          }),
+        ],
+      })
+
+      // Switch to month view
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Expand to month view' })
+      )
+
+      // 2026/03/18 has 0 transactions
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('transaction-hero-record-count').textContent
+        ).toBe('2026/03/18: 0 records')
+      })
+    })
+
+    it('reports displayed week count when no date is selected, and updates on week navigation', async () => {
+      await renderWithProviders({
+        currentAccountBookId: 'book-1',
+        routeAccountBookId: 'book-1',
+        selectedDate: null,
+        transactions: [
+          createTransactionFixture({
+            id: 'tx-w1',
+            accountBookId: 'book-1',
+            date: '2026/03/18',
+            description: 'Current week tx',
+          }),
+          createTransactionFixture({
+            id: 'tx-w2',
+            accountBookId: 'book-1',
+            date: '2026/03/25',
+            description: 'Next week tx 1',
+          }),
+          createTransactionFixture({
+            id: 'tx-w3',
+            accountBookId: 'book-1',
+            date: '2026/03/26',
+            description: 'Next week tx 2',
+          }),
+        ],
+      })
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('transaction-hero-record-count').textContent
+        ).toBe('2026/03/16–2026/03/22: 1 records')
+      })
+
+      // Navigate to next week
+      fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('transaction-hero-record-count').textContent
+        ).toBe('2026/03/23–2026/03/29: 2 records')
+      })
+    })
+
+    it('reports displayed month count when no date is selected in month view, excluding adjacent month cells', async () => {
+      await renderWithProviders({
+        currentAccountBookId: 'book-1',
+        routeAccountBookId: 'book-1',
+        selectedDate: null,
+        transactions: [
+          createTransactionFixture({
+            id: 'tx-m1',
+            accountBookId: 'book-1',
+            date: '2026/03/05',
+            description: 'March tx 1',
+          }),
+          createTransactionFixture({
+            id: 'tx-m2',
+            accountBookId: 'book-1',
+            date: '2026/03/25',
+            description: 'March tx 2',
+          }),
+          createTransactionFixture({
+            id: 'tx-adjacent',
+            accountBookId: 'book-1',
+            date: '2026/04/02',
+            description: 'April adjacent tx',
+          }),
+        ],
+      })
+
+      // Switch to month view
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Expand to month view' })
+      )
+
+      await waitFor(() => {
+        // 2 in March, the April transaction in the grid must be excluded
+        expect(
+          screen.getByTestId('transaction-hero-record-count').textContent
+        ).toBe('2026/03: 2 records')
+      })
+    })
   })
 })
