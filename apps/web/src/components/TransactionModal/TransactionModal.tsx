@@ -470,6 +470,7 @@ export default function TransactionModal({
                 value={draft}
                 onChange={modalMode === 'view' ? () => {} : setDraft} // eslint-disable-line @typescript-eslint/no-empty-function
                 isEditMode={isEditMode}
+                shouldAutoFocusAmount={modalMode !== 'view'}
               />
               {modalMode === 'edit' ? (
                 <div className="rounded-xl bg-danger-50 px-4 py-4 ring-1 ring-danger-200 dark:bg-danger-50/10 dark:ring-danger-400/30">

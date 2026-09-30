@@ -50,9 +50,15 @@ type Props = {
   value: Transaction
   onChange: (nextValue: Transaction) => void
   isEditMode: boolean
+  shouldAutoFocusAmount: boolean
 }
 
-export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
+export default function ExpenseForm({
+  value,
+  onChange,
+  isEditMode,
+  shouldAutoFocusAmount,
+}: Props) {
   const t = useTranslations()
   const now = new Date()
   const currentAccountBookId =
@@ -250,6 +256,7 @@ export default function ExpenseForm({ value, onChange, isEditMode }: Props) {
           className="w-full"
         >
           <Input
+            autoFocus={shouldAutoFocusAmount}
             size="lg"
             isRequired
             label={t('transactionForm.amount')}

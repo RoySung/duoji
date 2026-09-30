@@ -298,14 +298,21 @@ function setMockSuggestionsByBook(
 function ExpenseFormHarness({
   initialValue = createTransactionFixture(),
   isEditMode = false,
+  shouldAutoFocusAmount = false,
 }: {
   initialValue?: Transaction
   isEditMode?: boolean
+  shouldAutoFocusAmount?: boolean
 }) {
   const [value, setValue] = useState(initialValue)
 
   return (
-    <ExpenseForm value={value} onChange={setValue} isEditMode={isEditMode} />
+    <ExpenseForm
+      value={value}
+      onChange={setValue}
+      isEditMode={isEditMode}
+      shouldAutoFocusAmount={shouldAutoFocusAmount}
+    />
   )
 }
 
@@ -315,19 +322,39 @@ function IncomeFormHarness({
     receivedByUserId: userList[0]!.id,
   }),
   isEditMode = false,
+  shouldAutoFocusAmount = false,
 }: {
   initialValue?: Transaction
   isEditMode?: boolean
+  shouldAutoFocusAmount?: boolean
 }) {
   const [value, setValue] = useState(initialValue)
 
-  return <IncomeForm value={value} onChange={setValue} isEditMode={isEditMode} />
+  return (
+    <IncomeForm
+      value={value}
+      onChange={setValue}
+      isEditMode={isEditMode}
+      shouldAutoFocusAmount={shouldAutoFocusAmount}
+    />
+  )
 }
 
 describe('transaction form tags', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     setMockSuggestionsByBook({})
+  })
+
+  it.each([
+    ['expense', () => <ExpenseFormHarness shouldAutoFocusAmount />],
+    ['income', () => <IncomeFormHarness shouldAutoFocusAmount />],
+  ])('auto-focuses the %s amount input when requested', (_type, createForm) => {
+    render(createForm())
+
+    expect(document.activeElement).toBe(
+      screen.getByLabelText('transactionForm.amount')
+    )
   })
 
   it('adds a clicked suggestion and still allows manual entry when no suggestions are available', () => {

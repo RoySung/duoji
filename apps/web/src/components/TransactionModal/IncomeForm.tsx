@@ -45,9 +45,15 @@ type Props = {
   value: Transaction
   onChange: (nextValue: Transaction) => void
   isEditMode: boolean
+  shouldAutoFocusAmount: boolean
 }
 
-export default function IncomeForm({ value, onChange, isEditMode }: Props) {
+export default function IncomeForm({
+  value,
+  onChange,
+  isEditMode,
+  shouldAutoFocusAmount,
+}: Props) {
   const t = useTranslations()
   const now = new Date()
   const currentAccountBookId =
@@ -164,6 +170,7 @@ export default function IncomeForm({ value, onChange, isEditMode }: Props) {
     <div className="income-form w-full">
       <Form className="flex w-full flex-col gap-5">
         <Input
+          autoFocus={shouldAutoFocusAmount}
           size="lg"
           isRequired
           label={t('transactionForm.amount')}
