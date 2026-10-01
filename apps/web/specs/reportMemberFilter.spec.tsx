@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import MemberFilterSelector from '../src/components/report/MemberFilterSelector'
 import AccountBookReportPage from '../src/pages/account-books/[id]/report'
+import {
+  TransactionModalLauncherProvider,
+  useOpenCreateTransaction,
+} from '../src/components/TransactionModal/TransactionModalLauncher'
 import { DefaultPaymentMethod, UNSETTLED_SETTLEMENT_RECORD_ID } from '../src/entities/transaction'
 import { User } from '@/entities/user'
 
@@ -130,8 +134,25 @@ jest.mock('../src/components/onboarding/ReportTutorial', () => ({
 }))
 
 jest.mock('../src/components/TransactionModal', () => ({
-  TransactionModal: () => null,
+  TransactionModal: ({
+    isOpen,
+    modalMode,
+  }: {
+    isOpen: boolean
+    modalMode: string
+  }) =>
+    isOpen ? <div data-mode={modalMode} role="dialog" /> : null,
 }))
+
+function OpenTransactionButton() {
+  const openCreateTransaction = useOpenCreateTransaction()
+
+  return (
+    <button type="button" onClick={() => openCreateTransaction()}>
+      Open transaction
+    </button>
+  )
+}
 
 function makeTransaction(overrides: Record<string, unknown> = {}) {
   return {
@@ -296,6 +317,26 @@ describe('AccountBookReportPage member filter integration', () => {
     expect(screen.getByText('User A')).toBeTruthy()
     expect(screen.getByText('User B')).toBeTruthy()
     expect(screen.queryByText('User C')).toBeNull() // User C has no transaction here
+  })
+
+  it('opens transaction creation in place through the page launcher', () => {
+    mockUseReportTransactions.mockReturnValue({
+      transactions: [],
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    })
+
+    render(
+      <TransactionModalLauncherProvider>
+        <AccountBookReportPage />
+        <OpenTransactionButton />
+      </TransactionModalLauncherProvider>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open transaction' }))
+
+    expect(screen.getByRole('dialog').dataset.mode).toBe('create')
   })
 
   it('filters and maps amounts to selected member share', () => {

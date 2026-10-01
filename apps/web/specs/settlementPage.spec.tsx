@@ -8,6 +8,7 @@ import {
 import { HeroUIProvider, addToast } from '@heroui/react'
 import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import SettlementPage from '../src/pages/account-books/[id]/settlement'
 import { AccountBook } from '../src/entities/accountBook'
 import {
@@ -38,6 +39,11 @@ import {
   SettingsStoreProvider,
   createSettingsStore,
 } from '../src/stores/settings'
+import {
+  TransactionModalLauncherProvider,
+  useOpenCreateTransaction,
+} from '../src/components/TransactionModal/TransactionModalLauncher'
+import { transactionRangeQueryKey } from '../src/hooks/transactionQueryUtils'
 
 const FAKE_SETTINGS_REPO = {
   async getSettings() {
@@ -76,17 +82,15 @@ jest.mock('@heroui/react', () => {
       children,
       disabled,
       disableRipple,
+      isIconOnly,
       isDisabled,
       isLoading,
       onClick,
       onPress,
       ...props
     }: any) => {
-      const {
-        onClick: _ignored,
-        disableRipple: _ignoredDisableRipple,
-        ...restProps
-      } = props
+      void disableRipple
+      void isIconOnly
 
       return (
         <button
@@ -103,7 +107,7 @@ jest.mock('@heroui/react', () => {
               onClick(event)
             }
           }}
-          {...restProps}
+          {...props}
         >
           {children}
         </button>
@@ -294,9 +298,23 @@ function createTransactionFixture(
   }
 }
 
+function OpenTransactionButton() {
+  const openCreateTransaction = useOpenCreateTransaction()
+
+  return (
+    <button type="button" onClick={() => openCreateTransaction()}>
+      Open transaction
+    </button>
+  )
+}
+
 function renderSettlementPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   const accountBookStore = createAccountBookStore(undefined, {
     accountBooks: [createAccountBookFixture()],
+    currentAccountBookId: 'book-1',
     initialized: true,
   })
   const categoryStore = createCategoryStore(
@@ -329,21 +347,28 @@ function renderSettlementPage() {
     onboardingCompleted: true,
   })
 
-  return render(
-    <ThemeProvider attribute="class">
-      <HeroUIProvider>
-        <AccountBookStoreProvider store={accountBookStore}>
-          <CategoryStoreProvider store={categoryStore}>
-            <UserStoreProvider store={userStore}>
-              <SettingsStoreProvider store={settingsStore}>
-                <SettlementPage />
-              </SettingsStoreProvider>
-            </UserStoreProvider>
-          </CategoryStoreProvider>
-        </AccountBookStoreProvider>
-      </HeroUIProvider>
-    </ThemeProvider>
+  const renderResult = render(
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class">
+        <HeroUIProvider>
+          <AccountBookStoreProvider store={accountBookStore}>
+            <CategoryStoreProvider store={categoryStore}>
+              <UserStoreProvider store={userStore}>
+                <SettingsStoreProvider store={settingsStore}>
+                  <TransactionModalLauncherProvider>
+                    <SettlementPage />
+                    <OpenTransactionButton />
+                  </TransactionModalLauncherProvider>
+                </SettingsStoreProvider>
+              </UserStoreProvider>
+            </CategoryStoreProvider>
+          </AccountBookStoreProvider>
+        </HeroUIProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
+
+  return { ...renderResult, queryClient }
 }
 
 describe('Settlement page', () => {
@@ -409,5 +434,40 @@ describe('Settlement page', () => {
     expect(mockPush).toHaveBeenCalledWith(
       expect.stringMatching(/^\/account-books\/book-1\/settlement\//)
     )
+  })
+
+  it('creates a transaction in place and updates transaction query caches', async () => {
+    const { queryClient } = renderSettlementPage()
+    const rangeKey = transactionRangeQueryKey(
+      'book-1',
+      '2026/01/01',
+      '2026/12/31'
+    )
+    queryClient.setQueryData<Transaction[]>(rangeKey, [])
+
+    await screen.findByText('Breakfast with friends')
+    fireEvent.click(screen.getByRole('button', { name: 'Open transaction' }))
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '240' },
+    })
+    fireEvent.change(screen.getByLabelText('Description'), {
+      target: { value: 'Dinner after settlement' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData<Transaction[]>(rangeKey)).toEqual([
+        expect.objectContaining({
+          accountBookId: 'book-1',
+          amount: 240,
+          description: 'Dinner after settlement',
+        }),
+      ])
+    })
+
+    expect(await screen.findByText('Dinner after settlement')).toBeTruthy()
+    expect(mockPush).not.toHaveBeenCalled()
   })
 })

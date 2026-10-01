@@ -12,6 +12,7 @@ import {
 
 import { useAccountBookStore } from '@/stores/accountBook'
 import { cn } from '@/lib/utils'
+import { useOpenCreateTransaction } from '@/components/TransactionModal/TransactionModalLauncher'
 
 type NavigationItemProps = {
   children: ReactNode
@@ -124,6 +125,7 @@ function DisabledWithTooltip({
 export default function NavBar() {
   const router = useRouter()
   const t = useTranslations()
+  const openCreateTransaction = useOpenCreateTransaction()
   const isSettlement = router.pathname.includes('/settlement')
   const isReport = router.pathname === '/account-books/[id]/report'
   const isAccountBookSettings =
@@ -149,6 +151,10 @@ export default function NavBar() {
 
   function handleAddTransaction() {
     if (isAggregateView) return
+
+    if (openCreateTransaction()) {
+      return
+    }
 
     const onboardingParam =
       typeof router.query.onboarding === 'string'

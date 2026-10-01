@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/router'
 import { Button, addToast } from '@heroui/react'
 import { useTranslations } from 'next-intl'
@@ -12,6 +13,8 @@ import { TransactionModal } from '@/components/TransactionModal'
 import { useSettlementRecordTransactions } from '@/hooks/useSettlementRecordTransactions'
 import { PageScaffold } from '@/components/ui/PageScaffold'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
+import { useAccountBookTransactions } from '@/hooks/useAccountBookTransactions'
+import { useRegisterCreateTransactionHandler } from '@/components/TransactionModal/TransactionModalLauncher'
 
 export default function SettlementRecordDetailPage() {
   const router = useRouter()
@@ -21,7 +24,7 @@ export default function SettlementRecordDetailPage() {
   const settlementRecordId = typeof recordId === 'string' ? recordId : null
 
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [modalMode] = useState<TransactionModalMode>('view')
+  const [modalMode, setModalMode] = useState<TransactionModalMode>('view')
   const [selectedTransactionId, setSelectedTransactionId] = useState<
     string | null
   >(null)
@@ -33,6 +36,10 @@ export default function SettlementRecordDetailPage() {
 
   const { transactions: recordTransactions } =
     useSettlementRecordTransactions(settlementRecordId)
+  const { createTransaction, isMutating } = useAccountBookTransactions(
+    accountBookId,
+    null
+  )
 
   const currentAccountBook =
     accountBooks.find((ab) => ab.id === accountBookId) ?? null
@@ -51,14 +58,28 @@ export default function SettlementRecordDetailPage() {
     void initializeCategories(accountBookId)
   }, [accountBookId, initializeCategories])
 
+  const openCreateModal = useCallback(() => {
+    flushSync(() => {
+      setModalMode('create')
+      setSelectedTransactionId(null)
+      setIsModalOpen(true)
+    })
+  }, [])
+
+  useRegisterCreateTransactionHandler(openCreateModal)
+
   function openViewModal(transactionId: string) {
-    setSelectedTransactionId(transactionId)
-    setIsModalOpen(true)
+    flushSync(() => {
+      setModalMode('view')
+      setSelectedTransactionId(transactionId)
+      setIsModalOpen(true)
+    })
   }
 
   function handleModalOpenChange(open: boolean) {
     setIsModalOpen(open)
     if (!open) {
+      setModalMode('view')
       setSelectedTransactionId(null)
     }
   }
@@ -145,8 +166,8 @@ export default function SettlementRecordDetailPage() {
         onOpenChange={handleModalOpenChange}
         modalMode={modalMode}
         selectedTransaction={selectedTransaction}
-        isSubmitting={false}
-        onCreateTransaction={async (t) => t}
+        isSubmitting={isMutating}
+        onCreateTransaction={createTransaction}
         onUpdateTransaction={async () => null}
         onDeleteTransaction={async () => false}
       />

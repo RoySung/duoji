@@ -13,6 +13,7 @@ import { useRouter } from 'next/router'
 import AccountBookPage from '../src/pages/account-books/[id]/index'
 import AccountBookSettingsRoute from '../src/pages/account-books/[id]/settings'
 import NavBar from '../src/components/layout/navbar'
+import { TransactionModalLauncherProvider } from '../src/components/TransactionModal/TransactionModalLauncher'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import {
   DefaultPaymentMethod,
@@ -1141,10 +1142,12 @@ async function renderWithProviders(options: RenderOptions = {}) {
               <CategoryStoreProvider store={categoryStore}>
                 <UserStoreProvider store={userStore}>
                   <SettingsStoreProvider store={settingsStore}>
-                    <div>
-                      <RouteComponent />
-                      <NavBar />
-                    </div>
+                    <TransactionModalLauncherProvider>
+                      <div>
+                        <RouteComponent />
+                        <NavBar />
+                      </div>
+                    </TransactionModalLauncherProvider>
                   </SettingsStoreProvider>
                 </UserStoreProvider>
               </CategoryStoreProvider>
@@ -1275,6 +1278,19 @@ describe('Home transaction history', () => {
     })
   })
 
+  it('opens the create transaction modal without routing away first', async () => {
+    const { router } = await renderWithProviders({
+      currentAccountBookId: 'book-1',
+      routeAccountBookId: 'book-1',
+    })
+
+    router.push.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
+
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(router.push).not.toHaveBeenCalled()
+  })
+
   it('keeps the calendar in flow while raising it across the hero edge', async () => {
     await renderWithProviders({
       currentAccountBookId: 'book-1',
@@ -1315,11 +1331,14 @@ describe('Home transaction history', () => {
     })
 
     const calendar = screen.getByTestId('transaction-calendar-surface')
-    const scrollContainer = calendar.closest('[data-ui="page-scaffold"]')
-      ?.parentElement
+    const scrollContainer = calendar.closest(
+      '[data-ui="page-scaffold"]'
+    )?.parentElement
 
     if (!scrollContainer) {
-      throw new Error('Expected the calendar to be inside the page scroll container')
+      throw new Error(
+        'Expected the calendar to be inside the page scroll container'
+      )
     }
 
     fireEvent.click(
@@ -1367,9 +1386,7 @@ describe('Home transaction history', () => {
     })
 
     expect(screen.getByText('Daily Life')).toBeTruthy()
-    expect(
-      screen.getByText('2026/03/16–2026/03/22: 2 records')
-    ).toBeTruthy()
+    expect(screen.getByText('2026/03/16–2026/03/22: 2 records')).toBeTruthy()
     expect(screen.getByTestId('transaction-list')).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-1')).getByText('2026/03/19')
@@ -1433,9 +1450,7 @@ describe('Home transaction history', () => {
       ).toBeTruthy()
     })
 
-    expect(
-      screen.getByText('2026/03/16–2026/03/22: 1 records')
-    ).toBeTruthy()
+    expect(screen.getByText('2026/03/16–2026/03/22: 1 records')).toBeTruthy()
     expect(screen.getByText('Current month lunch')).toBeTruthy()
     expect(screen.queryByText('Previous month dinner')).toBeNull()
     expect(screen.queryByText('Next month coffee')).toBeNull()
@@ -1453,9 +1468,7 @@ describe('Home transaction history', () => {
     })
 
     expect(screen.getByText('Travel Fund')).toBeTruthy()
-    expect(
-      screen.getByText('2026/03/16–2026/03/22: 1 records')
-    ).toBeTruthy()
+    expect(screen.getByText('2026/03/16–2026/03/22: 1 records')).toBeTruthy()
     expect(
       within(screen.getByTestId('transaction-row-tx-3')).getAllByText('Bonus')
         .length
@@ -1646,9 +1659,7 @@ describe('Home transaction history', () => {
     })
 
     expect(screen.queryByTestId('transaction-row-tx-1')).toBeNull()
-    expect(
-      screen.getByText('2026/03/16–2026/03/22: 1 records')
-    ).toBeTruthy()
+    expect(screen.getByText('2026/03/16–2026/03/22: 1 records')).toBeTruthy()
   })
 
   it('prefills new transaction drafts with Cash as the default payment method', async () => {
@@ -1814,9 +1825,7 @@ describe('Home transaction history', () => {
     const transactionRow = descriptionElement.closest('article')
 
     expect(transactionRow).not.toBeNull()
-    expect(
-      screen.getByText('2026/03/16–2026/03/22: 2 records')
-    ).toBeTruthy()
+    expect(screen.getByText('2026/03/16–2026/03/22: 2 records')).toBeTruthy()
     expect(
       (transactionRow as HTMLElement).querySelector('[data-name="Roy"]')
     ).toBeTruthy()

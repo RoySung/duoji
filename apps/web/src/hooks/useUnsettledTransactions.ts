@@ -15,7 +15,9 @@ export function useUnsettledTransactions(
         setTransactions(null)
         return []
       }
-      const results = await repoRef.current.findUnsettledExpenseByAccountBookId(id)
+      const results = await repoRef.current.findUnsettledExpenseByAccountBookId(
+        id
+      )
       setTransactions(results)
       return results
     },
@@ -38,32 +40,8 @@ export function useUnsettledTransactions(
     }
   }, [accountBookId])
 
-  const updateTransaction = useCallback(
-    async (id: string, updates: Partial<Transaction>): Promise<Transaction | null> => {
-      const updated = await repoRef.current.update(id, updates)
-      if (updated && accountBookId) {
-        await load(accountBookId)
-      }
-      return updated
-    },
-    [accountBookId, load]
-  )
-
-  const deleteTransaction = useCallback(
-    async (id: string): Promise<boolean> => {
-      const deleted = await repoRef.current.delete(id)
-      if (deleted && accountBookId) {
-        await load(accountBookId)
-      }
-      return deleted
-    },
-    [accountBookId, load]
-  )
-
   return {
     transactions,
     refresh: () => load(accountBookId),
-    updateTransaction,
-    deleteTransaction,
   }
 }

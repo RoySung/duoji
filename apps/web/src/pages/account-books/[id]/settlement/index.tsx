@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import { Tabs, Tab, addToast } from '@heroui/react'
@@ -13,6 +14,8 @@ import SettlementConfirmModal from '@/components/settlement/SettlementConfirmMod
 import { TransactionModal } from '@/components/TransactionModal'
 import SplitTutorial from '@/components/onboarding/SplitTutorial'
 import { PageScaffold } from '@/components/ui/PageScaffold'
+import { useRegisterCreateTransactionHandler } from '@/components/TransactionModal/TransactionModalLauncher'
+import { useAccountBookTransactions } from '@/hooks/useAccountBookTransactions'
 
 export default function SettlementPage() {
   const router = useRouter()
@@ -35,12 +38,10 @@ export default function SettlementPage() {
 
   const initializeCategories = useCategoryStore((state) => state.initialize)
 
-  const {
-    transactions: unsettledTransactions,
-    refresh: refreshUnsettled,
-    updateTransaction,
-    deleteTransaction,
-  } = useUnsettledTransactions(accountBookId)
+  const { transactions: unsettledTransactions, refresh: refreshUnsettled } =
+    useUnsettledTransactions(accountBookId)
+  const { createTransaction, updateTransaction, deleteTransaction } =
+    useAccountBookTransactions(accountBookId, null)
 
   const {
     records,
@@ -88,16 +89,42 @@ export default function SettlementPage() {
     }
   }
 
+  const openCreateModal = useCallback(() => {
+    flushSync(() => {
+      setModalMode('create')
+      setSelectedTransactionId(null)
+      setIsModalOpen(true)
+    })
+  }, [])
+
+  useRegisterCreateTransactionHandler(openCreateModal)
+
   function openEditModal(transactionId: string) {
-    setModalMode('edit')
-    setSelectedTransactionId(transactionId)
-    setIsModalOpen(true)
+    flushSync(() => {
+      setModalMode('edit')
+      setSelectedTransactionId(transactionId)
+      setIsModalOpen(true)
+    })
   }
 
   function handleModalOpenChange(open: boolean) {
     setIsModalOpen(open)
     if (!open) {
+      setModalMode('edit')
       setSelectedTransactionId(null)
+    }
+  }
+
+  async function handleCreateTransaction(
+    transaction: Transaction
+  ): Promise<Transaction> {
+    setIsModalSubmitting(true)
+    try {
+      const created = await createTransaction(transaction)
+      await refreshUnsettled()
+      return created
+    } finally {
+      setIsModalSubmitting(false)
     }
   }
 
@@ -107,7 +134,9 @@ export default function SettlementPage() {
   ): Promise<Transaction | null> {
     setIsModalSubmitting(true)
     try {
-      return await updateTransaction(id, updates)
+      const updated = await updateTransaction(id, updates)
+      await refreshUnsettled()
+      return updated
     } finally {
       setIsModalSubmitting(false)
     }
@@ -116,7 +145,9 @@ export default function SettlementPage() {
   async function handleDeleteTransaction(id: string): Promise<boolean> {
     setIsModalSubmitting(true)
     try {
-      return await deleteTransaction(id)
+      const deleted = await deleteTransaction(id)
+      await refreshUnsettled()
+      return deleted
     } finally {
       setIsModalSubmitting(false)
     }
@@ -203,7 +234,7 @@ export default function SettlementPage() {
           modalMode={modalMode}
           selectedTransaction={selectedTransaction}
           isSubmitting={isModalSubmitting}
-          onCreateTransaction={async (t) => t}
+          onCreateTransaction={handleCreateTransaction}
           onUpdateTransaction={handleUpdateTransaction}
           onDeleteTransaction={handleDeleteTransaction}
         />

@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import { PiBooksBold } from 'react-icons/pi'
@@ -23,6 +24,7 @@ import {
   sortTransactions,
   TransactionCalendarVisibleRange,
 } from '@/hooks/transactionQueryUtils'
+import { useRegisterCreateTransactionHandler } from '@/components/TransactionModal/TransactionModalLauncher'
 
 export default function AccountBookPage() {
   const router = useRouter()
@@ -225,10 +227,22 @@ export default function AccountBookPage() {
     setIsModalOpen(true)
   }
 
+  const openCreateModalFromUserGesture = useCallback(() => {
+    flushSync(() => {
+      setModalMode('create')
+      setSelectedTransactionId(null)
+      setIsModalOpen(true)
+    })
+  }, [])
+
+  useRegisterCreateTransactionHandler(openCreateModalFromUserGesture)
+
   function openEditModal(transactionId: string) {
-    setModalMode('edit')
-    setSelectedTransactionId(transactionId)
-    setIsModalOpen(true)
+    flushSync(() => {
+      setModalMode('edit')
+      setSelectedTransactionId(transactionId)
+      setIsModalOpen(true)
+    })
   }
 
   useEffect(() => {

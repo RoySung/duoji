@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { HeroUIProvider, addToast } from '@heroui/react'
 import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import SettlementRecordDetailPage from '../src/pages/account-books/[id]/settlement/[recordId]'
 import { AccountBook } from '../src/entities/accountBook'
 import {
@@ -24,6 +25,8 @@ import {
   createCategoryStore,
 } from '../src/stores/category'
 import { UserStoreProvider, createUserStore } from '../src/stores/user'
+import { TransactionModalLauncherProvider } from '../src/components/TransactionModal/TransactionModalLauncher'
+import NavBar from '../src/components/layout/navbar'
 
 jest.mock('next/router', () => ({
   useRouter: jest.fn(),
@@ -43,7 +46,14 @@ jest.mock('../src/repositories/settlementRepo', () => ({
 
 jest.mock('../src/components/TransactionModal', () => ({
   __esModule: true,
-  TransactionModal: () => null,
+  TransactionModal: ({
+    isOpen,
+    modalMode,
+  }: {
+    isOpen: boolean
+    modalMode: string
+  }) =>
+    isOpen ? <div data-mode={modalMode} role="dialog" /> : null,
 }))
 
 jest.mock('@heroui/react', () => {
@@ -379,8 +389,12 @@ function createMockTransactionRepo(): TransactionRepo {
 }
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   const accountBookStore = createAccountBookStore(undefined, {
     accountBooks: [createAccountBookFixture()],
+    currentAccountBookId: 'book-1',
     initialized: true,
   })
   const categoryStore = createCategoryStore(
@@ -410,17 +424,22 @@ function renderPage() {
   })
 
   return render(
-    <ThemeProvider attribute="class">
-      <HeroUIProvider>
-        <AccountBookStoreProvider store={accountBookStore}>
-          <CategoryStoreProvider store={categoryStore}>
-            <UserStoreProvider store={userStore}>
-              <SettlementRecordDetailPage />
-            </UserStoreProvider>
-          </CategoryStoreProvider>
-        </AccountBookStoreProvider>
-      </HeroUIProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class">
+        <HeroUIProvider>
+          <AccountBookStoreProvider store={accountBookStore}>
+            <CategoryStoreProvider store={categoryStore}>
+              <UserStoreProvider store={userStore}>
+                <TransactionModalLauncherProvider>
+                  <SettlementRecordDetailPage />
+                  <NavBar />
+                </TransactionModalLauncherProvider>
+              </UserStoreProvider>
+            </CategoryStoreProvider>
+          </AccountBookStoreProvider>
+        </HeroUIProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 
@@ -429,6 +448,7 @@ describe('Settlement record detail page', () => {
     ;(useRouter as jest.Mock).mockReturnValue({
       query: { id: 'book-1', recordId: 'record-1' },
       push: mockPush,
+      pathname: '/account-books/[id]/settlement/[recordId]',
     })
 
     mockTransactionRepo = createMockTransactionRepo()
@@ -492,5 +512,16 @@ describe('Settlement record detail page', () => {
       color: 'success',
     })
     expect(await screen.findByText('Done')).toBeTruthy()
+  })
+
+  it('opens transaction creation from the navbar without leaving the record', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Settlement #1' })
+    fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.dataset.mode).toBe('create')
+    expect(mockPush).not.toHaveBeenCalled()
   })
 })

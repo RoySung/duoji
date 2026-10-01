@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import dayjs from 'dayjs'
@@ -26,6 +27,7 @@ import { TransactionModal } from '@/components/TransactionModal'
 import { TransactionModalMode } from '@/entities/transaction'
 import { PageScaffold } from '@/components/ui/PageScaffold'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
+import { useRegisterCreateTransactionHandler } from '@/components/TransactionModal/TransactionModalLauncher'
 
 type DateRange = { startDate: string; endDate: string }
 
@@ -80,10 +82,22 @@ export default function AccountBookReportPage() {
   const selectedTransaction =
     transactions.find((t) => t.id === selectedTransactionId) ?? undefined
 
+  const openCreateModal = useCallback(() => {
+    flushSync(() => {
+      setModalMode('create')
+      setSelectedTransactionId(null)
+      setIsModalOpen(true)
+    })
+  }, [])
+
+  useRegisterCreateTransactionHandler(openCreateModal)
+
   function openEditModal(transactionId: string) {
-    setModalMode('edit')
-    setSelectedTransactionId(transactionId)
-    setIsModalOpen(true)
+    flushSync(() => {
+      setModalMode('edit')
+      setSelectedTransactionId(transactionId)
+      setIsModalOpen(true)
+    })
   }
 
   function handleModalOpenChange(open: boolean) {
