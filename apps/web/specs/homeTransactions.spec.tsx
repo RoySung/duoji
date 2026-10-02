@@ -236,9 +236,11 @@ jest.mock('../src/components/TransactionModal/ExpenseForm', () => ({
   default: function MockExpenseForm({
     value,
     onChange,
+    shouldAutoFocusAmount,
   }: {
     value: Transaction
     onChange: (nextValue: Transaction) => void
+    shouldAutoFocusAmount: boolean
   }) {
     const { PaymentMethodValues } = require('../src/entities/transaction')
     const { useUserStore } = require('../src/stores/user')
@@ -250,6 +252,21 @@ jest.mock('../src/components/TransactionModal/ExpenseForm', () => ({
 
     return (
       <div>
+        <label>
+          Amount
+          <input
+            aria-label="Amount"
+            autoFocus={shouldAutoFocusAmount}
+            type="number"
+            value={value.amount.toString()}
+            onChange={(event) =>
+              onChange({
+                ...value,
+                amount: Number(event.target.value) || 0,
+              })
+            }
+          />
+        </label>
         <label>
           Description
           <input
@@ -1288,6 +1305,7 @@ describe('Home transaction history', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New Transaction' }))
 
     expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByLabelText('Amount'))
     expect(router.push).not.toHaveBeenCalled()
   })
 
@@ -1594,6 +1612,8 @@ describe('Home transaction history', () => {
     await waitFor(() => {
       expect(screen.getByText('Edit Transaction')).toBeTruthy()
     })
+
+    expect(document.activeElement).not.toBe(screen.getByLabelText('Amount'))
 
     const paymentMethodSelect = screen.getByLabelText(
       'Payment Method'
