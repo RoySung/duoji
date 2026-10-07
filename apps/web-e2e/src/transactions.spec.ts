@@ -36,6 +36,45 @@ test.describe('Transactions', () => {
     await expect(transactionList).toContainText('150')
   })
 
+  test('clears the amount when creating after editing a transaction', async ({
+    page,
+  }) => {
+    await createAccountBookAndSkipOnboarding(page, 'Reset Amount Book')
+
+    await page
+      .locator('[data-onboarding-anchor="create-transaction"]')
+      .click()
+
+    const dialog = page.getByRole('dialog')
+    const amountInput = dialog.locator(
+      '[data-onboarding-anchor="transaction-form-amount"] input'
+    )
+    const submitButton = dialog.locator(
+      'span[data-onboarding-anchor="transaction-form-submit"] button'
+    )
+
+    await amountInput.fill('150')
+    await submitButton.click()
+    await expect(dialog).toBeHidden()
+
+    await page
+      .getByTestId('transaction-list')
+      .getByRole('button')
+      .first()
+      .click()
+    await expect(dialog).toBeVisible()
+
+    await amountInput.fill('275')
+    await submitButton.click()
+    await expect(dialog).toBeHidden()
+
+    await page
+      .locator('[data-onboarding-anchor="create-transaction"]')
+      .click()
+    await expect(dialog).toBeVisible()
+    await expect(amountInput).toHaveValue('')
+  })
+
   test('browsing and filtering transaction history', async ({ page }) => {
     await createAccountBookAndSkipOnboarding(page, 'Test Account Book 2')
 

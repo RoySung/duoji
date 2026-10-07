@@ -466,7 +466,9 @@ export default function TransactionModal({
             onFocusCapture={handleModalBodyFocusCapture}
           >
             <div className="flex flex-col gap-4">
+              {/* Reset field-local UI state whenever the transaction draft changes. */}
               <Form
+                key={draft.id}
                 value={draft}
                 onChange={modalMode === 'view' ? () => {} : setDraft} // eslint-disable-line @typescript-eslint/no-empty-function
                 isEditMode={isEditMode}
