@@ -7,6 +7,7 @@ import {
   Form,
   DatePicker,
   Input,
+  Textarea,
   Button,
   addToast,
   Avatar,
@@ -309,10 +310,11 @@ export default function ExpenseForm({
             })
           }}
         />
-        <Input
+        <Textarea
           size="sm"
           classNames={compactInputClassNames}
           label={t('transactionForm.description')}
+          minRows={3}
           value={value.description}
           isClearable
           onClear={() => {

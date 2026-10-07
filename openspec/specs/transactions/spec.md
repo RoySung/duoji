@@ -8,7 +8,7 @@ TBD - created by archiving change 'migrate-project-instructions-to-spectra'. Upd
 
 ### Requirement: Users can record income and expense transactions
 
-The system SHALL allow users to create transactions with a type, amount, date, category, note, and payment method within the active account book. Transaction split fields (`paidByDetail`, `splitDetail`) SHALL reference `Person` records (by `personId` and `personType`) from the active account book's people list rather than embedding full `User` objects. The `receivedByPersonId` field SHALL replace `receivedByUserId` and SHALL accept any `Person` id from the account book's people list.
+The system SHALL allow users to create transactions with a type, amount, date, category, description, and payment method within the active account book. The income and expense transaction forms SHALL provide a multiline description input with at least three visible rows and SHALL preserve entered line breaks. Transaction split fields (`paidByDetail`, `splitDetail`) SHALL reference `Person` records (by `personId` and `personType`) from the active account book's people list rather than embedding full `User` objects. The `receivedByPersonId` field SHALL replace `receivedByUserId` and SHALL accept any `Person` id from the account book's people list.
 
 #### Scenario: Create an expense transaction
 
@@ -19,6 +19,11 @@ The system SHALL allow users to create transactions with a type, amount, date, c
 
 - **WHEN** a user submits a valid income transaction form in the active account book
 - **THEN** the system SHALL store the transaction and include it in the active account book transaction list
+
+#### Scenario: Enter a multiline transaction description
+
+- **WHEN** a user enters a description containing multiple lines in an income or expense transaction form
+- **THEN** the form SHALL preserve the line breaks in the transaction description
 
 
 <!-- @trace

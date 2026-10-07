@@ -145,6 +145,24 @@ jest.mock('@heroui/react', () => {
         />
       </label>
     ),
+    Textarea: ({
+      label,
+      minRows,
+      onChange,
+      placeholder,
+      value,
+    }: any) => (
+      <label>
+        <span>{label}</span>
+        <textarea
+          aria-label={label}
+          onChange={onChange}
+          placeholder={placeholder}
+          rows={minRows}
+          value={value ?? ''}
+        />
+      </label>
+    ),
     Select: ({
       children,
       isDisabled,
@@ -354,6 +372,26 @@ describe('transaction form tags', () => {
 
     expect(document.activeElement).toBe(
       screen.getByLabelText('transactionForm.amount')
+    )
+  })
+
+  it.each([
+    ['expense', () => <ExpenseFormHarness />],
+    ['income', () => <IncomeFormHarness />],
+  ])('supports multiline descriptions in the %s form', (_type, createForm) => {
+    render(createForm())
+
+    const description = screen.getByLabelText('transactionForm.description')
+
+    expect(description.tagName).toBe('TEXTAREA')
+    expect(description.getAttribute('rows')).toBe('3')
+
+    fireEvent.change(description, {
+      target: { value: 'First line\nSecond line' },
+    })
+
+    expect((description as HTMLTextAreaElement).value).toBe(
+      'First line\nSecond line'
     )
   })
 

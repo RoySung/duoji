@@ -6,6 +6,7 @@ import {
   DatePicker,
   Form,
   Input,
+  Textarea,
   Select,
   SelectItem,
 } from '@heroui/react'
@@ -217,10 +218,11 @@ export default function IncomeForm({
             })
           }}
         />
-        <Input
+        <Textarea
           size="sm"
           classNames={compactInputClassNames}
           label={t('transactionForm.description')}
+          minRows={3}
           value={value.description}
           isClearable
           onClear={() => {
