@@ -18,13 +18,39 @@ jest.mock('../src/components/report/ReportSummaryCards', () => ({
 
 jest.mock('../src/components/report/ReportCategoryBreakdown', () => ({
   __esModule: true,
-  default: ({ expense, income }: any) => (
-    <div data-testid="category-breakdown">
-      {JSON.stringify({
-        expense: expense.map((item: any) => item.displayName),
-        income: income.map((item: any) => item.displayName),
-      })}
-    </div>
+  default: ({
+    expense,
+    income,
+    activeExpense,
+    activeIncome,
+    descendantKeysByRoot,
+  }: any) => (
+    <>
+      <div data-testid="category-breakdown">
+        {JSON.stringify({
+          expense: expense.map((item: any) => item.displayName),
+          income: income.map((item: any) => item.displayName),
+        })}
+      </div>
+      <div data-testid="category-breakdown-hierarchy">
+        {JSON.stringify({
+          expense,
+          income,
+          activeExpense,
+          activeIncome,
+          reusesActiveExpense: activeExpense === expense,
+          reusesActiveIncome: activeIncome === income,
+          descendantKeysByRoot: Object.fromEntries(
+            Array.from(descendantKeysByRoot.entries()).map(
+              ([rootKey, descendantKeys]: any) => [
+                rootKey,
+                Array.from(descendantKeys),
+              ]
+            )
+          ),
+        })}
+      </div>
+    </>
   ),
 }))
 
@@ -237,6 +263,12 @@ describe('ReportSection', () => {
     expect(screen.getByTestId('category-breakdown').textContent).toContain(
       JSON.stringify({ expense: ['Food', 'Utilities'], income: [] })
     )
+
+    const hierarchy = JSON.parse(
+      screen.getByTestId('category-breakdown-hierarchy').textContent ?? ''
+    )
+    expect(hierarchy.reusesActiveExpense).toBe(true)
+    expect(hierarchy.reusesActiveIncome).toBe(true)
   })
 
   it('passes only the tag-scoped dataset to the monthly trend', () => {
@@ -281,5 +313,148 @@ describe('ReportSection', () => {
         { month: '2026/06', income: 0, expense: 50 },
       ])
     )
+  })
+
+  it('removes direct and descendant transactions when an all-books root is excluded', () => {
+    const categories = [
+      makeCategory({ id: 'food', name: 'Food' }),
+      makeCategory({ id: 'dining', name: 'Dining', parentId: 'food' }),
+      makeCategory({
+        id: 'late-night',
+        name: 'Late Night',
+        parentId: 'dining',
+      }),
+      makeCategory({ id: 'transport', name: 'Transport' }),
+    ]
+    const transactions = [
+      makeTransaction({ id: 'food-direct', categoryId: 'food', amount: 100 }),
+      makeTransaction({ id: 'dining', categoryId: 'dining', amount: 200 }),
+      makeTransaction({
+        id: 'late-night',
+        categoryId: 'late-night',
+        amount: 50,
+      }),
+      makeTransaction({ id: 'transport', categoryId: 'transport', amount: 40 }),
+    ]
+
+    render(
+      <ReportSection
+        transactions={transactions}
+        categories={categories}
+        mergeByName
+        currency="TWD"
+        selectedTags={new Set()}
+        excludedKeys={new Set(['name::expense::Food'])}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('summary-totals').textContent).toContain(
+      JSON.stringify({ income: 0, expense: 40, net: -40 })
+    )
+    expect(screen.getByTestId('monthly-trend').textContent).toContain(
+      JSON.stringify([{ month: '2026/05', income: 0, expense: 40 }])
+    )
+
+    const hierarchy = JSON.parse(
+      screen.getByTestId('category-breakdown-hierarchy').textContent!
+    )
+    expect(hierarchy.expense).toHaveLength(2)
+    expect(hierarchy.expense[0]).toMatchObject({
+      displayName: 'Food',
+      totalAmount: 350,
+      directAmount: 100,
+    })
+    expect(
+      hierarchy.expense[0].children.map((child: any) => child.displayName)
+    ).toEqual(['Dining', 'Late Night'])
+    expect(hierarchy.activeExpense).toHaveLength(1)
+    expect(hierarchy.reusesActiveExpense).toBe(false)
+    expect(hierarchy.reusesActiveIncome).toBe(false)
+    expect(hierarchy.activeExpense[0]).toMatchObject({
+      displayName: 'Transport',
+      totalAmount: 40,
+    })
+  })
+
+  it('keeps direct and sibling transactions active when one child is excluded', () => {
+    const categories = [
+      makeCategory({ id: 'food', name: 'Food' }),
+      makeCategory({ id: 'dining', name: 'Dining', parentId: 'food' }),
+      makeCategory({ id: 'groceries', name: 'Groceries', parentId: 'food' }),
+    ]
+    const transactions = [
+      makeTransaction({ id: 'food-direct', categoryId: 'food', amount: 20 }),
+      makeTransaction({ id: 'dining', categoryId: 'dining', amount: 200 }),
+      makeTransaction({ id: 'groceries', categoryId: 'groceries', amount: 80 }),
+    ]
+
+    render(
+      <ReportSection
+        transactions={transactions}
+        categories={categories}
+        mergeByName={false}
+        currency="TWD"
+        selectedTags={new Set()}
+        excludedKeys={new Set(['id::expense::dining'])}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('summary-totals').textContent).toContain(
+      JSON.stringify({ income: 0, expense: 100, net: -100 })
+    )
+
+    const hierarchy = JSON.parse(
+      screen.getByTestId('category-breakdown-hierarchy').textContent!
+    )
+    expect(hierarchy.expense[0]).toMatchObject({
+      displayName: 'Food',
+      totalAmount: 300,
+      directAmount: 20,
+    })
+    expect(
+      hierarchy.expense[0].children.map((child: any) => child.displayName)
+    ).toEqual(['Dining', 'Groceries'])
+    expect(hierarchy.activeExpense[0]).toMatchObject({
+      displayName: 'Food',
+      totalAmount: 100,
+      directAmount: 20,
+    })
+    expect(
+      hierarchy.activeExpense[0].children.map((child: any) => child.displayName)
+    ).toEqual(['Groceries'])
+  })
+
+  it('passes descendant keys that are outside the current transaction scope', () => {
+    const categories = [
+      makeCategory({ id: 'food', name: 'Food' }),
+      makeCategory({ id: 'dining', name: 'Dining', parentId: 'food' }),
+    ]
+
+    render(
+      <ReportSection
+        transactions={[
+          makeTransaction({
+            id: 'food-direct',
+            categoryId: 'food',
+            amount: 20,
+          }),
+        ]}
+        categories={categories}
+        mergeByName={false}
+        currency="TWD"
+        selectedTags={new Set()}
+        excludedKeys={new Set()}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    const hierarchy = JSON.parse(
+      screen.getByTestId('category-breakdown-hierarchy').textContent!
+    )
+    expect(hierarchy.descendantKeysByRoot).toEqual({
+      'id::expense::food': ['id::expense::dining'],
+    })
   })
 })

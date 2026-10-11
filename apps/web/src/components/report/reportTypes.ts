@@ -8,8 +8,12 @@ export type CategorySummary = {
   imageUrl: string | null
   totalAmount: number
   transactionCount: number
+  directAmount: number
+  directTransactionCount: number
+  directTransactions: Transaction[]
   percentage: number
   transactions: Transaction[]
+  children: CategorySummary[]
 }
 
 export type CurrencyGroup = {

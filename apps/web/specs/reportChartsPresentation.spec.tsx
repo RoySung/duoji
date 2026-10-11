@@ -65,7 +65,11 @@ describe('report chart presentation', () => {
   })
 
   it('keeps fixed report data intact while resolving semantic light chart colors', () => {
+    const getComputedStyleSpy = jest.spyOn(window, 'getComputedStyle')
+
     render(<ReportMonthlyTrend points={FIXED_POINTS} currency="TWD" />)
+
+    expect(getComputedStyleSpy).toHaveBeenCalledTimes(1)
 
     expect(
       screen.getByTestId('monthly-trend-surface').getAttribute('data-ui')

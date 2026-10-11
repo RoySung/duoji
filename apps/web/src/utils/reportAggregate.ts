@@ -21,9 +21,10 @@ export function extractReportTags(transactions: Transaction[]): string[] {
     }
   }
 
-  return Array.from(tags.values()).sort((left, right) =>
-    left.localeCompare(right, undefined, { sensitivity: 'base' }) ||
-    left.localeCompare(right)
+  return Array.from(tags.values()).sort(
+    (left, right) =>
+      left.localeCompare(right, undefined, { sensitivity: 'base' }) ||
+      left.localeCompare(right)
   )
 }
 
@@ -90,60 +91,245 @@ export function groupByCategory(
     imageUrl: string | null
     totalAmount: number
     transactionCount: number
+    directAmount: number
+    directTransactionCount: number
+    directTransactions: Transaction[]
     transactions: Transaction[]
+    children: Map<string, Bucket>
   }
 
-  const buckets = new Map<string, Bucket>()
+  const rootBuckets = new Map<string, Bucket>()
   let totalForType = 0
 
   for (const transaction of transactions) {
     if (transaction.type !== type) continue
 
-    const category = categoryById.get(transaction.categoryId) ?? null
-    const { key, displayName, imageUrl } = getCategoryBucketIdentity(
+    const { root, assigned } = getCategoryHierarchyIdentity(
       transaction,
-      category,
+      categoryById,
       options.mergeByName
     )
 
-    const existing = buckets.get(key)
-    if (existing) {
-      existing.totalAmount += transaction.amount
-      existing.transactionCount += 1
-      existing.transactions.push(transaction)
-    } else {
-      buckets.set(key, {
-        key,
-        displayName,
-        imageUrl,
-        totalAmount: transaction.amount,
-        transactionCount: 1,
-        transactions: [transaction],
-      })
+    let rootBucket = rootBuckets.get(root.key)
+    if (!rootBucket) {
+      rootBucket = {
+        ...root,
+        totalAmount: 0,
+        transactionCount: 0,
+        directAmount: 0,
+        directTransactionCount: 0,
+        directTransactions: [],
+        transactions: [],
+        children: new Map(),
+      }
+      rootBuckets.set(root.key, rootBucket)
     }
+
+    rootBucket.totalAmount += transaction.amount
+    rootBucket.transactionCount += 1
+    rootBucket.transactions.push(transaction)
+
+    if (assigned.key === root.key) {
+      rootBucket.directAmount += transaction.amount
+      rootBucket.directTransactionCount += 1
+      rootBucket.directTransactions.push(transaction)
+    } else {
+      let childBucket = rootBucket.children.get(assigned.key)
+      if (!childBucket) {
+        const childTransactions: Transaction[] = []
+        childBucket = {
+          ...assigned,
+          totalAmount: 0,
+          transactionCount: 0,
+          directAmount: 0,
+          directTransactionCount: 0,
+          directTransactions: childTransactions,
+          transactions: childTransactions,
+          children: new Map(),
+        }
+        rootBucket.children.set(assigned.key, childBucket)
+      }
+
+      childBucket.totalAmount += transaction.amount
+      childBucket.transactionCount += 1
+      childBucket.directAmount += transaction.amount
+      childBucket.directTransactionCount += 1
+      childBucket.transactions.push(transaction)
+    }
+
     totalForType += transaction.amount
   }
 
-  const summaries: CategorySummary[] = Array.from(buckets.values()).map(
-    (bucket) => ({
-      ...bucket,
-      percentage:
-        totalForType > 0 ? (bucket.totalAmount / totalForType) * 100 : 0,
-    })
-  )
+  const toSummary = (bucket: Bucket): CategorySummary => ({
+    key: bucket.key,
+    displayName: bucket.displayName,
+    imageUrl: bucket.imageUrl,
+    totalAmount: bucket.totalAmount,
+    transactionCount: bucket.transactionCount,
+    directAmount: bucket.directAmount,
+    directTransactionCount: bucket.directTransactionCount,
+    directTransactions: bucket.directTransactions,
+    percentage:
+      totalForType > 0 ? (bucket.totalAmount / totalForType) * 100 : 0,
+    transactions: bucket.transactions,
+    children: Array.from(bucket.children.values())
+      .map(toSummary)
+      .sort((left, right) => right.totalAmount - left.totalAmount),
+  })
 
-  summaries.sort((a, b) => b.totalAmount - a.totalAmount)
-  return summaries
+  return Array.from(rootBuckets.values())
+    .map(toSummary)
+    .sort((left, right) => right.totalAmount - left.totalAmount)
+}
+
+type CategoryBucketIdentity = {
+  key: string
+  displayName: string
+  imageUrl: string | null
+}
+
+function encodeCategoryKeySegment(value: string): string {
+  return encodeURIComponent(value)
+}
+
+function getMergedDescendantBucketKey(
+  type: TransactionType,
+  rootCategory: Category,
+  category: Category
+): string {
+  return [
+    'name',
+    type,
+    encodeCategoryKeySegment(rootCategory.name),
+    encodeCategoryKeySegment(category.name),
+  ].join('::')
+}
+
+function getMalformedCategoryBucketIdentity(
+  transaction: Transaction,
+  category: Category
+): CategoryBucketIdentity {
+  return {
+    key: `malformed::${transaction.type}::${encodeCategoryKeySegment(
+      category.id
+    )}`,
+    displayName: category.name,
+    imageUrl: category.imageUrl,
+  }
+}
+
+export type CategoryHierarchyIdentity = {
+  root: CategoryBucketIdentity
+  assigned: CategoryBucketIdentity
+}
+
+function resolveCategoryRoot(
+  category: Category,
+  categoryById: ReadonlyMap<string, Category>
+): Category | null {
+  let current = category
+  const visitedIds = new Set([category.id])
+
+  while (current.parentId) {
+    const parent = categoryById.get(current.parentId)
+    if (!parent || visitedIds.has(parent.id)) return null
+
+    visitedIds.add(parent.id)
+    current = parent
+  }
+
+  return current
+}
+
+export function getCategoryBucketKey(
+  type: TransactionType,
+  category: Category,
+  mergeByName: boolean
+): string {
+  return mergeByName
+    ? `name::${type}::${encodeCategoryKeySegment(category.name)}`
+    : `id::${type}::${category.id}`
+}
+
+export function getCategoryHierarchyIdentity(
+  transaction: Transaction,
+  categoryById: ReadonlyMap<string, Category>,
+  mergeByName: boolean
+): CategoryHierarchyIdentity {
+  const category = categoryById.get(transaction.categoryId) ?? null
+  if (!category) {
+    const uncategorized = getCategoryBucketIdentity(
+      transaction,
+      null,
+      mergeByName
+    )
+    return { root: uncategorized, assigned: uncategorized }
+  }
+
+  const rootCategory = resolveCategoryRoot(category, categoryById)
+  if (!rootCategory) {
+    const fallback = getMalformedCategoryBucketIdentity(transaction, category)
+    return { root: fallback, assigned: fallback }
+  }
+
+  const root = getCategoryBucketIdentity(transaction, rootCategory, mergeByName)
+  if (rootCategory.id === category.id) {
+    return { root, assigned: root }
+  }
+
+  const assigned = mergeByName
+    ? {
+        key: getMergedDescendantBucketKey(
+          transaction.type,
+          rootCategory,
+          category
+        ),
+        displayName: category.name,
+        imageUrl: category.imageUrl,
+      }
+    : getCategoryBucketIdentity(transaction, category, false)
+
+  return { root, assigned }
+}
+
+export function getCategoryDescendantKeysByRoot(
+  categories: Category[],
+  mergeByName: boolean
+): Map<string, Set<string>> {
+  const categoryById = new Map(
+    categories.map((category) => [category.id, category])
+  )
+  const descendantKeysByRoot = new Map<string, Set<string>>()
+
+  for (const category of categories) {
+    const rootCategory = resolveCategoryRoot(category, categoryById)
+    if (!rootCategory || rootCategory.id === category.id) continue
+
+    const rootKey = getCategoryBucketKey(
+      category.type,
+      rootCategory,
+      mergeByName
+    )
+    const descendantKey = mergeByName
+      ? getMergedDescendantBucketKey(category.type, rootCategory, category)
+      : getCategoryBucketKey(category.type, category, false)
+    const existingKeys = descendantKeysByRoot.get(rootKey)
+
+    if (existingKeys) existingKeys.add(descendantKey)
+    else descendantKeysByRoot.set(rootKey, new Set([descendantKey]))
+  }
+
+  return descendantKeysByRoot
 }
 
 export function getCategoryBucketIdentity(
   transaction: Transaction,
   category: Category | null,
   mergeByName: boolean
-): { key: string; displayName: string; imageUrl: string | null } {
+): CategoryBucketIdentity {
   if (!category) {
     return {
-      key: `uncategorized::${transaction.type}::${transaction.categoryId}`,
+      key: `uncategorized::${transaction.type}`,
       displayName: UNCATEGORIZED_DISPLAY_NAME,
       imageUrl: null,
     }
@@ -151,14 +337,14 @@ export function getCategoryBucketIdentity(
 
   if (mergeByName) {
     return {
-      key: `name::${transaction.type}::${category.name}`,
+      key: getCategoryBucketKey(transaction.type, category, true),
       displayName: category.name,
       imageUrl: category.imageUrl,
     }
   }
 
   return {
-    key: `id::${transaction.type}::${category.id}`,
+    key: getCategoryBucketKey(transaction.type, category, false),
     displayName: category.name,
     imageUrl: category.imageUrl,
   }

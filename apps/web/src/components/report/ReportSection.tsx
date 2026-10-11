@@ -6,7 +6,9 @@ import { AccountBook } from '@/entities/accountBook'
 import { Category } from '@/entities/category'
 import { Transaction } from '@/entities/transaction'
 import {
-  getCategoryBucketIdentity,
+  getCategoryBucketKey,
+  getCategoryDescendantKeysByRoot,
+  getCategoryHierarchyIdentity,
   groupByCategory,
   groupByMonth,
   summarize,
@@ -50,6 +52,21 @@ export default function ReportSection({
     () => new Map(categories.map((category) => [category.id, category])),
     [categories]
   )
+  const drillableRootKeys = useMemo(
+    () =>
+      new Set(
+        categories
+          .filter((category) => category.parentId === null)
+          .map((category) =>
+            getCategoryBucketKey(category.type, category, mergeByName)
+          )
+      ),
+    [categories, mergeByName]
+  )
+  const descendantKeysByRoot = useMemo(
+    () => getCategoryDescendantKeysByRoot(categories, mergeByName),
+    [categories, mergeByName]
+  )
 
   const tagFilteredTransactions = useMemo(() => {
     if (!selectedTags || selectedTags.size === 0) return transactions
@@ -66,31 +83,12 @@ export default function ReportSection({
     if (excludedKeys.size === 0) return tagFilteredTransactions
 
     return tagFilteredTransactions.filter((tx) => {
-      const category = categoryById.get(tx.categoryId) ?? null
-      const currentKey = getCategoryBucketIdentity(
+      const { root, assigned } = getCategoryHierarchyIdentity(
         tx,
-        category,
+        categoryById,
         mergeByName
-      ).key
-      if (excludedKeys.has(currentKey)) {
-        return false
-      }
-
-      if (!mergeByName && category?.parentId) {
-        const parentCategory = categoryById.get(category.parentId) ?? null
-        if (parentCategory) {
-          const parentKey = getCategoryBucketIdentity(
-            tx,
-            parentCategory,
-            mergeByName
-          ).key
-          if (excludedKeys.has(parentKey)) {
-            return false
-          }
-        }
-      }
-
-      return true
+      )
+      return !excludedKeys.has(root.key) && !excludedKeys.has(assigned.key)
     })
   }, [tagFilteredTransactions, excludedKeys, categoryById, mergeByName])
 
@@ -111,6 +109,38 @@ export default function ReportSection({
         mergeByName,
       }),
     [tagFilteredTransactions, categories, mergeByName]
+  )
+  const activeExpenseCategories = useMemo(
+    () => {
+      if (excludedKeys.size === 0) return expenseCategories
+
+      return groupByCategory(activeTransactions, categories, 'expense', {
+        mergeByName,
+      })
+    },
+    [
+      activeTransactions,
+      categories,
+      excludedKeys,
+      expenseCategories,
+      mergeByName,
+    ]
+  )
+  const activeIncomeCategories = useMemo(
+    () => {
+      if (excludedKeys.size === 0) return incomeCategories
+
+      return groupByCategory(activeTransactions, categories, 'income', {
+        mergeByName,
+      })
+    },
+    [
+      activeTransactions,
+      categories,
+      excludedKeys,
+      incomeCategories,
+      mergeByName,
+    ]
   )
   const monthlyTrend = useMemo(
     () => groupByMonth(activeTransactions),
@@ -199,8 +229,12 @@ export default function ReportSection({
           <ReportCategoryBreakdown
             expense={expenseCategories}
             income={incomeCategories}
+            activeExpense={activeExpenseCategories}
+            activeIncome={activeIncomeCategories}
             currency={currency}
             excludedKeys={excludedKeys}
+            drillableRootKeys={drillableRootKeys}
+            descendantKeysByRoot={descendantKeysByRoot}
             onToggleKey={onToggleKey}
             onEditTransaction={onEditTransaction}
           />
