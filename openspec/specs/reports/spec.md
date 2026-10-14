@@ -163,6 +163,7 @@ The report page SHALL display a hierarchical category breakdown for each scope, 
 The breakdown SHALL include:
 
 - A donut chart visualizing each root category's proportion of the total.
+- A full-height rectangular color block on the left edge of every ranking row that maps the category to its donut slice without requiring hover, including categories with an image. Its outer left corners SHALL follow the row's rounded outline while its inner right edge remains straight.
 - A donut center label identifying the current category context, using the localized all-categories label at the root level and the selected root category name in a focused view.
 - A ranking list showing each root category's display name, total amount, transaction count, and percentage of the total, sorted by amount descending.
 - A hierarchy indicator above the category content that remains visible at every level, displaying a static localized all-categories label at the root level and a breadcrumb/back control naming the selected root in a focused view.
@@ -201,6 +202,14 @@ Transactions whose `categoryId` cannot be resolved to a known category SHALL be 
 
 - **WHEN** the user activates a donut slice for a root category with child or direct-assignment data
 - **THEN** the system SHALL show the same focused composition produced by the matching root row action
+
+#### Scenario: User identifies donut categories without hover
+
+- **WHEN** the category breakdown is displayed at any supported width
+- **THEN** every ranking row SHALL show a full-height rectangular color block matching its donut slice color along the row's left edge
+- **AND** the block SHALL follow the row's rounded outer-left corners while keeping its inner right edge straight
+- **AND** the marker SHALL remain visible when the category also has an image
+- **AND** an excluded row and its marker SHALL share the existing muted excluded treatment
 
 #### Scenario: Current hierarchy indicator remains visible
 

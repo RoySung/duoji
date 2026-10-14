@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type Key } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type Key,
+} from 'react'
 import { Avatar, Tab, Tabs } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import {
@@ -289,7 +295,9 @@ function BreakdownList({
             : 'report.breakdown.openTransactionsFor',
           { name: summary.displayName }
         )}
-        className={`relative grid min-h-14 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 rounded-2xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card lg:grid-cols-[auto_minmax(0,1fr)_auto] ${
+        data-chart-color={dotColor}
+        style={{ '--category-chart-color': dotColor } as CSSProperties}
+        className={`relative grid min-h-14 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 overflow-hidden rounded-2xl border py-2.5 pl-5 pr-3 text-left transition-colors before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:w-2 before:rounded-l-2xl before:bg-[var(--category-chart-color)] before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card lg:grid-cols-[auto_minmax(0,1fr)_auto] ${
           isExcluded
             ? 'border-border bg-card/60 opacity-60'
             : 'border-border bg-card hover:border-primary/45 hover:bg-accent/10'
@@ -727,19 +735,16 @@ export default function ReportCategoryBreakdown({
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [drilledKey, setDrilledKey] = useState<string | null>(null)
 
-  const selectedSummary = useMemo(
-    () => {
-      if (!selectedKey) return null
+  const selectedSummary = useMemo(() => {
+    if (!selectedKey) return null
 
-      const directLabelFor = (root: CategorySummary) =>
-        t('report.breakdown.directlyIn', { name: root.displayName })
-      return (
-        findSummaryByKey(expense, selectedKey, directLabelFor) ??
-        findSummaryByKey(income, selectedKey, directLabelFor)
-      )
-    },
-    [expense, income, selectedKey, t]
-  )
+    const directLabelFor = (root: CategorySummary) =>
+      t('report.breakdown.directlyIn', { name: root.displayName })
+    return (
+      findSummaryByKey(expense, selectedKey, directLabelFor) ??
+      findSummaryByKey(income, selectedKey, directLabelFor)
+    )
+  }, [expense, income, selectedKey, t])
   const currentSummaries = activeTab === 'expense' ? expense : income
   const currentActiveSummaries =
     activeTab === 'expense' ? activeExpense : activeIncome
@@ -767,10 +772,7 @@ export default function ReportCategoryBreakdown({
   }, [currentSummaries, drilledKey])
 
   useEffect(() => {
-    if (
-      selectedKey &&
-      !selectedSummary
-    ) {
+    if (selectedKey && !selectedSummary) {
       setSelectedKey(null)
     }
   }, [selectedKey, selectedSummary])

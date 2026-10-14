@@ -246,6 +246,65 @@ describe('ReportCategoryBreakdown', () => {
     expect(viewButton.className).toContain('min-w-11')
   })
 
+  it('maps donut colors to category rows with a flush left color block', () => {
+    const expense = [
+      makeSummary({
+        totalAmount: 300,
+        imageUrl: 'https://example.com/food.svg',
+        percentage: 75,
+      }),
+      makeSummary({
+        key: 'name::expense::Transport',
+        displayName: 'Transport',
+        totalAmount: 100,
+        directAmount: 100,
+        percentage: 25,
+      }),
+    ]
+
+    render(
+      <ReportCategoryBreakdown
+        expense={expense}
+        income={[]}
+        activeExpense={expense}
+        activeIncome={[]}
+        currency="TWD"
+        excludedKeys={new Set()}
+        onToggleKey={jest.fn()}
+      />
+    )
+
+    const foodRow = screen.getByRole('button', {
+      name: 'Open Food transactions',
+    })
+    const transportRow = screen.getByRole('button', {
+      name: 'Open Transport transactions',
+    })
+    expect(foodRow.className).toContain('relative')
+    expect(foodRow.className).toContain('overflow-hidden')
+    expect(foodRow.className).toContain('before:inset-y-0')
+    expect(foodRow.className).toContain('before:left-0')
+    expect(foodRow.className).toContain('before:w-2')
+    expect(foodRow.className).toContain('before:rounded-l-2xl')
+    expect(foodRow.className).toContain(
+      'before:bg-[var(--category-chart-color)]'
+    )
+    expect(foodRow.className).not.toContain('before:rounded-r')
+    expect(foodRow.className).toContain('pl-5')
+    expect(foodRow.className).toContain('pr-3')
+    expect(foodRow.getAttribute('data-chart-color')).toBe(
+      'hsl(var(--chart-1))'
+    )
+    expect(foodRow.getAttribute('style')).toContain(
+      '--category-chart-color: hsl(var(--chart-1))'
+    )
+    expect(screen.queryByTestId('avatar-Food')).not.toBeNull()
+    expect(transportRow.className).toContain('before:w-2')
+    expect(transportRow.getAttribute('data-chart-color')).toBe(
+      'hsl(var(--chart-2))'
+    )
+  })
+
   it('shows an empty state when every category in the active tab is excluded', () => {
     const expense: CategorySummary[] = [
       makeSummary({ transactionCount: 2, directTransactionCount: 2 }),
