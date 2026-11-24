@@ -463,97 +463,57 @@ code:
 ---
 ### Requirement: Users can soft-delete a settlement record
 
-The system SHALL allow users to delete a settlement record. Deletion SHALL set `deletedAt` to the current timestamp (soft delete). Deleted records SHALL NOT appear in the settlement record list. Transactions previously covered by a deleted record SHALL become unsettled again.
+The system SHALL allow users to cancel an active settlement from its detail page after confirmation, provided no transfer has been marked complete. The system SHALL atomically set the record's deletion timestamp and restore the transactions linked to it in the same account book to unsettled status. Canceled records SHALL be excluded from active settlement views and pending-transfer counts.
 
-#### Scenario: Deleting a settlement record re-exposes transactions
+#### Scenario: Confirming cancellation for an eligible record
 
-- **WHEN** a settlement record is soft-deleted
-- **THEN** its `transactionIds` SHALL no longer be in the settled set, and those transactions SHALL appear in the unsettled transaction list
+- **WHEN** a user confirms cancellation of a settlement with no completed transfers
+- **THEN** the user SHALL return to the account book's unsettled view, where the released expenses SHALL be available for a new settlement and included in the recalculated balances and suggestions.
+
+#### Scenario: Viewing settlements in another tab
+
+- **WHEN** a user cancels a settlement while another tab displays the same account book’s settlements
+- **THEN** the other tab SHALL remove the record and its pending count and include the reopened expenses in its unsettled view without a reload.
+
+#### Scenario: Attempting to cancel a record with a completed transfer
+
+- **WHEN** a settlement contains any completed transfer, including a shared-wallet transfer
+- **THEN** the system SHALL disallow cancellation and preserve the settlement and its linked transactions.
+
+#### Scenario: Dismissing the confirmation
+
+- **WHEN** the user dismisses the cancellation confirmation
+- **THEN** the settlement and its linked transactions SHALL retain their current state.
+
+#### Scenario: Cancellation write fails
+
+- **WHEN** the cancellation cannot be committed
+- **THEN** the system SHALL preserve the previous settlement and transaction states and show an error.
+
+#### Scenario: Saving an edit opened before cancellation
+
+- **WHEN** a user saves an expense edit that was opened before its settlement was canceled and the expense is still unsettled
+- **THEN** the edit SHALL be saved and the expense SHALL remain unsettled.
+
 
 <!-- @trace
-source: split-settlement-feature
-updated: 2026-04-11
+source: cancel-settlement
+updated: 2026-11-25
 code:
-  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
-  - apps/web/src/components/accountBookSettings/AccountBookSettingsPage.tsx
-  - apps/web/src/components/settlement/SettlementTransferModal.tsx
-  - apps/web/src/stores/transaction/transactionStoreProvider.tsx
-  - apps/web/src/components/settlement/SettlementConfirmModal.tsx
-  - apps/web/src/stores/accountBook/accountBookStore.ts
-  - CLAUDE.md
-  - apps/web/src/components/accountBookSettings/AccountBookCreatePage.tsx
+  - apps/web/src/i18n/messages/zh-TW.json
   - apps/web/src/hooks/useSettlement.ts
-  - apps/web/src/components/accountBookSettings/AccountBookEditPage.tsx
-  - apps/web/src/pages/settings.tsx
-  - apps/web/src/pages/account-books/new.tsx
-  - apps/web/src/utils/settlementUtils.ts
-  - apps/web/src/pages/settings/account-books.tsx
-  - apps/web/jest.config.ts
-  - apps/web/src/components/settlement/SettlementRecordDetail.tsx
-  - apps/web/src/repositories/settlementRepo/index.ts
-  - apps/web/src/components/accountBookSettings/DeleteAccountBookModal.tsx
-  - .github/skills/spectra-apply/SKILL.md
-  - apps/web/src/components/transaction/TransactionList.tsx
-  - .github/skills/spectra-propose/SKILL.md
-  - .github/skills/spectra-discuss/SKILL.md
-  - apps/web/src/components/categorySettings/CategorySettingsModal.tsx
-  - apps/web/src/pages/index.tsx
-  - GEMINI.md
-  - apps/web/package.json
-  - apps/web/src/components/accountBook/AccountBookMenu.tsx
   - apps/web/src/repositories/settlementRepo/settlementLocalRepo.ts
-  - apps/web/next.config.js
-  - apps/web/src/components/settlement/SettlementRecordList.tsx
-  - .spectra.yaml
-  - AGENTS.md
-  - apps/web/src/stores/transaction/transactionStore.ts
-  - apps/web/src/components/TransactionModal/IncomeForm.tsx
-  - apps/web/src/hooks/useUnsettledTransactions.ts
-  - apps/web/src/pages/_app.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
-  - apps/web/src/components/layout/header.tsx
-  - apps/web/src/hooks/useAccountBookTransactions.ts
-  - apps/web/.babelrc
-  - apps/web/src/lib/dexie.ts
-  - apps/web/src/components/accountBookSettings/AccountBookFormPage.tsx
-  - apps/web/src/pages/settings/account-books/[id]/categories.tsx
-  - .github/skills/spectra-ingest/SKILL.md
-  - apps/web/src/components/layout/navbar.tsx
-  - .github/prompts/spectra-propose.prompt.md
-  - .github/prompts/spectra-discuss.prompt.md
-  - apps/web/src/components/settlement/UnsettledTransactionList.tsx
-  - apps/web/src/pages/account-books/[id]/settlement/index.tsx
-  - apps/web/src/stores/accountBook/index.ts
   - apps/web/src/entities/settlement.ts
-  - .github/skills/spectra-debug/SKILL.md
   - apps/web/src/repositories/transactionRepo/transactionLocalRepo.ts
-  - apps/web/src/hooks/useSettlementRecordTransactions.ts
-  - apps/web/src/components/TransactionModal/ExpenseForm.tsx
-  - apps/web/src/components/layout/layout.tsx
-  - apps/web/src/pages/settings/account-books/new.tsx
-  - apps/web/src/utils/transactionUtils.ts
-  - .github/prompts/spectra-ask.prompt.md
-  - .github/prompts/spectra-ingest.prompt.md
-  - apps/web/src/pages/account-books/[id]/settings.tsx
-  - apps/web/src/entities/transaction.ts
-  - apps/web/src/stores/transaction/index.ts
-  - apps/web/src/pages/account-books/[id]/index.tsx
-  - apps/web/src/components/TransactionModal/TransactionModal.tsx
-  - .github/skills/spectra-ask/SKILL.md
-  - .github/prompts/spectra-apply.prompt.md
-  - .github/prompts/spectra-debug.prompt.md
-  - apps/web/src/pages/settings/account-books/[id]/index.tsx
+  - apps/web/package.json
+  - apps/web/src/hooks/useUnsettledTransactions.ts
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/src/pages/account-books/[id]/settlement/[recordId].tsx
 tests:
   - apps/web/specs/settlementStore.spec.ts
-  - apps/web/specs/settlementRecordDetailPage.spec.tsx
-  - apps/web/specs/accountBookSettings.spec.tsx
-  - apps/web/specs/transaction.spec.ts
-  - apps/web/specs/accountBookStore.spec.ts
   - apps/web/specs/settlementPage.spec.tsx
-  - apps/web/specs/transactionUtils.spec.ts
-  - apps/web/specs/transactionStore.spec.ts
-  - apps/web/specs/homeTransactions.spec.tsx
   - apps/web/specs/settlement.spec.ts
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
 -->
 
 ---

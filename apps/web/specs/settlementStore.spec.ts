@@ -63,6 +63,8 @@ function createTransactionFixture(
 }
 
 class InMemorySettlementRepo implements SettlementRepo {
+  cancel = jest.fn<Promise<void>, [string, string]>()
+
   private records: SettlementRecord[]
 
   constructor(records: SettlementRecord[] = []) {

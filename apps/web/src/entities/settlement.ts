@@ -34,6 +34,7 @@ export const SettlementRecordSchema = z.object({
   transfers: z.array(SettlementTransferSchema),
   createdAt: z.number().int().nonnegative(),
   updatedAt: z.number().int().nonnegative(),
+  deletedAt: z.number().int().nonnegative().nullable().optional(),
 })
 export type SettlementRecord = z.infer<typeof SettlementRecordSchema>
 
@@ -44,6 +45,7 @@ export interface SettlementRepo {
   ): Promise<SettlementRecord>
   findById(id: string): Promise<SettlementRecord | null>
   findByAccountBookId(accountBookId: string): Promise<SettlementRecord[]>
+  cancel(accountBookId: string, id: string): Promise<void>
   update(
     id: string,
     updates: Partial<SettlementRecord>

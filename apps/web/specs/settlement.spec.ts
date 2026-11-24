@@ -122,6 +122,26 @@ describe('Settlement repositories', () => {
     })
   })
 
+  it('rolls back settlement creation if linking its expenses fails', async () => {
+    const record = createSettlementRecordFixture()
+    const expense = await transactionRepo.create(createTransactionFixture())
+    const rejectLink = () => {
+      throw new Error('Failed to link expense')
+    }
+
+    db.transactions.hook('updating', rejectLink)
+    try {
+      await expect(settlementRepo.create(record, [expense.id])).rejects.toThrow(
+        'Failed to link expense'
+      )
+    } finally {
+      db.transactions.hook('updating').unsubscribe(rejectLink)
+    }
+
+    await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
+    await expect(transactionRepo.findById(expense.id)).resolves.toEqual(expense)
+  })
+
   it('retrieves settlement history transactions via reverse lookup on settlementRecordId', async () => {
     const record = createSettlementRecordFixture()
 
@@ -151,5 +171,123 @@ describe('Settlement repositories', () => {
       expect.objectContaining({ id: 'tx-1' }),
       expect.objectContaining({ id: 'tx-2' }),
     ])
+  })
+
+  it('hides canceled records and reopens only their own expenses for a new settlement', async () => {
+    const record = createSettlementRecordFixture()
+    const expense = createTransactionFixture()
+    const deleted = createTransactionFixture({
+      id: 'deleted',
+      settlementRecordId: record.id,
+      deletedAt: baseTimestamp,
+    })
+    const otherBook = createTransactionFixture({
+      id: 'other-book',
+      accountBookId: 'book-2',
+      settlementRecordId: record.id,
+    })
+    await db.transactions.bulkAdd([expense, deleted, otherBook])
+    await settlementRepo.create(record, [expense.id])
+
+    await expect(settlementRepo.cancel('book-2', record.id)).rejects.toThrow()
+    await settlementRepo.cancel(record.accountBookId, record.id)
+    await expect(
+      settlementRepo.cancel(record.accountBookId, record.id)
+    ).rejects.toThrow()
+
+    await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
+    await expect(
+      settlementRepo.findByAccountBookId(record.accountBookId)
+    ).resolves.toEqual([])
+    await expect(db.settlements.get(record.id)).resolves.toMatchObject({
+      ...record,
+      deletedAt: expect.any(Number),
+      updatedAt: expect.any(Number),
+    })
+    await expect(db.transactions.get(deleted.id)).resolves.toEqual({
+      ...deleted,
+      settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
+    })
+    await expect(db.transactions.get(otherBook.id)).resolves.toEqual(otherBook)
+    await expect(
+      transactionRepo.findUnsettledExpenseByAccountBookId(record.accountBookId)
+    ).resolves.toEqual([expense])
+
+    await settlementRepo.create({ ...record, id: 'record-2' }, [expense.id])
+    await expect(
+      transactionRepo.findBySettlementRecordId('record-2')
+    ).resolves.toEqual([{ ...expense, settlementRecordId: 'record-2' }])
+  })
+
+  it('serializes transfer completion with cancellation in either order', async () => {
+    const record = createSettlementRecordFixture()
+    const completedTransfer = {
+      ...record.transfers[0]!,
+      id: 'shared-wallet-transfer',
+      toUserId: 'shared-wallet',
+      status: 'completed' as const,
+      actualAmount: 60,
+      completedAt: baseTimestamp,
+    }
+    const transfers = [...record.transfers, completedTransfer]
+    await settlementRepo.create(record)
+
+    const [updated, rejected] = await Promise.allSettled([
+      settlementRepo.update(record.id, { transfers }),
+      settlementRepo.cancel(record.accountBookId, record.id),
+    ])
+    expect(updated.status).toBe('fulfilled')
+    expect(rejected.status).toBe('rejected')
+    await expect(settlementRepo.findById(record.id)).resolves.toMatchObject({
+      transfers,
+    })
+
+    const anotherRecord = { ...record, id: 'record-2', transfers: [] }
+    await settlementRepo.create(anotherRecord)
+    const [, staleUpdate] = await Promise.all([
+      settlementRepo.cancel(anotherRecord.accountBookId, anotherRecord.id),
+      settlementRepo.update(anotherRecord.id, { updatedAt: baseTimestamp + 1 }),
+    ])
+    expect(staleUpdate).toBeNull()
+    await expect(settlementRepo.findById(anotherRecord.id)).resolves.toBeNull()
+  })
+
+  it('rolls back record cancellation if reopening expenses fails', async () => {
+    const record = createSettlementRecordFixture()
+    const expense = createTransactionFixture({ settlementRecordId: record.id })
+    await settlementRepo.create(record)
+    await transactionRepo.create(expense)
+
+    const rejectUpdate = () => {
+      throw new Error('Failed to reopen expense')
+    }
+    db.transactions.hook('updating', rejectUpdate)
+    try {
+      await expect(
+        settlementRepo.cancel(record.accountBookId, record.id)
+      ).rejects.toThrow('Failed to reopen expense')
+    } finally {
+      db.transactions.hook('updating').unsubscribe(rejectUpdate)
+    }
+
+    await expect(settlementRepo.findById(record.id)).resolves.toEqual(record)
+    await expect(transactionRepo.findById(expense.id)).resolves.toEqual(expense)
+  })
+
+  it('keeps a reopened expense unsettled when saving an older edit', async () => {
+    const record = createSettlementRecordFixture()
+    const draft = createTransactionFixture({ settlementRecordId: record.id })
+    await settlementRepo.create(record)
+    await transactionRepo.create(draft)
+
+    await Promise.all([
+      settlementRepo.cancel(record.accountBookId, record.id),
+      transactionRepo.update(draft.id, { ...draft, description: 'Updated' }),
+    ])
+
+    await expect(transactionRepo.findById(draft.id)).resolves.toMatchObject({
+      description: 'Updated',
+      settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
+    })
   })
 })

@@ -504,6 +504,15 @@
       "noteOptional": "備註（選填）",
       "confirm": "確認"
     },
+    "cancel": {
+      "action": "取消結算",
+      "description": "這筆結算涵蓋的 {count} 筆支出會回到未結算，並可再次納入結算。",
+      "keep": "保留結算",
+      "confirm": "確認取消結算",
+      "success": "已取消結算",
+      "error": "無法取消結算",
+      "errorDescription": "請確認結算紀錄仍存在，且沒有已完成的轉帳。"
+    },
     "recordPage": {
       "notFound": "找不到結算紀錄。",
       "back": "返回結算",

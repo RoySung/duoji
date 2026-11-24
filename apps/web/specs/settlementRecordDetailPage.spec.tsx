@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { HeroUIProvider, addToast } from '@heroui/react'
 import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/router'
@@ -236,6 +242,10 @@ class InMemoryCategoryRepo implements CategoryRepo {
 }
 
 class InMemorySettlementRepo implements SettlementRepo {
+  cancel = jest
+    .fn<Promise<void>, [string, string]>()
+    .mockResolvedValue(undefined)
+
   constructor(private readonly records: SettlementRecord[]) {}
 
   async create(record: SettlementRecord): Promise<SettlementRecord> {
@@ -277,6 +287,7 @@ class InMemorySettlementRepo implements SettlementRepo {
 
 const baseTimestamp = 1710000000000
 const mockPush = jest.fn()
+const mockReplace = jest.fn()
 
 function createAccountBookFixture(
   overrides: Partial<AccountBook> = {}
@@ -448,6 +459,7 @@ describe('Settlement record detail page', () => {
     ;(useRouter as jest.Mock).mockReturnValue({
       query: { id: 'book-1', recordId: 'record-1' },
       push: mockPush,
+      replace: mockReplace,
       pathname: '/account-books/[id]/settlement/[recordId]',
     })
 
@@ -512,6 +524,74 @@ describe('Settlement record detail page', () => {
       color: 'success',
     })
     expect(await screen.findByText('Done')).toBeTruthy()
+    expect(
+      screen.queryByRole('button', { name: 'Cancel settlement' })
+    ).toBeNull()
+  })
+
+  it('keeps the settlement when the cancellation dialog is dismissed', async () => {
+    renderPage()
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Cancel settlement' })
+    )
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/covered expenses \(1\)/)).toBeTruthy()
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Keep settlement' })
+    )
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mockSettlementRepo.cancel).not.toHaveBeenCalled()
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  it('cancels the settlement after confirmation and returns to the settlement page', async () => {
+    renderPage()
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Cancel settlement' })
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Confirm cancellation' })
+    )
+
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/account-books/book-1/settlement'
+      )
+    })
+    expect(mockSettlementRepo.cancel).toHaveBeenCalledTimes(1)
+    expect(mockSettlementRepo.cancel).toHaveBeenCalledWith('book-1', 'record-1')
+    expect(addToast).toHaveBeenCalledWith({
+      title: 'Settlement canceled',
+      color: 'success',
+    })
+  })
+
+  it('keeps the cancellation dialog open when the write fails', async () => {
+    jest
+      .mocked(mockSettlementRepo.cancel)
+      .mockRejectedValueOnce(new Error('Write failed'))
+    renderPage()
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Cancel settlement' })
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Confirm cancellation' })
+    )
+
+    await waitFor(() => {
+      expect(addToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Unable to cancel settlement',
+          color: 'danger',
+        })
+      )
+    })
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 
   it('opens transaction creation from the navbar without leaving the record', async () => {

@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/router'
-import { Button, addToast } from '@heroui/react'
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  addToast,
+} from '@heroui/react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
 import { PiArrowLeftBold } from 'react-icons/pi'
 import { useAccountBookStore } from '@/stores/accountBook'
@@ -15,15 +24,20 @@ import { PageScaffold } from '@/components/ui/PageScaffold'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import { useAccountBookTransactions } from '@/hooks/useAccountBookTransactions'
 import { useRegisterCreateTransactionHandler } from '@/components/TransactionModal/TransactionModalLauncher'
+import { confirmModalClassNames } from '@/components/TransactionModal/formControlStyles'
+import { AppButton } from '@/components/ui/AppButton'
 
 export default function SettlementRecordDetailPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const t = useTranslations()
   const { id, recordId } = router.query
   const accountBookId = typeof id === 'string' ? id : null
   const settlementRecordId = typeof recordId === 'string' ? recordId : null
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCancelOpen, setIsCancelOpen] = useState(false)
+  const [isCanceling, setIsCanceling] = useState(false)
   const [modalMode, setModalMode] = useState<TransactionModalMode>('view')
   const [selectedTransactionId, setSelectedTransactionId] = useState<
     string | null
@@ -32,9 +46,10 @@ export default function SettlementRecordDetailPage() {
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
   const initializeCategories = useCategoryStore((state) => state.initialize)
 
-  const { records, completeTransfer } = useSettlement(accountBookId)
+  const { records, cancelSettlementRecord, completeTransfer } =
+    useSettlement(accountBookId)
 
-  const { transactions: recordTransactions } =
+  const { transactions: recordTransactions, isLoading: isLoadingTransactions } =
     useSettlementRecordTransactions(settlementRecordId)
   const { createTransaction, isMutating } = useAccountBookTransactions(
     accountBookId,
@@ -111,6 +126,33 @@ export default function SettlementRecordDetailPage() {
     )
   }
 
+  const canCancel = record.transfers.every(
+    (transfer) => transfer.status !== 'completed'
+  )
+
+  async function handleCancelSettlement() {
+    if (!record || !canCancel || isCanceling) return
+
+    setIsCanceling(true)
+    try {
+      await cancelSettlementRecord(record.id)
+    } catch {
+      addToast({
+        title: t('settlement.cancel.error'),
+        color: 'danger',
+        description: t('settlement.cancel.errorDescription'),
+      })
+      return
+    } finally {
+      setIsCanceling(false)
+    }
+
+    setIsCancelOpen(false)
+    void queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    addToast({ title: t('settlement.cancel.success'), color: 'success' })
+    void router.replace(`/account-books/${record.accountBookId}/settlement`)
+  }
+
   async function handleCompleteTransfer(
     transferId: string,
     actualAmount: number,
@@ -159,7 +201,63 @@ export default function SettlementRecordDetailPage() {
           onCompleteTransfer={handleCompleteTransfer}
           onViewTransaction={openViewModal}
         />
+        {canCancel && (
+          <AppButton
+            className="min-h-11 self-start rounded-xl px-4 text-body"
+            disableRipple
+            isDisabled={isLoadingTransactions || isCanceling}
+            tone="danger"
+            onPress={() => setIsCancelOpen(true)}
+          >
+            {t('settlement.cancel.action')}
+          </AppButton>
+        )}
       </PageScaffold>
+
+      <Modal
+        classNames={confirmModalClassNames}
+        hideCloseButton={isCanceling}
+        isDismissable={!isCanceling}
+        isKeyboardDismissDisabled={isCanceling}
+        isOpen={isCancelOpen && canCancel}
+        onOpenChange={(open) => !isCanceling && setIsCancelOpen(open)}
+        placement="center"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <h2 className="text-title font-semibold text-foreground">
+              {t('settlement.cancel.action')}
+            </h2>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-body text-muted-foreground">
+              {t('settlement.cancel.description', {
+                count: recordTransactions.length,
+              })}
+            </p>
+          </ModalBody>
+          <ModalFooter className="flex-wrap">
+            <AppButton
+              appearance="light"
+              className="min-h-11 rounded-xl text-body"
+              isDisabled={isCanceling}
+              tone="neutral"
+              onPress={() => setIsCancelOpen(false)}
+            >
+              {t('settlement.cancel.keep')}
+            </AppButton>
+            <AppButton
+              className="min-h-11 rounded-xl text-body"
+              disableRipple
+              isLoading={isCanceling}
+              tone="danger"
+              onPress={() => void handleCancelSettlement()}
+            >
+              {t('settlement.cancel.confirm')}
+            </AppButton>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <TransactionModal
         isOpen={isModalOpen}

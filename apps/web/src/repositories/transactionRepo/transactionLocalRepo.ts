@@ -168,20 +168,24 @@ class TransactionLocalRepo implements TransactionRepo {
     updates: Partial<Transaction>
   ): Promise<Transaction | null> {
     try {
-      const existing = await db.transactions.get(id)
-      if (!existing) {
-        return null
-      }
+      return await db.transaction('rw', db.transactions, async () => {
+        const existing = await db.transactions.get(id)
+        if (!existing) {
+          return null
+        }
 
-      const updatedTransaction = TransactionSchema.parse({
-        ...existing,
-        ...updates,
-        id: existing.id,
-        createdAt: existing.createdAt,
+        const updatedTransaction = TransactionSchema.parse({
+          ...existing,
+          ...updates,
+          id: existing.id,
+          createdAt: existing.createdAt,
+          // Settlement writes own this field. An open edit can hold an older value.
+          settlementRecordId: existing.settlementRecordId,
+        })
+
+        await db.transactions.put(updatedTransaction)
+        return updatedTransaction
       })
-
-      await db.transactions.put(updatedTransaction)
-      return updatedTransaction
     } catch (error) {
       console.error('Failed to update transaction:', error)
       throw error

@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -10,6 +11,7 @@ import { ThemeProvider } from 'next-themes'
 import { useRouter } from 'next/router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import SettlementPage from '../src/pages/account-books/[id]/settlement'
+import SettlementRecordDetailPage from '../src/pages/account-books/[id]/settlement/[recordId]'
 import { AccountBook } from '../src/entities/accountBook'
 import {
   Category,
@@ -25,6 +27,7 @@ import {
 } from '../src/entities/transaction'
 import { db } from '../src/lib/dexie'
 import { userList } from './fixtures'
+import SettlementLocalRepo from '../src/repositories/settlementRepo/settlementLocalRepo'
 import TransactionLocalRepo from '../src/repositories/transactionRepo/transactionLocalRepo'
 import {
   AccountBookStoreProvider,
@@ -87,6 +90,7 @@ jest.mock('@heroui/react', () => {
       isLoading,
       onClick,
       onPress,
+      startContent,
       ...props
     }: any) => {
       void disableRipple
@@ -109,6 +113,7 @@ jest.mock('@heroui/react', () => {
           }}
           {...props}
         >
+          {startContent}
           {children}
         </button>
       )
@@ -120,7 +125,12 @@ jest.mock('@heroui/react', () => {
     ModalBody: ({ children }: any) => <div>{children}</div>,
     ModalFooter: ({ children }: any) => <div>{children}</div>,
     Tabs: ({ children }: any) => <div>{children}</div>,
-    Tab: ({ children }: any) => <div>{children}</div>,
+    Tab: ({ children, title }: any) => (
+      <div>
+        <div role="tab">{title}</div>
+        {children}
+      </div>
+    ),
     Avatar: ({ name }: any) => <div>{name}</div>,
     Chip: ({ children }: any) => <span>{children}</span>,
   }
@@ -129,6 +139,13 @@ jest.mock('@heroui/react', () => {
 const transactionRepo = new TransactionLocalRepo()
 const baseTimestamp = 1710000000000
 const mockPush = jest.fn()
+const mockReplace = jest.fn()
+const listRouter = {
+  query: { id: 'book-1' },
+  push: mockPush,
+  replace: mockReplace,
+  pathname: '/account-books/[id]/settlement',
+}
 
 class InMemoryCategoryRepo implements CategoryRepo {
   constructor(private readonly categories: Category[] = []) {}
@@ -308,7 +325,7 @@ function OpenTransactionButton() {
   )
 }
 
-function renderSettlementPage() {
+function renderSettlementPage(page = <SettlementPage />) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -356,7 +373,7 @@ function renderSettlementPage() {
               <UserStoreProvider store={userStore}>
                 <SettingsStoreProvider store={settingsStore}>
                   <TransactionModalLauncherProvider>
-                    <SettlementPage />
+                    {page}
                     <OpenTransactionButton />
                   </TransactionModalLauncherProvider>
                 </SettingsStoreProvider>
@@ -373,11 +390,7 @@ function renderSettlementPage() {
 
 describe('Settlement page', () => {
   beforeEach(async () => {
-    ;(useRouter as jest.Mock).mockReturnValue({
-      query: { id: 'book-1' },
-      push: mockPush,
-      pathname: '/account-books/[id]/settlement',
-    })
+    ;(useRouter as jest.Mock).mockReturnValue(listRouter)
 
     await db.delete()
     await db.open()
@@ -389,8 +402,8 @@ describe('Settlement page', () => {
     jest.clearAllMocks()
   })
 
-  it('refreshes the unsettled list after creating a settlement record', async () => {
-    renderSettlementPage()
+  it('restores expenses and transfer suggestions after canceling a settlement', async () => {
+    const originalPage = renderSettlementPage()
 
     expect(await screen.findByText('Breakfast with friends')).toBeTruthy()
     expect(screen.getByTestId('settlement-page').dataset.ui).toBe(
@@ -434,6 +447,68 @@ describe('Settlement page', () => {
     expect(mockPush).toHaveBeenCalledWith(
       expect.stringMatching(/^\/account-books\/book-1\/settlement\//)
     )
+    const [record] = await db.settlements.toArray()
+    originalPage.unmount()
+    ;(useRouter as jest.Mock).mockReturnValue({
+      ...listRouter,
+      query: { id: 'book-1', recordId: record.id },
+      pathname: '/account-books/[id]/settlement/[recordId]',
+    })
+    const detailPage = renderSettlementPage(<SettlementRecordDetailPage />)
+    const cancelButton = await screen.findByRole('button', {
+      name: 'Cancel settlement',
+    })
+    await waitFor(() => expect(cancelButton).toHaveProperty('disabled', false))
+    expect(cancelButton.getAttribute('variant')).toBe('solid')
+    expect(cancelButton.getAttribute('color')).toBe('danger')
+    expect(cancelButton.className).toContain('self-start')
+    expect(cancelButton.className).toContain('!text-white')
+    fireEvent.click(cancelButton)
+    const confirmButton = screen.getByRole('button', {
+      name: 'Confirm cancellation',
+    })
+    expect(confirmButton.getAttribute('variant')).toBe('solid')
+    expect(confirmButton.getAttribute('color')).toBe('danger')
+    expect(confirmButton.className).toContain('!text-white')
+    fireEvent.click(confirmButton)
+    await waitFor(() => {
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/account-books/book-1/settlement'
+      )
+    })
+    detailPage.unmount()
+    ;(useRouter as jest.Mock).mockReturnValue(listRouter)
+    renderSettlementPage()
+    expect(await screen.findByText('Breakfast with friends')).toBeTruthy()
+    expect(
+      await screen.findByTestId('settlement-records-empty-state')
+    ).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Review & settle' }))
+    expect(
+      within(screen.getByRole('dialog')).getByText('Suggested transfers')
+    ).toBeTruthy()
+  })
+
+  it('refreshes the open settlement page when another view cancels a record', async () => {
+    renderSettlementPage()
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Review & settle' })
+    )
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Create settlement record' })
+    )
+    await screen.findByText('All settled')
+    await screen.findByRole('button', { name: /Settlement #1/ })
+    expect(screen.getByRole('tab', { name: 'Settled 1' })).toBeTruthy()
+
+    const [record] = await db.settlements.toArray()
+    await act(async () => {
+      await new SettlementLocalRepo().cancel(record.accountBookId, record.id)
+    })
+
+    await screen.findByText('Breakfast with friends')
+    await screen.findByTestId('settlement-records-empty-state')
+    expect(screen.getByRole('tab', { name: 'Settled' })).toBeTruthy()
   })
 
   it('creates a transaction in place and updates transaction query caches', async () => {

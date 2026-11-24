@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { liveQuery } from 'dexie'
 import { Transaction } from '@/entities/transaction'
 import {
   SettlementRecord,
@@ -40,6 +41,7 @@ type UseSettlementReturn = {
   isLoading: boolean
   error: string | null
   createSettlementRecord: (transactions: Transaction[]) => Promise<void>
+  cancelSettlementRecord: (recordId: string) => Promise<void>
   completeTransfer: (
     recordId: string,
     transferId: string,
@@ -80,53 +82,51 @@ export function useSettlement(
   useEffect(() => {
     if (!accountBookId) {
       setRecords([])
-      setMemberStatuses([])
-      setTransferSuggestions([])
+      setIsLoading(false)
       return
     }
 
-    let isActive = true
     setIsLoading(true)
     setError(null)
 
-    repoRef.current
-      .findByAccountBookId(accountBookId)
-      .then((fetchedRecords) => {
-        if (!isActive) return
+    const subscription = liveQuery(() =>
+      repoRef.current.findByAccountBookId(accountBookId)
+    ).subscribe({
+      next: (fetchedRecords) => {
         setRecords(fetchedRecords)
-        if (transactions !== null) {
-          const sharedWalletIds = new Set(
-            allUsers.filter(isSharedWalletUser).map((u) => u.id)
-          )
-          const realMembersCount = allUsers.filter(
-            (u) => !isDeletedUser(u) && !isSharedWalletUser(u)
-          ).length
-
-          const unsettled = computeUnsettledTransactions(transactions)
-          const statuses = computeMemberStatuses(unsettled, sharedWalletIds)
-          const suggestions = computeMinimumTransfers(statuses)
-          const summary = computeSharedWalletSummary(
-            unsettled,
-            sharedWalletIds,
-            realMembersCount
-          )
-
-          setMemberStatuses(statuses)
-          setTransferSuggestions(suggestions)
-          setSharedWalletSummary(summary)
-        }
         setIsLoading(false)
-      })
-      .catch((err: unknown) => {
-        if (!isActive) return
+      },
+      error: (err: unknown) => {
         setError(toErrorMessage(err))
         setIsLoading(false)
-      })
+      },
+    })
 
-    return () => {
-      isActive = false
+    return () => subscription.unsubscribe()
+  }, [accountBookId])
+
+  useEffect(() => {
+    if (!accountBookId || transactions === null) {
+      setMemberStatuses([])
+      setTransferSuggestions([])
+      setSharedWalletSummary(null)
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    const sharedWalletIds = new Set(
+      allUsers.filter(isSharedWalletUser).map((u) => u.id)
+    )
+    const realMembersCount = allUsers.filter(
+      (u) => !isDeletedUser(u) && !isSharedWalletUser(u)
+    ).length
+    const unsettled = computeUnsettledTransactions(transactions)
+    const statuses = computeMemberStatuses(unsettled, sharedWalletIds)
+
+    setMemberStatuses(statuses)
+    setTransferSuggestions(computeMinimumTransfers(statuses))
+    setSharedWalletSummary(
+      computeSharedWalletSummary(unsettled, sharedWalletIds, realMembersCount)
+    )
   }, [accountBookId, transactions, allUsers])
 
   const createSettlementRecord = useCallback(
@@ -193,7 +193,11 @@ export function useSettlement(
         const emptyStatuses = computeMemberStatuses([])
         const emptySuggestions = computeMinimumTransfers(emptyStatuses)
 
-        setRecords((prev) => [...prev, newRecord])
+        setRecords((prev) =>
+          prev.some((record) => record.id === newRecord.id)
+            ? prev
+            : [...prev, newRecord]
+        )
         setMemberStatuses(emptyStatuses)
         setTransferSuggestions(emptySuggestions)
         setSharedWalletSummary(null)
@@ -205,6 +209,18 @@ export function useSettlement(
       }
     },
     [accountBookId, allUsers]
+  )
+
+  const cancelSettlementRecord = useCallback(
+    async (recordId: string) => {
+      if (!accountBookId) throw new Error('Account book is unavailable')
+
+      await repoRef.current.cancel(accountBookId, recordId)
+      setRecords((previous) =>
+        previous.filter((record) => record.id !== recordId)
+      )
+    },
+    [accountBookId]
   )
 
   const completeTransfer = useCallback(
@@ -220,8 +236,7 @@ export function useSettlement(
       try {
         const record = records.find((r) => r.id === recordId)
         if (!record) {
-          setIsLoading(false)
-          return
+          throw new Error(`Settlement record ${recordId} no longer exists`)
         }
 
         const updatedTransfers = record.transfers.map((t) =>
@@ -242,9 +257,7 @@ export function useSettlement(
         })
 
         if (!updatedRecord) {
-          setError(`Settlement record ${recordId} no longer exists`)
-          setIsLoading(false)
-          return
+          throw new Error(`Settlement record ${recordId} no longer exists`)
         }
 
         setRecords((prev) =>
@@ -268,6 +281,7 @@ export function useSettlement(
     isLoading,
     error,
     createSettlementRecord,
+    cancelSettlementRecord,
     completeTransfer,
   }
 }

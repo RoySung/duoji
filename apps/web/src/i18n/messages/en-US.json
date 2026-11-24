@@ -504,6 +504,15 @@
       "noteOptional": "Note (optional)",
       "confirm": "Confirm"
     },
+    "cancel": {
+      "action": "Cancel settlement",
+      "description": "The covered expenses ({count}) will return to Unsettled and can be included in a new settlement.",
+      "keep": "Keep settlement",
+      "confirm": "Confirm cancellation",
+      "success": "Settlement canceled",
+      "error": "Unable to cancel settlement",
+      "errorDescription": "Check that the settlement still exists and has no completed transfers."
+    },
     "recordPage": {
       "notFound": "Settlement record not found.",
       "back": "Back to settlements",

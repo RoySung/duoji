@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { liveQuery } from 'dexie'
 import { Transaction } from '@/entities/transaction'
 import { TransactionLocalRepo } from '@/repositories/transactionRepo'
 
@@ -25,19 +26,15 @@ export function useUnsettledTransactions(
   )
 
   useEffect(() => {
-    let isActive = true
     if (!accountBookId) {
       setTransactions(null)
       return
     }
-    void repoRef.current
-      .findUnsettledExpenseByAccountBookId(accountBookId)
-      .then((results) => {
-        if (isActive) setTransactions(results)
-      })
-    return () => {
-      isActive = false
-    }
+    const subscription = liveQuery(() =>
+      repoRef.current.findUnsettledExpenseByAccountBookId(accountBookId)
+    ).subscribe(setTransactions)
+
+    return () => subscription.unsubscribe()
   }, [accountBookId])
 
   return {
