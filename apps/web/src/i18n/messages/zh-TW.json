@@ -427,6 +427,8 @@
       "title": "確認並結算",
       "balances": "成員餘額",
       "transfers": "建議轉帳",
+      "exportDraft": "匯出 Markdown 草稿",
+      "reviewChanged": "結算內容已變更，請核對更新後的總覽再確認。",
       "submit": "建立結算紀錄"
     },
     "unsettled": {
@@ -452,6 +454,14 @@
       "copiedToast": "已複製到剪貼簿",
       "copyFailedTitle": "複製失敗",
       "copyFailedDesc": "請手動選取並複製文字。",
+      "draft": {
+        "previewTitle": "匯出為 Markdown — 結算草稿",
+        "includedExpenses": "本次納入的支出（{count} 筆）",
+        "title": "# 結算草稿\n\n匯出時間 {timestamp}",
+        "roundingOn": "自動進位已開啟",
+        "roundingOff": "自動進位已關閉",
+        "transfers": "## 建議轉帳"
+      },
       "content": {
         "title": "# 結算 #{sequenceNumber}\n\n日期：{date}",
         "autoRoundNote": "金額設定：無條件進位",
@@ -479,6 +489,7 @@
     "detail": {
       "title": "結算 #{sequenceNumber}",
       "exportMarkdown": "匯出 Markdown",
+      "recordActions": "結算操作",
       "settled": "已結算",
       "pending": "待處理",
       "split": "分攤",

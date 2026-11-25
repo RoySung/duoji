@@ -4,13 +4,39 @@ import {
 } from '@/entities/transaction'
 import {
   SettlementMemberStatus,
+  SettlementReviewMembers,
   SettlementTransfer,
 } from '@/entities/settlement'
+import { isDeletedUser, isSharedWalletUser, User } from '@/entities/user'
 
 export interface SharedWalletSummary {
   totalExpense: number
   averagePerPerson: number
   borrowings: { userId: string; amount: number }[]
+}
+
+export function getSettlementReviewMembers(
+  users: User[]
+): SettlementReviewMembers {
+  return {
+    sharedWalletIds: users.filter(isSharedWalletUser).map(({ id }) => id),
+    activeMemberCount: users.filter(
+      (user) => !isDeletedUser(user) && !isSharedWalletUser(user)
+    ).length,
+  }
+}
+
+export function haveSameSettlementReviewMembers(
+  reviewed: SettlementReviewMembers,
+  current: SettlementReviewMembers
+): boolean {
+  return (
+    reviewed.activeMemberCount === current.activeMemberCount &&
+    reviewed.sharedWalletIds.length === current.sharedWalletIds.length &&
+    reviewed.sharedWalletIds.every(
+      (id, index) => id === current.sharedWalletIds[index]
+    )
+  )
 }
 
 /**
@@ -19,12 +45,48 @@ export interface SharedWalletSummary {
 export function computeUnsettledTransactions(
   transactions: Transaction[]
 ): Transaction[] {
-  return transactions.filter(
-    (t) =>
-      t.type === 'expense' &&
-      t.deletedAt === null &&
-      isUnsettledSettlementRecordId(t.settlementRecordId)
+  return transactions.filter(isUnsettledExpense)
+}
+
+export function isUnsettledExpense(transaction: Transaction): boolean {
+  return (
+    transaction.type === 'expense' &&
+    transaction.deletedAt === null &&
+    isUnsettledSettlementRecordId(transaction.settlementRecordId)
   )
+}
+
+export function haveSameSettlementExpenses(
+  reviewed: readonly Transaction[],
+  current: readonly Transaction[]
+): boolean {
+  if (reviewed.length !== current.length) return false
+
+  const serialize = (expenses: readonly Transaction[]) =>
+    JSON.stringify(
+      [...expenses]
+        .sort((a, b) => (a.id === b.id ? 0 : a.id < b.id ? -1 : 1))
+        .map((expense) => [
+          expense.id,
+          expense.accountBookId,
+          expense.date,
+          expense.description,
+          expense.amount,
+          expense.categoryId,
+          expense.paidByDetail.map(({ userId, userType, amount }) => [
+            userId,
+            userType,
+            amount,
+          ]),
+          expense.splitDetail.map(({ userId, userType, amount }) => [
+            userId,
+            userType,
+            amount,
+          ]),
+        ])
+    )
+
+  return serialize(reviewed) === serialize(current)
 }
 
 /**

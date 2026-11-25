@@ -1,21 +1,41 @@
 import {
+  SettlementCreateTransactions,
   SettlementRecord,
   SettlementRecordSchema,
   SettlementRepo,
+  StaleSettlementReviewError,
 } from '@/entities/settlement'
 import {
+  Transaction,
   TransactionSchema,
   UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '@/entities/transaction'
 import { db } from '@/lib/dexie'
+import { resolveAccountBookUsers, UserLocalRepo } from '@/repositories/userRepo'
+import {
+  getSettlementReviewMembers,
+  haveSameSettlementExpenses,
+  haveSameSettlementReviewMembers,
+  isUnsettledExpense,
+} from '@/utils/settlementUtils'
 
 class SettlementLocalRepo implements SettlementRepo {
+  async findReviewUsers(accountBookId: string) {
+    const accountBook = await db.accountBooks.get(accountBookId)
+    return accountBook
+      ? resolveAccountBookUsers(accountBook, new UserLocalRepo())
+      : null
+  }
+
   async create(
     record: SettlementRecord,
-    transactionIds: string[] = []
+    transactionIdsOrReview: SettlementCreateTransactions = []
   ): Promise<SettlementRecord> {
     const validated = SettlementRecordSchema.parse(record)
-    return db.transaction('rw', db.settlements, db.transactions, async () => {
+    const tables = Array.isArray(transactionIdsOrReview)
+      ? [db.settlements, db.transactions]
+      : [db.settlements, db.transactions, db.accountBooks, db.users]
+    return db.transaction('rw', tables, async () => {
       const existing = await db.settlements.get(validated.id)
 
       if (existing) {
@@ -24,21 +44,45 @@ class SettlementLocalRepo implements SettlementRepo {
         )
       }
 
+      let transactions: Transaction[]
+      if (Array.isArray(transactionIdsOrReview)) {
+        const linked = await db.transactions.bulkGet(transactionIdsOrReview)
+        transactions = linked.filter((transaction) => transaction !== undefined)
+      } else {
+        const [eligibleExpenses, users] = await Promise.all([
+          db.transactions
+            .where('accountBookId')
+            .equals(validated.accountBookId)
+            .filter(isUnsettledExpense)
+            .toArray(),
+          this.findReviewUsers(validated.accountBookId),
+        ])
+        transactions = eligibleExpenses
+
+        if (
+          !users ||
+          transactions.length === 0 ||
+          !haveSameSettlementReviewMembers(
+            transactionIdsOrReview.reviewedMembers,
+            getSettlementReviewMembers(users)
+          ) ||
+          !haveSameSettlementExpenses(
+            transactionIdsOrReview.reviewedExpenses,
+            transactions
+          )
+        ) {
+          throw new StaleSettlementReviewError()
+        }
+      }
+
+      const updatedTransactions = transactions.map((transaction) =>
+        TransactionSchema.parse({
+          ...transaction,
+          settlementRecordId: validated.id,
+        })
+      )
+
       await db.settlements.add(validated)
-      if (transactionIds.length === 0) return validated
-
-      const transactions = await db.transactions.bulkGet(transactionIds)
-      const updatedTransactions = transactions
-        .filter((transaction): transaction is NonNullable<typeof transaction> =>
-          Boolean(transaction)
-        )
-        .map((transaction) =>
-          TransactionSchema.parse({
-            ...transaction,
-            settlementRecordId: validated.id,
-          })
-        )
-
       if (updatedTransactions.length > 0) {
         await db.transactions.bulkPut(updatedTransactions)
       }

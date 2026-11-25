@@ -524,18 +524,37 @@ describe('Settlement record detail page', () => {
       color: 'success',
     })
     expect(await screen.findByText('Done')).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Settlement actions' })
+    )
+    const menu = await screen.findByRole('menu')
     expect(
-      screen.queryByRole('button', { name: 'Cancel settlement' })
+      within(menu).queryByRole('menuitem', { name: 'Cancel settlement' })
     ).toBeNull()
+    fireEvent.click(
+      within(menu).getByRole('menuitem', { name: 'Export Markdown' })
+    )
+    const dialog = await screen.findByRole('dialog')
+    expect(
+      within(dialog).getByRole('heading', {
+        name: 'Export as Markdown — Settlement #1',
+      })
+    ).toBeTruthy()
   })
 
   it('keeps the settlement when the cancellation dialog is dismissed', async () => {
     renderPage()
 
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Cancel settlement' })
+      await screen.findByRole('button', { name: 'Settlement actions' })
     )
-    const dialog = screen.getByRole('dialog')
+    const cancelItem = await screen.findByRole('menuitem', {
+      name: 'Cancel settlement',
+    })
+    fireEvent.keyDown(cancelItem, { key: 'Enter', code: 'Enter' })
+    fireEvent.keyUp(cancelItem, { key: 'Enter', code: 'Enter' })
+    const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText(/covered expenses \(1\)/)).toBeTruthy()
     fireEvent.click(
       within(dialog).getByRole('button', { name: 'Keep settlement' })
@@ -550,10 +569,13 @@ describe('Settlement record detail page', () => {
     renderPage()
 
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Cancel settlement' })
+      await screen.findByRole('button', { name: 'Settlement actions' })
     )
     fireEvent.click(
-      screen.getByRole('button', { name: 'Confirm cancellation' })
+      await screen.findByRole('menuitem', { name: 'Cancel settlement' })
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Confirm cancellation' })
     )
 
     await waitFor(() => {
@@ -576,10 +598,13 @@ describe('Settlement record detail page', () => {
     renderPage()
 
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Cancel settlement' })
+      await screen.findByRole('button', { name: 'Settlement actions' })
     )
     fireEvent.click(
-      screen.getByRole('button', { name: 'Confirm cancellation' })
+      await screen.findByRole('menuitem', { name: 'Cancel settlement' })
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Confirm cancellation' })
     )
 
     await waitFor(() => {

@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { liveQuery } from 'dexie'
 import { Transaction } from '@/entities/transaction'
 import {
   SettlementRecord,
   SettlementMemberStatus,
+  SettlementReviewMembers,
   SettlementTransfer,
   SettlementRepo,
+  StaleSettlementReviewError,
 } from '@/entities/settlement'
 import { SettlementLocalRepo } from '@/repositories/settlementRepo'
 import {
@@ -13,13 +15,34 @@ import {
   computeMemberStatuses,
   computeMinimumTransfers,
   computeSharedWalletSummary,
+  getSettlementReviewMembers,
+  haveSameSettlementExpenses,
+  haveSameSettlementReviewMembers,
   SharedWalletSummary,
 } from '@/utils/settlementUtils'
 import { genUuid } from '@/utils/genUuid'
 import { useUserStore } from '@/stores/user'
-import { isDeletedUser, isSharedWalletUser } from '@/entities/user'
+import type { User } from '@/entities/user'
+
+export type SettlementPreview = {
+  accountBookId: string
+  users: User[]
+  reviewedMembers: SettlementReviewMembers
+  transactions: Transaction[]
+  memberStatuses: SettlementMemberStatus[]
+  transferSuggestions: Pick<
+    SettlementTransfer,
+    'fromUserId' | 'toUserId' | 'suggestedAmount'
+  >[]
+  sharedWalletSummary: SharedWalletSummary
+  sharedWalletTransfers: SettlementPreview['transferSuggestions']
+}
+
+const noMemberStatuses: SettlementMemberStatus[] = []
+const noTransferSuggestions: SettlementPreview['transferSuggestions'] = []
 
 type UseSettlementReturn = {
+  preview: SettlementPreview | null
   records: SettlementRecord[]
   /**
    * Per-member balance preview for unsettled transactions.
@@ -40,7 +63,10 @@ type UseSettlementReturn = {
   sharedWalletSummary: SharedWalletSummary | null
   isLoading: boolean
   error: string | null
-  createSettlementRecord: (transactions: Transaction[]) => Promise<void>
+  refreshReviewUsers: () => Promise<void>
+  createSettlementRecord: (
+    transactionsOrPreview: Transaction[] | SettlementPreview
+  ) => Promise<void>
   cancelSettlementRecord: (recordId: string) => Promise<void>
   completeTransfer: (
     recordId: string,
@@ -55,29 +81,115 @@ function toErrorMessage(error: unknown): string {
   return 'Unknown settlement error'
 }
 
+function buildSettlementPreview(
+  accountBookId: string,
+  transactions: Transaction[],
+  allUsers: User[]
+): SettlementPreview {
+  const reviewedMembers = getSettlementReviewMembers(allUsers)
+  const sharedWalletIds = new Set(reviewedMembers.sharedWalletIds)
+  const eligible = computeUnsettledTransactions(transactions).filter(
+    (transaction) => transaction.accountBookId === accountBookId
+  )
+  // Transfer matching uses member encounter order to break ties.
+  eligible.sort((left, right) =>
+    left.id === right.id ? 0 : left.id < right.id ? -1 : 1
+  )
+  const memberStatuses = computeMemberStatuses(eligible, sharedWalletIds)
+  const sharedWalletSummary = computeSharedWalletSummary(
+    eligible,
+    sharedWalletIds,
+    reviewedMembers.activeMemberCount
+  )
+  const [sharedWalletId] = sharedWalletIds
+
+  return {
+    accountBookId,
+    users: allUsers,
+    reviewedMembers,
+    transactions: eligible,
+    memberStatuses,
+    transferSuggestions: computeMinimumTransfers(memberStatuses),
+    sharedWalletSummary,
+    sharedWalletTransfers: sharedWalletId
+      ? sharedWalletSummary.borrowings.map(({ userId, amount }) => ({
+          fromUserId: userId,
+          toUserId: sharedWalletId,
+          suggestedAmount: amount,
+        }))
+      : [],
+  }
+}
+
+export function haveSameSettlementPreview(
+  reviewed: SettlementPreview,
+  current: SettlementPreview
+): boolean {
+  if (reviewed === current) return true
+  return (
+    reviewed.accountBookId === current.accountBookId &&
+    haveSameSettlementReviewMembers(
+      reviewed.reviewedMembers,
+      current.reviewedMembers
+    ) &&
+    haveSameSettlementExpenses(reviewed.transactions, current.transactions) &&
+    JSON.stringify(reviewed.memberStatuses) ===
+      JSON.stringify(current.memberStatuses) &&
+    JSON.stringify(reviewed.transferSuggestions) ===
+      JSON.stringify(current.transferSuggestions) &&
+    JSON.stringify(reviewed.sharedWalletSummary) ===
+      JSON.stringify(current.sharedWalletSummary) &&
+    JSON.stringify(reviewed.sharedWalletTransfers) ===
+      JSON.stringify(current.sharedWalletTransfers)
+  )
+}
+
 export function useSettlement(
   accountBookId: string | null,
   transactions: Transaction[] | null = null,
   repo: SettlementRepo = new SettlementLocalRepo()
 ): UseSettlementReturn {
   const [records, setRecords] = useState<SettlementRecord[]>([])
-  const [memberStatuses, setMemberStatuses] = useState<
-    SettlementMemberStatus[]
-  >([])
-  const [transferSuggestions, setTransferSuggestions] = useState<
-    Omit<
-      SettlementTransfer,
-      'id' | 'actualAmount' | 'note' | 'status' | 'completedAt'
-    >[]
-  >([])
-  const [sharedWalletSummary, setSharedWalletSummary] =
-    useState<SharedWalletSummary | null>(null)
+  const [lastSavedPreview, setLastSavedPreview] =
+    useState<SettlementPreview | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const allUsers = useUserStore((state) => state.allUsers)
 
   const repoRef = useRef(repo)
+  const observesReviewUsers =
+    !!repoRef.current.findReviewUsers && transactions !== null
+  const [reviewUserSnapshot, setReviewUserSnapshot] = useState<{
+    accountBookId: string
+    users: User[] | null
+  } | null>(null)
+
+  useEffect(() => {
+    const repo = repoRef.current
+    const findReviewUsers = repo.findReviewUsers
+    if (!accountBookId || !observesReviewUsers || !findReviewUsers) return
+
+    const subscription = liveQuery(() =>
+      findReviewUsers.call(repo, accountBookId)
+    ).subscribe({
+      next: (users) => setReviewUserSnapshot({ accountBookId, users }),
+      error: (err: unknown) => setError(toErrorMessage(err)),
+    })
+
+    return () => subscription.unsubscribe()
+  }, [accountBookId, observesReviewUsers])
+
+  const refreshReviewUsers = useCallback(async () => {
+    if (!accountBookId || !repoRef.current.findReviewUsers) return
+
+    const users = await repoRef.current.findReviewUsers(accountBookId)
+    setReviewUserSnapshot((current) =>
+      current?.accountBookId === accountBookId
+        ? { accountBookId, users }
+        : current
+    )
+  }, [accountBookId])
 
   useEffect(() => {
     if (!accountBookId) {
@@ -105,75 +217,50 @@ export function useSettlement(
     return () => subscription.unsubscribe()
   }, [accountBookId])
 
-  useEffect(() => {
-    if (!accountBookId || transactions === null) {
-      setMemberStatuses([])
-      setTransferSuggestions([])
-      setSharedWalletSummary(null)
-      return
-    }
+  const persistedUsers =
+    reviewUserSnapshot?.accountBookId === accountBookId
+      ? reviewUserSnapshot.users
+      : null
+  const reviewUsers = observesReviewUsers ? persistedUsers : allUsers
+  const currentPreview = useMemo(
+    () =>
+      accountBookId && transactions !== null && reviewUsers !== null
+        ? buildSettlementPreview(accountBookId, transactions, reviewUsers)
+        : null,
+    [accountBookId, transactions, reviewUsers]
+  )
 
-    const sharedWalletIds = new Set(
-      allUsers.filter(isSharedWalletUser).map((u) => u.id)
-    )
-    const realMembersCount = allUsers.filter(
-      (u) => !isDeletedUser(u) && !isSharedWalletUser(u)
-    ).length
-    const unsettled = computeUnsettledTransactions(transactions)
-    const statuses = computeMemberStatuses(unsettled, sharedWalletIds)
-
-    setMemberStatuses(statuses)
-    setTransferSuggestions(computeMinimumTransfers(statuses))
-    setSharedWalletSummary(
-      computeSharedWalletSummary(unsettled, sharedWalletIds, realMembersCount)
-    )
-  }, [accountBookId, transactions, allUsers])
+  const preview = currentPreview === lastSavedPreview ? null : currentPreview
 
   const createSettlementRecord = useCallback(
-    async (txns: Transaction[]) => {
+    async (transactionsOrPreview: Transaction[] | SettlementPreview) => {
       if (!accountBookId) return
+
+      const reviewed = !Array.isArray(transactionsOrPreview)
+      const settlement = reviewed
+        ? transactionsOrPreview
+        : buildSettlementPreview(accountBookId, transactionsOrPreview, allUsers)
+      if (
+        reviewed &&
+        (!preview || !haveSameSettlementPreview(settlement, preview))
+      ) {
+        throw new StaleSettlementReviewError()
+      }
 
       setIsLoading(true)
       setError(null)
 
       try {
-        const sharedWalletIds = new Set(
-          allUsers.filter(isSharedWalletUser).map((u) => u.id)
-        )
-        const realMembersCount = allUsers.filter(
-          (u) => !isDeletedUser(u) && !isSharedWalletUser(u)
-        ).length
-
-        const unsettled = computeUnsettledTransactions(txns)
-        const statuses = computeMemberStatuses(unsettled, sharedWalletIds)
-        const suggestions = computeMinimumTransfers(statuses)
-        const summary = computeSharedWalletSummary(
-          unsettled,
-          sharedWalletIds,
-          realMembersCount
-        )
-
         const now = Date.now()
-
-        const sharedWalletTransfers = summary.borrowings.flatMap((b) => {
-          const swId = Array.from(sharedWalletIds)[0]
-          if (!swId) return []
-          return [
-            {
-              fromUserId: b.userId,
-              toUserId: swId,
-              suggestedAmount: b.amount,
-            },
-          ]
-        })
-
-        const allTransfersToSave = [...suggestions, ...sharedWalletTransfers]
-
+        const transfers = [
+          ...settlement.transferSuggestions,
+          ...settlement.sharedWalletTransfers,
+        ]
         const newRecord: SettlementRecord = {
           id: genUuid(),
           accountBookId,
-          memberStatuses: statuses,
-          transfers: allTransfersToSave.map((t) => ({
+          memberStatuses: settlement.memberStatuses,
+          transfers: transfers.map((t) => ({
             ...t,
             id: genUuid(),
             actualAmount: null,
@@ -187,20 +274,20 @@ export function useSettlement(
 
         await repoRef.current.create(
           newRecord,
-          unsettled.map((t) => t.id)
+          reviewed
+            ? {
+                reviewedExpenses: settlement.transactions,
+                reviewedMembers: settlement.reviewedMembers,
+              }
+            : settlement.transactions.map(({ id }) => id)
         )
-
-        const emptyStatuses = computeMemberStatuses([])
-        const emptySuggestions = computeMinimumTransfers(emptyStatuses)
 
         setRecords((prev) =>
           prev.some((record) => record.id === newRecord.id)
             ? prev
             : [...prev, newRecord]
         )
-        setMemberStatuses(emptyStatuses)
-        setTransferSuggestions(emptySuggestions)
-        setSharedWalletSummary(null)
+        if (!reviewed) setLastSavedPreview(currentPreview)
         setIsLoading(false)
       } catch (err) {
         setError(toErrorMessage(err))
@@ -208,7 +295,7 @@ export function useSettlement(
         throw err
       }
     },
-    [accountBookId, allUsers]
+    [accountBookId, allUsers, currentPreview, preview]
   )
 
   const cancelSettlementRecord = useCallback(
@@ -275,11 +362,13 @@ export function useSettlement(
 
   return {
     records,
-    memberStatuses,
-    transferSuggestions,
-    sharedWalletSummary,
+    preview,
+    memberStatuses: preview?.memberStatuses ?? noMemberStatuses,
+    transferSuggestions: preview?.transferSuggestions ?? noTransferSuggestions,
+    sharedWalletSummary: preview?.sharedWalletSummary ?? null,
     isLoading,
     error,
+    refreshReviewUsers,
     createSettlementRecord,
     cancelSettlementRecord,
     completeTransfer,

@@ -13,9 +13,17 @@ import {
   SettlementMemberStatus,
   SettlementTransfer,
 } from '@/entities/settlement'
+import { PiFileTextBold } from 'react-icons/pi'
+import { Transaction } from '@/entities/transaction'
 import { SharedWalletSummary } from '@/utils/settlementUtils'
-import { useUserStore } from '@/stores/user'
+import type { User } from '@/entities/user'
+import SettlementMarkdownModal from './SettlementMarkdownModal'
 import { formatAmount } from '@/utils/amountUtils'
+import { AppButton } from '@/components/ui/AppButton'
+import {
+  generateSettlementDraftMarkdown,
+  settlementUserName,
+} from '@/utils/settlementMarkdown'
 import {
   settlementModalActionClassName,
   settlementModalBodyClassName,
@@ -23,6 +31,7 @@ import {
   settlementModalContentClassName,
   settlementModalFooterClassName,
   settlementModalHeaderClassName,
+  settlementModalPrimaryActionClassName,
 } from './settlementModalStyles'
 
 type Props = {
@@ -33,10 +42,14 @@ type Props = {
     'id' | 'actualAmount' | 'note' | 'status' | 'completedAt'
   >[]
   sharedWalletSummary?: SharedWalletSummary | null
+  transactions: Transaction[]
+  users: User[]
+  categoryNames: ReadonlyMap<string, string>
   currency: string | null
   autoRound?: boolean
   onAutoRoundChange?: (autoRound: boolean) => void
   isSubmitting: boolean
+  reviewChanged?: boolean
   onConfirm: () => Promise<void>
   onClose: () => void
 }
@@ -46,15 +59,20 @@ export default function SettlementConfirmModal({
   memberStatuses,
   transferSuggestions,
   sharedWalletSummary,
+  transactions,
+  users,
+  categoryNames,
   currency,
   autoRound: autoRoundProp,
   onAutoRoundChange,
   isSubmitting,
+  reviewChanged = false,
   onConfirm,
   onClose,
 }: Props) {
   const t = useTranslations()
   const [internalAutoRound, setInternalAutoRound] = useState(true)
+  const [draftMarkdown, setDraftMarkdown] = useState<string | null>(null)
   const autoRound = autoRoundProp ?? internalAutoRound
 
   const handleAutoRoundChange = (val: boolean) => {
@@ -62,14 +80,41 @@ export default function SettlementConfirmModal({
     onAutoRoundChange?.(val)
   }
 
-  const allUsers = useUserStore((state) => state.allUsers)
-  const userMap = new Map(allUsers.map((u) => [u.id, u]))
+  const userMap = new Map(users.map((user) => [user.id, user]))
+  const getName = (userId: string) => settlementUserName(userId, userMap, t)
+
+  function handleClose() {
+    setDraftMarkdown(null)
+    onClose()
+  }
+
+  function openDraft() {
+    if (transactions.length === 0 || isSubmitting) return
+
+    setDraftMarkdown(
+      generateSettlementDraftMarkdown({
+        exportedAt: new Date(),
+        memberStatuses,
+        transfers: transferSuggestions,
+        sharedWalletSummary: sharedWalletSummary ?? null,
+        transactions,
+        currency,
+        autoRound,
+        userMap,
+        categoryMap: categoryNames,
+        t,
+      })
+    )
+  }
 
   return (
     <Modal
       isOpen={isOpen}
-      onOpenChange={(open) => !open && onClose()}
+      onOpenChange={(open) => !open && handleClose()}
       placement="bottom"
+      isDismissable={!isSubmitting && draftMarkdown === null}
+      isKeyboardDismissDisabled={isSubmitting || draftMarkdown !== null}
+      hideCloseButton={isSubmitting}
       scrollBehavior="inside"
       classNames={settlementModalClassNames}
     >
@@ -88,11 +133,18 @@ export default function SettlementConfirmModal({
               <Switch
                 className="min-h-11 min-w-11 shrink-0 justify-end"
                 isSelected={autoRound}
+                isDisabled={isSubmitting}
                 onValueChange={handleAutoRoundChange}
                 size="sm"
                 aria-label={t('settlement.unsettled.autoRound')}
               />
             </div>
+
+            {transactions.length === 0 && (
+              <p className="text-body text-muted-foreground">
+                {t('settlement.unsettled.emptyDescription')}
+              </p>
+            )}
 
             <section>
               <h3 className="mb-2 text-body font-semibold leading-5 text-foreground">
@@ -100,7 +152,7 @@ export default function SettlementConfirmModal({
               </h3>
               <div className="divide-y divide-border overflow-hidden rounded-xl bg-secondary/70">
                 {memberStatuses.map((ms) => {
-                  const name = userMap.get(ms.userId)?.name ?? ms.userId
+                  const name = getName(ms.userId)
                   const isCreditor = ms.netAmount > 0
                   const isZero = ms.netAmount === 0
 
@@ -139,11 +191,8 @@ export default function SettlementConfirmModal({
                 </h3>
                 <div className="divide-y divide-border overflow-hidden rounded-xl bg-secondary/70">
                   {transferSuggestions.map((transfer, i) => {
-                    const fromName =
-                      userMap.get(transfer.fromUserId)?.name ??
-                      transfer.fromUserId
-                    const toName =
-                      userMap.get(transfer.toUserId)?.name ?? transfer.toUserId
+                    const fromName = getName(transfer.fromUserId)
+                    const toName = getName(transfer.toUserId)
 
                     return (
                       <div
@@ -201,7 +250,7 @@ export default function SettlementConfirmModal({
                       </p>
                       <div>
                         {sharedWalletSummary.borrowings.map((b, i) => {
-                          const name = userMap.get(b.userId)?.name ?? b.userId
+                          const name = getName(b.userId)
                           return (
                             <div
                               key={i}
@@ -228,23 +277,48 @@ export default function SettlementConfirmModal({
           </div>
         </ModalBody>
         <ModalFooter className={settlementModalFooterClassName}>
+          {reviewChanged && (
+            <p
+              className="col-span-2 rounded-xl bg-secondary px-3 py-2 text-body text-foreground"
+              role="status"
+            >
+              {t('settlement.confirm.reviewChanged')}
+            </p>
+          )}
           <Button
-            className={settlementModalActionClassName}
-            isDisabled={isSubmitting}
-            onPress={onClose}
+            className={`${settlementModalActionClassName} col-span-2`}
+            variant="flat"
+            startContent={
+              <PiFileTextBold aria-hidden="true" className="size-4" />
+            }
+            isDisabled={isSubmitting || transactions.length === 0}
+            onPress={openDraft}
           >
-            {t('common.cancel')}
+            {t('settlement.confirm.exportDraft')}
           </Button>
           <Button
             className={settlementModalActionClassName}
-            color="primary"
             isDisabled={isSubmitting}
+            onPress={handleClose}
+          >
+            {t('common.cancel')}
+          </Button>
+          <AppButton
+            className={`${settlementModalPrimaryActionClassName} h-auto whitespace-normal py-2`}
+            isDisabled={isSubmitting || transactions.length === 0}
             isLoading={isSubmitting}
             onPress={onConfirm}
           >
             {t('settlement.confirm.submit')}
-          </Button>
+          </AppButton>
         </ModalFooter>
+        {draftMarkdown !== null && (
+          <SettlementMarkdownModal
+            markdown={draftMarkdown}
+            title={t('settlement.markdown.draft.previewTitle')}
+            onClose={() => setDraftMarkdown(null)}
+          />
+        )}
       </ModalContent>
     </Modal>
   )

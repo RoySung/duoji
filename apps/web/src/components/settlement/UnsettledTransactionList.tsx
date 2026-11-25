@@ -9,7 +9,7 @@ import { SurfaceCard } from '@/components/ui/SurfaceCard'
 type Props = {
   transactions: Transaction[]
   currency: string | null
-  onConfirm: () => void
+  onConfirm?: () => void
   onEditTransaction: (transactionId: string) => void
 }
 
@@ -60,6 +60,7 @@ export default function UnsettledTransactionList({
           className="min-h-11 w-full rounded-xl bg-primary px-4 text-body text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring min-[360px]:w-auto"
           color="primary"
           disableRipple
+          isDisabled={!onConfirm}
           onPress={onConfirm}
         >
           {t('settlement.unsettled.reviewAndSettle')}

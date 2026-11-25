@@ -1,10 +1,29 @@
-import { generateSettlementMarkdown as originalGenerate } from './settlementMarkdown'
+import {
+  generateSettlementDraftMarkdown,
+  generateSettlementMarkdown as originalGenerate,
+} from './settlementMarkdown'
 import { SettlementRecord } from '@/entities/settlement'
 import { Transaction } from '@/entities/transaction'
 import { User } from '@/entities/user'
 
 const mockT = (key: string, values?: any): string => {
   switch (key) {
+    case 'settlement.markdown.draft.title':
+      return `# Settlement draft\n\nExported at ${values.timestamp}`
+    case 'settlement.markdown.draft.roundingOn':
+      return 'Auto-rounding on'
+    case 'settlement.markdown.draft.transfers':
+      return '## Suggested transfers'
+    case 'settlement.markdown.draft.includedExpenses':
+      return `Included expenses (${values.count})`
+    case 'settlement.sharedWallet.title':
+      return 'Shared Wallet Summary'
+    case 'settlement.sharedWallet.total':
+      return 'Total Expenses'
+    case 'settlement.sharedWallet.average':
+      return 'Average per Person'
+    case 'settlement.sharedWallet.borrowings':
+      return 'Extra Borrowings'
     case 'settlement.markdown.content.title':
       return `# Settlement #${values.sequenceNumber}\n\nDate: ${values.date}`
     case 'settlement.markdown.content.autoRoundNote':
@@ -431,5 +450,105 @@ describe('generateSettlementMarkdown', () => {
     })
     expect(md).toContain('## Covered Transactions (0)')
     expect(md).toContain('_No covered transactions._')
+  })
+})
+
+describe('generateSettlementDraftMarkdown', () => {
+  it('escapes custom currency delimiters throughout the draft', () => {
+    const draft = generateSettlementDraftMarkdown({
+      exportedAt: new Date('2026-11-25T02:00:00.000Z'),
+      memberStatuses: [
+        { userId: alice.id, splitAmount: 50, paidAmount: 100, netAmount: 50 },
+      ],
+      transfers: [{ fromUserId: bob.id, toUserId: alice.id, suggestedAmount: 50 }],
+      sharedWalletSummary: {
+        totalExpense: 20,
+        averagePerPerson: 10,
+        borrowings: [{ userId: bob.id, amount: 5 }],
+      },
+      transactions: [baseTransaction],
+      currency: 'A|B',
+      userMap,
+      categoryMap,
+      t: mockT,
+    })
+
+    expect(draft).toContain(
+      '| Alice | 50 A\\|B | 100 A\\|B | +50 A\\|B (to receive) |'
+    )
+    expect(draft).toContain('- Bob → Alice: 50 A\\|B')
+    expect(draft).toContain('- Total Expenses: 20 A\\|B')
+    expect(draft).toContain('Paid by: Alice 100 A\\|B')
+    expect(draft).not.toContain('A|B')
+  })
+
+  it.each([
+    ['# Alex', '\\# Alex'],
+    ['- Alex', '\\- Alex'],
+    ['+ Alex', '\\+ Alex'],
+    ['1. Alex', '1\\. Alex'],
+    ['1) Alex', '1\\) Alex'],
+  ])('keeps %s literal at the start of a draft list item', (name, escaped) => {
+    const draft = generateSettlementDraftMarkdown({
+      exportedAt: new Date('2026-11-25T02:00:00.000Z'),
+      memberStatuses: [],
+      transfers: [{ fromUserId: alice.id, toUserId: bob.id, suggestedAmount: 60 }],
+      sharedWalletSummary: {
+        totalExpense: 60,
+        averagePerPerson: 0,
+        borrowings: [{ userId: alice.id, amount: 60 }],
+      },
+      transactions: [],
+      currency: 'TWD',
+      userMap: new Map([[alice.id, { ...alice, name }], [bob.id, bob]]),
+      categoryMap: new Map(),
+      t: mockT,
+    })
+
+    expect(draft).toContain(`- ${escaped} → Bob: 60 TWD`)
+    expect(draft).toContain(`  - ${escaped}: -60 TWD`)
+  })
+
+  it('keeps a draft shareable with wallet values and escaped user-entered text', () => {
+    const participant = { ...alice, name: '艾莉|絲\n[旅行]' }
+    const draft = generateSettlementDraftMarkdown({
+      exportedAt: new Date('2026-11-25T02:00:00.000Z'),
+      memberStatuses: [
+        {
+          userId: participant.id,
+          paidAmount: 10,
+          splitAmount: 5.25,
+          netAmount: 4.75,
+        },
+      ],
+      transfers: [
+        { fromUserId: bob.id, toUserId: participant.id, suggestedAmount: 4.75 },
+      ],
+      sharedWalletSummary: {
+        totalExpense: 11.2,
+        averagePerPerson: 2.45,
+        borrowings: [{ userId: bob.id, amount: 5.25 }],
+      },
+      transactions: [{ ...baseTransaction, description: '京都|晚餐\n<包廂>' }],
+      currency: 'TWD',
+      autoRound: true,
+      userMap: new Map([
+        [participant.id, participant],
+        [bob.id, bob],
+      ]),
+      categoryMap: new Map([['cat-1', '用餐|聚會']]),
+      t: mockT,
+    })
+
+    expect(draft).toContain('Exported at 2026-11-25T02:00:00.000Z')
+    expect(draft).toContain('| 艾莉\\|絲 \\[旅行\\] |')
+    expect(draft).toContain('- Bob → 艾莉\\|絲 \\[旅行\\]: 5 TWD')
+    expect(draft).not.toContain('[ ]')
+    expect(draft).toContain('京都\\|晚餐 \\<包廂\\>')
+    expect(draft).toContain('Category: 用餐\\|聚會')
+    expect(draft).toContain('## Shared Wallet Summary')
+    expect(draft).toContain('Total Expenses: 11.2 TWD')
+    expect(draft).toContain('Average per Person: 3 TWD')
+    expect(draft).toContain('Bob: -6 TWD')
   })
 })

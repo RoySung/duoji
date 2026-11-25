@@ -427,6 +427,8 @@
       "title": "Review & settle",
       "balances": "Member balances",
       "transfers": "Suggested transfers",
+      "exportDraft": "Export Markdown draft",
+      "reviewChanged": "The settlement details changed. Review the updated overview before confirming.",
       "submit": "Create settlement record"
     },
     "unsettled": {
@@ -452,6 +454,14 @@
       "copiedToast": "Copied to clipboard",
       "copyFailedTitle": "Copy failed",
       "copyFailedDesc": "Please select and copy the text manually.",
+      "draft": {
+        "previewTitle": "Export as Markdown — Settlement draft",
+        "includedExpenses": "Included expenses ({count})",
+        "title": "# Settlement draft\n\nExported at {timestamp}",
+        "roundingOn": "Auto-rounding on",
+        "roundingOff": "Auto-rounding off",
+        "transfers": "## Suggested Transfers"
+      },
       "content": {
         "title": "# Settlement #{sequenceNumber}\n\nDate: {date}",
         "autoRoundNote": "Rounding: Ceil",
@@ -479,6 +489,7 @@
     "detail": {
       "title": "Settlement #{sequenceNumber}",
       "exportMarkdown": "Export Markdown",
+      "recordActions": "Settlement actions",
       "settled": "Settled",
       "pending": "Pending",
       "split": "Split",

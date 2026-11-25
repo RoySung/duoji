@@ -2,13 +2,20 @@ import {
   Transaction,
   UNSETTLED_SETTLEMENT_RECORD_ID,
 } from '../src/entities/transaction'
-import { SettlementRecord } from '../src/entities/settlement'
+import {
+  SettlementRecord,
+  StaleSettlementReviewError,
+} from '../src/entities/settlement'
 import { db } from '../src/lib/dexie'
 import { userList } from './fixtures'
 import SettlementLocalRepo from '../src/repositories/settlementRepo/settlementLocalRepo'
 import TransactionLocalRepo from '../src/repositories/transactionRepo/transactionLocalRepo'
 
 const baseTimestamp = 1710000000000
+const reviewedMembers = {
+  activeMemberCount: userList.length,
+  sharedWalletIds: [],
+}
 
 function createTransactionFixture(
   overrides: Partial<Transaction> = {}
@@ -98,6 +105,18 @@ describe('Settlement repositories', () => {
   beforeEach(async () => {
     await db.delete()
     await db.open()
+    await db.accountBooks.add({
+      id: 'book-1',
+      name: 'Trip fund',
+      currency: 'TWD',
+      description: '',
+      ownerId: userList[0]!.id,
+      userIds: userList.map(({ id }) => id),
+      virtualUsers: [],
+      createdAt: baseTimestamp,
+      updatedAt: baseTimestamp,
+    })
+    await db.users.bulkAdd(userList)
     settlementRepo = new SettlementLocalRepo()
     transactionRepo = new TransactionLocalRepo()
   })
@@ -140,6 +159,119 @@ describe('Settlement repositories', () => {
 
     await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
     await expect(transactionRepo.findById(expense.id)).resolves.toEqual(expense)
+  })
+
+  it('links the reviewed expense set even when the preview has a different order', async () => {
+    const first = await transactionRepo.create(createTransactionFixture())
+    const second = await transactionRepo.create(
+      createTransactionFixture({ id: 'tx-2' })
+    )
+    const otherBook = await transactionRepo.create(
+      createTransactionFixture({ id: 'tx-3', accountBookId: 'book-2' })
+    )
+    const income = await transactionRepo.create(
+      createTransactionFixture({ id: 'tx-4', type: 'income' })
+    )
+    const record = createSettlementRecordFixture()
+
+    await settlementRepo.create(record, {
+      reviewedExpenses: [second, first],
+      reviewedMembers,
+    })
+
+    await expect(
+      transactionRepo.findBySettlementRecordId(record.id)
+    ).resolves.toEqual(
+      [first, second].map((expense) => ({
+        ...expense,
+        settlementRecordId: record.id,
+      }))
+    )
+    await expect(transactionRepo.findById(otherBook.id)).resolves.toEqual(
+      otherBook
+    )
+    await expect(transactionRepo.findById(income.id)).resolves.toEqual(income)
+  })
+
+  it('rejects settlement if an expense was added after review', async () => {
+    const reviewed = await transactionRepo.create(createTransactionFixture())
+    const added = await transactionRepo.create(
+      createTransactionFixture({ id: 'tx-2' })
+    )
+    const record = createSettlementRecordFixture()
+
+    await expect(
+      settlementRepo.create(record, {
+        reviewedExpenses: [reviewed],
+        reviewedMembers,
+      })
+    ).rejects.toBeInstanceOf(StaleSettlementReviewError)
+
+    await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
+    await expect(transactionRepo.findById(reviewed.id)).resolves.toEqual(reviewed)
+    await expect(transactionRepo.findById(added.id)).resolves.toEqual(added)
+  })
+
+  it('rejects settlement if a reviewed expense was edited in place', async () => {
+    const reviewed = await transactionRepo.create(createTransactionFixture())
+    const edited = await transactionRepo.update(reviewed.id, {
+      splitDetail: [
+        { ...reviewed.splitDetail[0]!, amount: 80 },
+        { ...reviewed.splitDetail[1]!, amount: 40 },
+      ],
+    })
+    const record = createSettlementRecordFixture()
+
+    await expect(
+      settlementRepo.create(record, {
+        reviewedExpenses: [reviewed],
+        reviewedMembers,
+      })
+    ).rejects.toBeInstanceOf(StaleSettlementReviewError)
+
+    await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
+    await expect(transactionRepo.findById(reviewed.id)).resolves.toEqual(edited)
+  })
+
+  it('rejects settlement if a reviewed expense was deleted', async () => {
+    const reviewed = await transactionRepo.create(createTransactionFixture())
+    await transactionRepo.delete(reviewed.id)
+    const record = createSettlementRecordFixture()
+
+    await expect(
+      settlementRepo.create(record, {
+        reviewedExpenses: [reviewed],
+        reviewedMembers,
+      })
+    ).rejects.toBeInstanceOf(StaleSettlementReviewError)
+
+    await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
+    await expect(db.transactions.get(reviewed.id)).resolves.toMatchObject({
+      deletedAt: expect.any(Number),
+      settlementRecordId: UNSETTLED_SETTLEMENT_RECORD_ID,
+    })
+  })
+
+  it('keeps the existing link if a reviewed expense was settled elsewhere', async () => {
+    const reviewed = await transactionRepo.create(createTransactionFixture())
+    const otherRecord = createSettlementRecordFixture({ id: 'record-2' })
+    await settlementRepo.create(otherRecord, {
+      reviewedExpenses: [reviewed],
+      reviewedMembers,
+    })
+    const record = createSettlementRecordFixture()
+
+    await expect(
+      settlementRepo.create(record, {
+        reviewedExpenses: [reviewed],
+        reviewedMembers,
+      })
+    ).rejects.toBeInstanceOf(StaleSettlementReviewError)
+
+    await expect(settlementRepo.findById(record.id)).resolves.toBeNull()
+    await expect(transactionRepo.findById(reviewed.id)).resolves.toMatchObject({
+      settlementRecordId: otherRecord.id,
+    })
   })
 
   it('retrieves settlement history transactions via reverse lookup on settlementRecordId', async () => {

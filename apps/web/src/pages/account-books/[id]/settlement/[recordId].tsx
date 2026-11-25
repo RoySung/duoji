@@ -200,18 +200,9 @@ export default function SettlementRecordDetailPage() {
           currency={currentAccountBook?.currency ?? null}
           onCompleteTransfer={handleCompleteTransfer}
           onViewTransaction={openViewModal}
+          onRequestCancel={canCancel ? () => setIsCancelOpen(true) : undefined}
+          isCancelDisabled={isLoadingTransactions || isCanceling}
         />
-        {canCancel && (
-          <AppButton
-            className="min-h-11 self-start rounded-xl px-4 text-body"
-            disableRipple
-            isDisabled={isLoadingTransactions || isCanceling}
-            tone="danger"
-            onPress={() => setIsCancelOpen(true)}
-          >
-            {t('settlement.cancel.action')}
-          </AppButton>
-        )}
       </PageScaffold>
 
       <Modal

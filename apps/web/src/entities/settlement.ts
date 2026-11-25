@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import type { Transaction } from './transaction'
+import type { User } from './user'
 
 export const SettlementMemberStatusSchema = z.object({
   userId: z.string(),
@@ -38,11 +40,31 @@ export const SettlementRecordSchema = z.object({
 })
 export type SettlementRecord = z.infer<typeof SettlementRecordSchema>
 
+export class StaleSettlementReviewError extends Error {
+  constructor() {
+    super('The reviewed settlement data changed')
+    this.name = 'StaleSettlementReviewError'
+  }
+}
+
+export type SettlementReviewMembers = {
+  sharedWalletIds: string[]
+  activeMemberCount: number
+}
+
+export type SettlementCreateTransactions =
+  | string[]
+  | {
+      reviewedExpenses: readonly Transaction[]
+      reviewedMembers: SettlementReviewMembers
+    }
+
 export interface SettlementRepo {
   create(
     record: SettlementRecord,
-    transactionIds?: string[]
+    transactionIdsOrReview?: SettlementCreateTransactions
   ): Promise<SettlementRecord>
+  findReviewUsers?(accountBookId: string): Promise<User[] | null>
   findById(id: string): Promise<SettlementRecord | null>
   findByAccountBookId(accountBookId: string): Promise<SettlementRecord[]>
   cancel(accountBookId: string, id: string): Promise<void>

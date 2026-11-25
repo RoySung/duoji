@@ -199,6 +199,32 @@ describe('settlement modal presentation and behavior', () => {
           },
         ]}
         transferSuggestions={[transfer]}
+        transactions={[
+          {
+            id: 'expense-1',
+            accountBookId: 'book-1',
+            type: 'expense',
+            categoryId: 'food',
+            amount: 125.5,
+            date: '2026/11/25',
+            description: 'Meal',
+            paymentMethod: 'Cash',
+            receivedByUserId: null,
+            settlementRecordId: '__unsettled__',
+            tags: [],
+            paidByDetail: [
+              { userId: 'user-a', userType: 'registered', amount: 125.5 },
+            ],
+            splitDetail: [
+              { userId: 'user-b', userType: 'registered', amount: 125.5 },
+            ],
+            createdAt: 0,
+            updatedAt: 0,
+            deletedAt: null,
+          },
+        ]}
+        categoryNames={new Map()}
+        users={[]}
         currency="TWD"
         isSubmitting={false}
         onConfirm={onConfirm}
@@ -221,6 +247,7 @@ describe('settlement modal presentation and behavior', () => {
     })
     expect(submit.className).toContain('min-h-11')
     expect(submit.className).toContain('text-body')
+    expect(submit.className).toContain('!text-white')
     fireEvent.click(submit)
     await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1))
 
@@ -273,7 +300,7 @@ describe('settlement modal presentation and behavior', () => {
     renderWithHeroUI(
       <SettlementMarkdownModal
         markdown={markdown}
-        sequenceNumber={7}
+        title="Export as Markdown — Settlement #7"
         onClose={jest.fn()}
       />
     )
@@ -292,7 +319,9 @@ describe('settlement modal presentation and behavior', () => {
       }).className
     ).toContain('text-title')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copy markdown' }))
+    const copy = screen.getByRole('button', { name: 'Copy markdown' })
+    expect(copy.className).toContain('!text-white')
+    fireEvent.click(copy)
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(markdown))
     await waitFor(() =>
       expect(

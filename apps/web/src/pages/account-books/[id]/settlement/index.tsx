@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useRouter } from 'next/router'
 import { useTranslations } from 'next-intl'
 import { Tabs, Tab, addToast } from '@heroui/react'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
-import { useSettlement } from '@/hooks/useSettlement'
+import {
+  haveSameSettlementPreview,
+  type SettlementPreview,
+  useSettlement,
+} from '@/hooks/useSettlement'
+import { StaleSettlementReviewError } from '@/entities/settlement'
 import { Transaction, TransactionModalMode } from '@/entities/transaction'
 import { useUnsettledTransactions } from '@/hooks/useUnsettledTransactions'
 import UnsettledTransactionList from '@/components/settlement/UnsettledTransactionList'
@@ -24,7 +29,10 @@ export default function SettlementPage() {
   const accountBookId = typeof id === 'string' ? id : null
 
   const [autoRound, setAutoRound] = useState(true)
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [openedPreview, setOpenedPreview] = useState<SettlementPreview | null>(
+    null
+  )
+  const [staleConfirmation, setStaleConfirmation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -37,19 +45,42 @@ export default function SettlementPage() {
   const accountBooks = useAccountBookStore((state) => state.accountBooks)
 
   const initializeCategories = useCategoryStore((state) => state.initialize)
+  const categories = useCategoryStore((state) => state.expenseCategories)
+  const categoryNames = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories]
+  )
 
   const { transactions: unsettledTransactions, refresh: refreshUnsettled } =
     useUnsettledTransactions(accountBookId)
   const { createTransaction, updateTransaction, deleteTransaction } =
     useAccountBookTransactions(accountBookId, null)
 
-  const {
-    records,
-    memberStatuses,
-    transferSuggestions,
-    sharedWalletSummary,
-    createSettlementRecord,
-  } = useSettlement(accountBookId, unsettledTransactions)
+  const { records, preview, createSettlementRecord, refreshReviewUsers } = useSettlement(
+    accountBookId,
+    unsettledTransactions
+  )
+
+  const isConfirmOpen =
+    openedPreview !== null && openedPreview.accountBookId === accountBookId
+  const reviewChanged = useMemo(
+    () =>
+      staleConfirmation ||
+      (openedPreview !== null &&
+        preview !== null &&
+        !haveSameSettlementPreview(openedPreview, preview)),
+    [staleConfirmation, openedPreview, preview]
+  )
+
+  function openReview() {
+    setStaleConfirmation(false)
+    setOpenedPreview(preview)
+  }
+
+  function closeReview() {
+    setOpenedPreview(null)
+    setStaleConfirmation(false)
+  }
 
   const pendingRecordsCount = records.filter((record) =>
     record.transfers.some((t) => t.status !== 'completed')
@@ -67,18 +98,28 @@ export default function SettlementPage() {
   }, [accountBookId, initializeCategories])
 
   async function handleCreateRecord() {
-    if (!accountBookId || !unsettledTransactions) return
+    if (!isConfirmOpen || isSubmitting || !preview?.transactions.length) return
 
     setIsSubmitting(true)
     try {
-      await createSettlementRecord(unsettledTransactions)
+      await createSettlementRecord(preview)
+      closeReview()
       await refreshUnsettled()
-      setIsConfirmOpen(false)
       addToast({
         title: t('settlement.toast.created'),
         color: 'success',
       })
-    } catch {
+    } catch (error) {
+      if (error instanceof StaleSettlementReviewError) {
+        setStaleConfirmation(true)
+        try {
+          await Promise.all([refreshUnsettled(), refreshReviewUsers()])
+          return
+        } catch {
+          // Use the existing failure message if the review cannot be refreshed.
+        }
+      }
+
       addToast({
         title: t('settlement.toast.failureTitle'),
         color: 'danger',
@@ -186,7 +227,7 @@ export default function SettlementPage() {
               <UnsettledTransactionList
                 transactions={unsettledTransactions}
                 currency={currentAccountBook?.currency ?? null}
-                onConfirm={() => setIsConfirmOpen(true)}
+                onConfirm={preview?.transactions.length ? openReview : undefined}
                 onEditTransaction={openEditModal}
               />
             </Tab>
@@ -215,18 +256,24 @@ export default function SettlementPage() {
           </Tabs>
         </PageScaffold>
 
-        <SettlementConfirmModal
-          isOpen={isConfirmOpen}
-          memberStatuses={memberStatuses}
-          transferSuggestions={transferSuggestions}
-          sharedWalletSummary={sharedWalletSummary}
-          currency={currentAccountBook?.currency ?? null}
-          autoRound={autoRound}
-          onAutoRoundChange={setAutoRound}
-          isSubmitting={isSubmitting}
-          onConfirm={handleCreateRecord}
-          onClose={() => setIsConfirmOpen(false)}
-        />
+        {preview && (
+          <SettlementConfirmModal
+            isOpen={isConfirmOpen}
+            memberStatuses={preview.memberStatuses}
+            transferSuggestions={preview.transferSuggestions}
+            sharedWalletSummary={preview.sharedWalletSummary}
+            transactions={preview.transactions}
+            users={preview.users}
+            categoryNames={categoryNames}
+            currency={currentAccountBook?.currency ?? null}
+            autoRound={autoRound}
+            onAutoRoundChange={setAutoRound}
+            isSubmitting={isSubmitting}
+            reviewChanged={reviewChanged}
+            onConfirm={handleCreateRecord}
+            onClose={closeReview}
+          />
+        )}
 
         <TransactionModal
           isOpen={isModalOpen}

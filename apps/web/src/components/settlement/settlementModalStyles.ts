@@ -24,3 +24,6 @@ export const settlementModalFooterClassName =
 
 export const settlementModalActionClassName =
   'min-h-11 w-full rounded-xl px-4 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
+export const settlementModalPrimaryActionClassName =
+  `${settlementModalActionClassName} !bg-[hsl(var(--heroui-primary))]`

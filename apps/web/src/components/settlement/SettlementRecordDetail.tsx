@@ -1,11 +1,19 @@
-import { useMemo, useState } from 'react'
-import { Button, Chip, Switch } from '@heroui/react'
+import { useMemo, useRef, useState } from 'react'
+import {
+  Button,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Switch,
+} from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import {
   PiCaretDownBold,
   PiCaretUpBold,
   PiCheckBold,
-  PiCopyBold,
+  PiDotsThreeBold,
   PiSlidersBold,
 } from 'react-icons/pi'
 import { SettlementRecord, SettlementTransfer } from '@/entities/settlement'
@@ -32,6 +40,8 @@ type Props = {
     note: string
   ) => Promise<void>
   onViewTransaction: (transactionId: string) => void
+  onRequestCancel?: () => void
+  isCancelDisabled?: boolean
 }
 
 function renderUserName(userId: string, userMap: Map<string, User>) {
@@ -52,6 +62,8 @@ export default function SettlementRecordDetail({
   currency,
   onCompleteTransfer,
   onViewTransaction,
+  onRequestCancel,
+  isCancelDisabled,
 }: Props) {
   const t = useTranslations()
   const [autoRound, setAutoRound] = useState(true)
@@ -59,6 +71,7 @@ export default function SettlementRecordDetail({
   const [selectedTransfer, setSelectedTransfer] =
     useState<SettlementTransfer | null>(null)
   const [isMarkdownModalOpen, setIsMarkdownModalOpen] = useState(false)
+  const recordActionsRef = useRef<HTMLButtonElement>(null)
   const allUsers = useUserStore((state) => state.allUsers)
   const categories = useCategoryStore((state) => state.categories)
 
@@ -140,10 +153,39 @@ export default function SettlementRecordDetail({
   })
 
   const isCompleted = record.transfers.every((t) => t.status === 'completed')
+  const recordActions = [
+    {
+      id: 'exportMarkdown',
+      label: t('settlement.detail.exportMarkdown'),
+      openDialog: () => setIsMarkdownModalOpen(true),
+      titleClassName: undefined,
+    },
+    ...(onRequestCancel
+      ? [
+          {
+            id: 'cancel',
+            label: t('settlement.cancel.action'),
+            openDialog: onRequestCancel,
+            titleClassName: 'text-danger-700 dark:text-danger-300',
+          },
+        ]
+      : []),
+  ]
+
+  function openDialogFromMenu(openDialog: () => void) {
+    // Let the menu close before the dialog captures its return focus.
+    requestAnimationFrame(() => {
+      const trigger = recordActionsRef.current
+      if (!trigger) return
+
+      trigger.focus()
+      openDialog()
+    })
+  }
 
   return (
     <div className="space-y-6" data-testid="settlement-record-detail">
-      <SurfaceCard className="flex flex-col gap-4 px-4 py-5 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between sm:px-6">
+      <SurfaceCard className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-5 sm:px-6">
         <div className="min-w-0 space-y-2">
           <h1 className="break-words text-headline font-semibold leading-tight tracking-[-0.02em] text-foreground text-balance">
             {t('settlement.detail.title', { sequenceNumber })}
@@ -165,16 +207,38 @@ export default function SettlementRecordDetail({
             </Chip>
           </div>
         </div>
-        <div className="flex items-center">
-          <Button
-            className="min-h-11 w-full rounded-xl bg-secondary px-4 text-body text-secondary-foreground focus-visible:ring-2 focus-visible:ring-ring min-[360px]:w-auto"
-            size="sm"
-            startContent={<PiCopyBold size={12} />}
-            variant="flat"
-            onPress={() => setIsMarkdownModalOpen(true)}
-          >
-            {t('settlement.detail.exportMarkdown')}
-          </Button>
+        <div>
+          <Dropdown disableAnimation placement="bottom-end">
+            <DropdownTrigger>
+              <Button
+                ref={recordActionsRef}
+                aria-label={t('settlement.detail.recordActions')}
+                className="size-11 min-w-11 rounded-xl text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                disableRipple
+                isIconOnly
+                variant="light"
+              >
+                <PiDotsThreeBold aria-hidden size={22} />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label={t('settlement.detail.recordActions')}
+              disabledKeys={isCancelDisabled ? ['cancel'] : []}
+              items={recordActions}
+              variant="flat"
+            >
+              {(action) => (
+                <DropdownItem
+                  key={action.id}
+                  className="min-h-11"
+                  classNames={{ title: action.titleClassName }}
+                  onAction={() => openDialogFromMenu(action.openDialog)}
+                >
+                  {action.label}
+                </DropdownItem>
+              )}
+            </DropdownMenu>
+          </Dropdown>
         </div>
       </SurfaceCard>
 
@@ -507,7 +571,7 @@ export default function SettlementRecordDetail({
       {isMarkdownModalOpen && (
         <SettlementMarkdownModal
           markdown={markdownText}
-          sequenceNumber={sequenceNumber}
+          title={t('settlement.markdown.title', { sequenceNumber })}
           onClose={() => setIsMarkdownModalOpen(false)}
         />
       )}

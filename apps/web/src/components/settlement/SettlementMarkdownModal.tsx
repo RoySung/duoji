@@ -10,6 +10,7 @@ import {
 } from '@heroui/react'
 import { useTranslations } from 'next-intl'
 import { PiCopyBold, PiCheckBold } from 'react-icons/pi'
+import { AppButton } from '@/components/ui/AppButton'
 import {
   settlementModalActionClassName,
   settlementModalBodyClassName,
@@ -17,17 +18,18 @@ import {
   settlementModalContentClassName,
   settlementModalFooterClassName,
   settlementModalHeaderClassName,
+  settlementModalPrimaryActionClassName,
 } from './settlementModalStyles'
 
 type Props = {
   markdown: string
-  sequenceNumber: number
+  title: string
   onClose: () => void
 }
 
 export default function SettlementMarkdownModal({
   markdown,
-  sequenceNumber,
+  title,
   onClose,
 }: Props) {
   const t = useTranslations()
@@ -63,7 +65,7 @@ export default function SettlementMarkdownModal({
       <ModalContent className={settlementModalContentClassName}>
         <ModalHeader className={settlementModalHeaderClassName}>
           <h2 className="break-words text-title font-semibold leading-snug text-foreground">
-            {t('settlement.markdown.title', { sequenceNumber })}
+            {title}
           </h2>
         </ModalHeader>
         <ModalBody className={settlementModalBodyClassName}>
@@ -86,14 +88,13 @@ export default function SettlementMarkdownModal({
           >
             {t('common.close')}
           </Button>
-          <Button
-            className={settlementModalActionClassName}
+          <AppButton
+            className={settlementModalPrimaryActionClassName}
             aria-label={
               copied
                 ? t('settlement.markdown.copiedAria')
                 : t('settlement.markdown.copyAria')
             }
-            color="primary"
             startContent={
               copied ? <PiCheckBold size={14} /> : <PiCopyBold size={14} />
             }
@@ -102,7 +103,7 @@ export default function SettlementMarkdownModal({
             {copied
               ? t('settlement.markdown.copied')
               : t('settlement.markdown.copy')}
-          </Button>
+          </AppButton>
         </ModalFooter>
       </ModalContent>
     </Modal>

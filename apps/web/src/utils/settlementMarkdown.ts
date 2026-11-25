@@ -1,53 +1,118 @@
 import dayjs from 'dayjs'
 
-import { SettlementRecord } from '@/entities/settlement'
+import { SettlementRecord, SettlementTransfer } from '@/entities/settlement'
 import { Transaction } from '@/entities/transaction'
 import { User, isDeletedUser } from '@/entities/user'
 import { formatAmount } from '@/utils/amountUtils'
+import type { SharedWalletSummary } from '@/utils/settlementUtils'
 
-function userName(userId: string, userMap: Map<string, User>, t: (key: string, values?: any) => string): string {
+type Translate = (
+  key: string,
+  values?: Record<string, string | number>
+) => string
+
+export function settlementUserName(
+  userId: string,
+  userMap: ReadonlyMap<string, User>,
+  t: Translate
+): string {
   const user = userMap.get(userId)
   if (!user) return userId
-  if (isDeletedUser(user)) return `${user.name} ${t('settlement.markdown.content.deleted')}`
-  return user.name
+
+  return isDeletedUser(user)
+    ? `${user.name} ${t('settlement.markdown.content.deleted')}`
+    : user.name
 }
 
-export function generateSettlementMarkdown(params: {
-  sequenceNumber: number
-  record: SettlementRecord
+type MarkdownData = {
   transactions: Transaction[]
   currency: string | null
   autoRound?: boolean
-  userMap: Map<string, User>
-  categoryMap: Map<string, string>
-  t: (key: string, values?: any) => string
-}): string {
+  userMap: ReadonlyMap<string, User>
+  categoryMap: ReadonlyMap<string, string>
+  t: Translate
+}
+
+type RecordMarkdown = MarkdownData & {
+  sequenceNumber: number
+  record: SettlementRecord
+}
+
+type DraftMarkdown = MarkdownData & {
+  exportedAt: Date
+  memberStatuses: SettlementRecord['memberStatuses']
+  transfers: Pick<
+    SettlementTransfer,
+    'fromUserId' | 'toUserId' | 'suggestedAmount'
+  >[]
+  sharedWalletSummary: SharedWalletSummary | null
+}
+
+function escapeMarkdownText(value: string): string {
+  return value
+    .replace(/\r\n?|\n/g, ' ')
+    .replace(/[!&*<>_~[\]`|\\]/g, '\\$&')
+    .replace(/^(\s*)(#{1,6}|[-+])(?=\s|$)/, '$1\\$2')
+    .replace(/^(\s*\d{1,9})([.)])(?=\s|$)/, '$1\\$2')
+}
+
+export function generateSettlementMarkdown(params: RecordMarkdown): string {
+  return formatSettlementMarkdown(params)
+}
+
+export function generateSettlementDraftMarkdown(params: DraftMarkdown): string {
+  return formatSettlementMarkdown(params)
+}
+
+function formatSettlementMarkdown(
+  params: RecordMarkdown | DraftMarkdown
+): string {
   const {
-    sequenceNumber,
-    record,
     transactions,
-    currency,
     autoRound = true,
     userMap,
     categoryMap,
     t,
   } = params
 
-  const date = dayjs(record.createdAt).format('YYYY-MM-DD')
   const roundMode = autoRound ? 'ceil' : 'none'
+  const escapeText = (value: string) =>
+    'record' in params ? value : escapeMarkdownText(value)
+  const currency = params.currency === null ? null : escapeText(params.currency)
+  const userName = (userId: string) =>
+    escapeText(settlementUserName(userId, userMap, t))
+  const memberStatuses =
+    'record' in params ? params.record.memberStatuses : params.memberStatuses
+  const transfers: (SettlementTransfer | DraftMarkdown['transfers'][number])[] =
+    'record' in params ? params.record.transfers : params.transfers
 
-  const sections: string[] = []
-
-  // Header
-  let titleSection = t('settlement.markdown.content.title', { sequenceNumber, date })
-  if (autoRound) {
-    titleSection += `\n_${t('settlement.markdown.content.autoRoundNote')}_`
+  let titleSection: string
+  if ('record' in params) {
+    titleSection = t('settlement.markdown.content.title', {
+      sequenceNumber: params.sequenceNumber,
+      date: dayjs(params.record.createdAt).format('YYYY-MM-DD'),
+    })
+    if (autoRound) {
+      titleSection += `\n_${t('settlement.markdown.content.autoRoundNote')}_`
+    }
+  } else {
+    titleSection = t('settlement.markdown.draft.title', {
+      timestamp: params.exportedAt.toISOString(),
+    })
+    titleSection += `\n_${t(
+      autoRound
+        ? 'settlement.markdown.draft.roundingOn'
+        : 'settlement.markdown.draft.roundingOff'
+    )}_`
   }
-  sections.push(titleSection)
+  const sections = [titleSection]
 
   // Member Balances
-  const memberLines: string[] = [t('settlement.markdown.content.memberBalances'), '']
-  if (record.memberStatuses.length === 0) {
+  const memberLines: string[] = [
+    t('settlement.markdown.content.memberBalances'),
+    '',
+  ]
+  if (memberStatuses.length === 0) {
     memberLines.push(t('settlement.markdown.content.noMemberData'))
   } else {
     memberLines.push(
@@ -58,17 +123,24 @@ export function generateSettlementMarkdown(params: {
       )} |`
     )
     memberLines.push('|--------|-------|------|---------|')
-    for (const ms of record.memberStatuses) {
-      const name = userName(ms.userId, userMap, t)
+    for (const ms of memberStatuses) {
+      const name = userName(ms.userId)
       const split = formatAmount(ms.splitAmount, currency, { roundMode })
       const paid = formatAmount(ms.paidAmount, currency, { roundMode })
       let balance: string
       if (ms.netAmount === 0) {
-        balance = `${formatAmount(0, currency, { roundMode })} ${t('settlement.markdown.content.settled')}`
+        balance = formatAmount(0, currency, { roundMode })
+        if ('record' in params) {
+          balance += ` ${t('settlement.markdown.content.settled')}`
+        }
       } else if (ms.netAmount > 0) {
-        balance = `+${formatAmount(ms.netAmount, currency, { roundMode })} ${t('settlement.markdown.content.toReceive')}`
+        balance = `+${formatAmount(ms.netAmount, currency, { roundMode })} ${t(
+          'settlement.markdown.content.toReceive'
+        )}`
       } else {
-        balance = `-${formatAmount(Math.abs(ms.netAmount), currency, { roundMode })} ${t('settlement.markdown.content.toPay')}`
+        balance = `-${formatAmount(Math.abs(ms.netAmount), currency, {
+          roundMode,
+        })} ${t('settlement.markdown.content.toPay')}`
       }
       memberLines.push(`| ${name} | ${split} | ${paid} | ${balance} |`)
     }
@@ -76,23 +148,42 @@ export function generateSettlementMarkdown(params: {
   sections.push(memberLines.join('\n'))
 
   // Transfers
-  const transferLines: string[] = [t('settlement.markdown.content.transfers'), '']
-  if (record.transfers.length === 0) {
+  const transferLines: string[] = [
+    t(
+      'record' in params
+        ? 'settlement.markdown.content.transfers'
+        : 'settlement.markdown.draft.transfers'
+    ),
+    '',
+  ]
+  if (transfers.length === 0) {
     transferLines.push(t('settlement.markdown.content.noTransfers'))
   } else {
-    for (const transfer of record.transfers) {
-      const from = userName(transfer.fromUserId, userMap, t)
-      const to = userName(transfer.toUserId, userMap, t)
-      const suggested = formatAmount(transfer.suggestedAmount, currency, { roundMode })
-      const checkbox = transfer.status === 'completed' ? '[x]' : '[ ]'
-      let line = `- ${checkbox} ${from} → ${to}: ${suggested}`
-      if (transfer.status === 'completed' && transfer.actualAmount !== null) {
+    for (const transfer of transfers) {
+      const from = userName(transfer.fromUserId)
+      const to = userName(transfer.toUserId)
+      const suggested = formatAmount(transfer.suggestedAmount, currency, {
+        roundMode,
+      })
+      const recordedTransfer =
+        'record' in params && 'status' in transfer ? transfer : null
+      const checkbox = recordedTransfer
+        ? recordedTransfer.status === 'completed'
+          ? '[x] '
+          : '[ ] '
+        : ''
+      let line = `- ${checkbox}${from} → ${to}: ${suggested}`
+      if (
+        recordedTransfer?.status === 'completed' &&
+        recordedTransfer.actualAmount !== null
+      ) {
         const showActual =
-          transfer.actualAmount !== transfer.suggestedAmount || transfer.note.length > 0
+          recordedTransfer.actualAmount !== transfer.suggestedAmount ||
+          recordedTransfer.note.length > 0
         if (showActual) {
           line += ` _${t('settlement.markdown.content.actual', {
-            amount: formatAmount(transfer.actualAmount, currency),
-            note: transfer.note ? ` · ${transfer.note}` : '',
+            amount: formatAmount(recordedTransfer.actualAmount, currency),
+            note: recordedTransfer.note ? ` · ${recordedTransfer.note}` : '',
           })}_`
         }
       }
@@ -101,31 +192,85 @@ export function generateSettlementMarkdown(params: {
   }
   sections.push(transferLines.join('\n'))
 
+  if ('sharedWalletSummary' in params && params.sharedWalletSummary) {
+    const { totalExpense, averagePerPerson, borrowings } =
+      params.sharedWalletSummary
+    if (totalExpense > 0) {
+      const walletLines = [
+        `## ${t('settlement.sharedWallet.title')}`,
+        '',
+        `- ${t('settlement.sharedWallet.total')}: ${formatAmount(
+          totalExpense,
+          currency
+        )}`,
+        `- ${t('settlement.sharedWallet.average')}: ${formatAmount(
+          averagePerPerson,
+          currency,
+          { roundMode }
+        )}`,
+      ]
+      if (borrowings.length > 0) {
+        walletLines.push(
+          `- ${t('settlement.sharedWallet.borrowings')}`,
+          ...borrowings.map(
+            ({ userId, amount }) =>
+              `  - ${userName(userId)}: -${formatAmount(amount, currency, {
+                roundMode,
+              })}`
+          )
+        )
+      }
+      sections.push(walletLines.join('\n'))
+    }
+  }
+
   // Covered Transactions
   const activeTxs = transactions.filter((tx) => tx.deletedAt === null)
   const txLines: string[] = [
-    t('settlement.markdown.content.coveredTransactions', { count: activeTxs.length }),
+    'record' in params
+      ? t('settlement.markdown.content.coveredTransactions', {
+          count: activeTxs.length,
+        })
+      : `## ${t('settlement.markdown.draft.includedExpenses', {
+          count: activeTxs.length,
+        })}`,
     '',
   ]
   if (activeTxs.length === 0) {
     txLines.push(t('settlement.markdown.content.noCoveredTransactions'))
   } else {
     for (const tx of activeTxs) {
-      const desc = tx.description || t('settlement.markdown.content.noDescription')
-      const category = categoryMap.get(tx.categoryId) ?? tx.categoryId
+      const desc = tx.description
+        ? escapeText(tx.description)
+        : t('settlement.markdown.content.noDescription')
+      const category = escapeText(
+        categoryMap.get(tx.categoryId) ?? tx.categoryId
+      )
 
       const paidByNames = tx.paidByDetail
-        .map((p) => `${userName(p.userId, userMap, t)} ${formatAmount(p.amount, currency)}`)
+        .map((p) => `${userName(p.userId)} ${formatAmount(p.amount, currency)}`)
         .join(', ')
 
       const splitWithNames = tx.splitDetail
-        .map((s) => `${userName(s.userId, userMap, t)} ${formatAmount(s.amount, currency)}`)
+        .map((s) => `${userName(s.userId)} ${formatAmount(s.amount, currency)}`)
         .join(', ')
 
-      txLines.push(`- ${tx.date} · ${desc} · ${formatAmount(tx.amount, currency)}`)
-      txLines.push(`  - ${t('settlement.markdown.content.category', { category })}`)
-      txLines.push(`  - ${t('settlement.markdown.content.paidBy', { paidBy: paidByNames })}`)
-      txLines.push(`  - ${t('settlement.markdown.content.splitWith', { splitWith: splitWithNames })}`)
+      txLines.push(
+        `- ${tx.date} · ${desc} · ${formatAmount(tx.amount, currency)}`
+      )
+      txLines.push(
+        `  - ${t('settlement.markdown.content.category', { category })}`
+      )
+      txLines.push(
+        `  - ${t('settlement.markdown.content.paidBy', {
+          paidBy: paidByNames,
+        })}`
+      )
+      txLines.push(
+        `  - ${t('settlement.markdown.content.splitWith', {
+          splitWith: splitWithNames,
+        })}`
+      )
     }
   }
   sections.push(txLines.join('\n'))

@@ -2,7 +2,7 @@ import { createStore } from 'zustand/vanilla'
 import { devtools } from 'zustand/middleware'
 import { AccountBook, AccountBookRepo } from '@/entities/accountBook'
 import { AccountBookLocalRepo } from '@/repositories/accountBookRepo'
-import { UserLocalRepo } from '@/repositories/userRepo'
+import { resolveAccountBookUsers, UserLocalRepo } from '@/repositories/userRepo'
 import { User, VirtualUser, RegisteredUser, UserRepo, isDeletedUser } from '@/entities/user'
 import { genUuid } from '@/utils/genUuid'
 
@@ -69,27 +69,6 @@ function dedupeUsersById(users: User[]): User[] {
   return Array.from(seen.values())
 }
 
-async function resolveUsers(
-  accountBook: AccountBook,
-  userRepo: UserRepo
-): Promise<User[]> {
-  const registeredUsers = await userRepo.findByIds(accountBook.userIds)
-
-  const registeredUserList: User[] = registeredUsers.map((user: RegisteredUser) => ({
-    ...user,
-    type: 'registered' as const,
-  }))
-
-  const virtualUserList: User[] = (accountBook.virtualUsers ?? []).map(
-    (v: VirtualUser) => ({
-      ...v,
-      type: 'virtual' as const,
-    })
-  )
-
-  return [...registeredUserList, ...virtualUserList]
-}
-
 type VirtualUserMutationOutcome<T> = {
   nextVirtualUsers: VirtualUser[]
   result: T
@@ -122,7 +101,7 @@ async function applyVirtualUserMutation<T>(
     return null
   }
 
-  const allUsers = await resolveUsers(updatedAccountBook, userRepo)
+  const allUsers = await resolveAccountBookUsers(updatedAccountBook, userRepo)
 
   return {
     allUsers,
@@ -190,7 +169,7 @@ export function createUserStore(
           try {
             if (Array.isArray(accountBook)) {
               const resolved = await Promise.all(
-                accountBook.map((ab) => resolveUsers(ab, userRepo))
+                accountBook.map((ab) => resolveAccountBookUsers(ab, userRepo))
               )
               if (
                 initializeId !== initializeRunId ||
@@ -209,7 +188,7 @@ export function createUserStore(
               return
             }
 
-            const allUsers = await resolveUsers(accountBook, userRepo)
+            const allUsers = await resolveAccountBookUsers(accountBook, userRepo)
             if (
               initializeId !== initializeRunId ||
               writeVersionAtStart !== successfulWriteVersion
