@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import {
   Button,
   Chip,
@@ -22,17 +23,24 @@ import { User, isDeletedUser, isSharedWalletUser } from '@/entities/user'
 import { useUserStore } from '@/stores/user'
 import { useCategoryStore } from '@/stores/category'
 import TransactionList from '@/components/transaction/TransactionList'
-import { generateSettlementMarkdown } from '@/utils/settlementMarkdown'
+import {
+  generateSettlementMarkdown,
+  type SettlementRecordExportData,
+} from '@/utils/settlementMarkdown'
 import { computeSharedWalletSummary } from '@/utils/settlementUtils'
 import { formatAmount } from '@/utils/amountUtils'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import SettlementTransferModal from './SettlementTransferModal'
 import SettlementMarkdownModal from './SettlementMarkdownModal'
 
+const SettlementImageModal = dynamic(() => import('./SettlementImageModal'))
+
 type Props = {
   record: SettlementRecord
   sequenceNumber: number
   transactions: Transaction[]
+  transactionStatus: 'loading' | 'ready' | 'error'
+  onRetryTransactions: () => void
   currency: string | null
   onCompleteTransfer: (
     transferId: string,
@@ -59,6 +67,8 @@ export default function SettlementRecordDetail({
   record,
   sequenceNumber,
   transactions,
+  transactionStatus,
+  onRetryTransactions,
   currency,
   onCompleteTransfer,
   onViewTransaction,
@@ -71,6 +81,8 @@ export default function SettlementRecordDetail({
   const [selectedTransfer, setSelectedTransfer] =
     useState<SettlementTransfer | null>(null)
   const [isMarkdownModalOpen, setIsMarkdownModalOpen] = useState(false)
+  const [imageSource, setImageSource] =
+    useState<Omit<SettlementRecordExportData, 'transactions'> | null>(null)
   const recordActionsRef = useRef<HTMLButtonElement>(null)
   const allUsers = useUserStore((state) => state.allUsers)
   const categories = useCategoryStore((state) => state.categories)
@@ -158,6 +170,21 @@ export default function SettlementRecordDetail({
       id: 'exportMarkdown',
       label: t('settlement.detail.exportMarkdown'),
       openDialog: () => setIsMarkdownModalOpen(true),
+      titleClassName: undefined,
+    },
+    {
+      id: 'exportImage',
+      label: t('settlement.image.action'),
+      openDialog: () =>
+        setImageSource({
+          sequenceNumber,
+          record,
+          currency,
+          autoRound,
+          userMap,
+          categoryMap,
+          t,
+        }),
       titleClassName: undefined,
     },
     ...(onRequestCancel
@@ -573,6 +600,15 @@ export default function SettlementRecordDetail({
           markdown={markdownText}
           title={t('settlement.markdown.title', { sequenceNumber })}
           onClose={() => setIsMarkdownModalOpen(false)}
+        />
+      )}
+      {imageSource && (
+        <SettlementImageModal
+          source={imageSource}
+          transactions={transactions}
+          transactionStatus={transactionStatus}
+          onRetryTransactions={onRetryTransactions}
+          onClose={() => setImageSource(null)}
         />
       )}
     </div>

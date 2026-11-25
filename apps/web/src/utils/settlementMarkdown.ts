@@ -33,12 +33,12 @@ type MarkdownData = {
   t: Translate
 }
 
-type RecordMarkdown = MarkdownData & {
+export type SettlementRecordExportData = MarkdownData & {
   sequenceNumber: number
   record: SettlementRecord
 }
 
-type DraftMarkdown = MarkdownData & {
+export type SettlementDraftExportData = MarkdownData & {
   exportedAt: Date
   memberStatuses: SettlementRecord['memberStatuses']
   transfers: Pick<
@@ -56,16 +56,22 @@ function escapeMarkdownText(value: string): string {
     .replace(/^(\s*\d{1,9})([.)])(?=\s|$)/, '$1\\$2')
 }
 
-export function generateSettlementMarkdown(params: RecordMarkdown): string {
+export function activeSettlementExpenses(transactions: Transaction[]) {
+  return transactions.filter((transaction) => transaction.deletedAt === null)
+}
+
+export function generateSettlementMarkdown(
+  params: SettlementRecordExportData
+): string {
   return formatSettlementMarkdown(params)
 }
 
-export function generateSettlementDraftMarkdown(params: DraftMarkdown): string {
+export function generateSettlementDraftMarkdown(params: SettlementDraftExportData): string {
   return formatSettlementMarkdown(params)
 }
 
 function formatSettlementMarkdown(
-  params: RecordMarkdown | DraftMarkdown
+  params: SettlementRecordExportData | SettlementDraftExportData
 ): string {
   const {
     transactions,
@@ -83,7 +89,7 @@ function formatSettlementMarkdown(
     escapeText(settlementUserName(userId, userMap, t))
   const memberStatuses =
     'record' in params ? params.record.memberStatuses : params.memberStatuses
-  const transfers: (SettlementTransfer | DraftMarkdown['transfers'][number])[] =
+  const transfers: (SettlementTransfer | SettlementDraftExportData['transfers'][number])[] =
     'record' in params ? params.record.transfers : params.transfers
 
   let titleSection: string
@@ -225,7 +231,7 @@ function formatSettlementMarkdown(
   }
 
   // Covered Transactions
-  const activeTxs = transactions.filter((tx) => tx.deletedAt === null)
+  const activeTxs = activeSettlementExpenses(transactions)
   const txLines: string[] = [
     'record' in params
       ? t('settlement.markdown.content.coveredTransactions', {

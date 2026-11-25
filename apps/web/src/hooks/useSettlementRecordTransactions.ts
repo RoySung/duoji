@@ -26,54 +26,74 @@ function toErrorMessage(error: unknown): string {
 
 export function useSettlementRecordTransactions(
   settlementRecordId: string | null,
-  repo: TransactionLocalRepo = new TransactionLocalRepo()
+  repo?: Pick<TransactionLocalRepo, 'findBySettlementRecordId'>
 ) {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const pendingRef = useRef<string | null>(null)
-  const repoRef = useRef(repo)
+  const [repository] = useState(() => repo ?? new TransactionLocalRepo())
+  const [result, setResult] = useState<{
+    recordId: string | null
+    status: 'loading' | 'ready' | 'error'
+    transactions: Transaction[]
+    error: string | null
+  }>({ recordId: null, status: 'ready', transactions: [], error: null })
+  const pendingRef = useRef(0)
 
-  const loadTransactions = useCallback(async (recordId: string | null) => {
-    pendingRef.current = recordId
-    setIsLoading(true)
-    setError(null)
+  const loadTransactions = useCallback(
+    async (recordId: string | null) => {
+      const request = ++pendingRef.current
 
-    if (!recordId) {
-      setTransactions([])
-      setIsLoading(false)
-      return []
-    }
-
-    try {
-      const results = await repoRef.current.findBySettlementRecordId(recordId)
-
-      if (pendingRef.current !== recordId) {
+      if (!recordId) {
+        setResult({ recordId, status: 'ready', transactions: [], error: null })
         return []
       }
 
-      setTransactions(sortTransactions(results))
-      setIsLoading(false)
-      return results
-    } catch (err) {
-      if (pendingRef.current !== recordId) {
+      setResult((current) => ({
+        recordId,
+        status: 'loading',
+        transactions: current.recordId === recordId ? current.transactions : [],
+        error: null,
+      }))
+
+      try {
+        const transactions = await repository.findBySettlementRecordId(recordId)
+
+        if (pendingRef.current !== request) return []
+
+        setResult({
+          recordId,
+          status: 'ready',
+          transactions: sortTransactions(transactions),
+          error: null,
+        })
+        return transactions
+      } catch (err) {
+        if (pendingRef.current !== request) return []
+
+        setResult({
+          recordId,
+          status: 'error',
+          transactions: [],
+          error: toErrorMessage(err),
+        })
         return []
       }
-
-      setError(toErrorMessage(err))
-      setIsLoading(false)
-      return []
-    }
-  }, [])
+    },
+    [repository]
+  )
 
   useEffect(() => {
     void loadTransactions(settlementRecordId)
+    return () => {
+      pendingRef.current += 1
+    }
   }, [loadTransactions, settlementRecordId])
 
+  const isCurrent = result.recordId === settlementRecordId
+  const status = isCurrent ? result.status : 'loading'
   return {
-    transactions,
-    isLoading,
-    error,
+    transactions: isCurrent ? result.transactions : [],
+    status,
+    isLoading: status === 'loading',
+    error: isCurrent ? result.error : null,
     loadTransactions,
   }
 }

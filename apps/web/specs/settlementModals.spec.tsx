@@ -8,8 +8,14 @@ import { SettlementTransfer } from '../src/entities/settlement'
 
 jest.mock('@heroui/react', () => {
   const React = jest.requireActual('react')
+  const { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } =
+    jest.requireActual('@heroui/react')
 
   return {
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownTrigger,
     addToast: jest.fn(),
     HeroUIProvider: ({ children }: { children: React.ReactNode }) => children,
     Modal: ({

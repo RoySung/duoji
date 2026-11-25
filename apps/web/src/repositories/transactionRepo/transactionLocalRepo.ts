@@ -150,17 +150,12 @@ class TransactionLocalRepo implements TransactionRepo {
   // Each scenario should be composed into a dedicated hook rather than shared global state.
 
   async findBySettlementRecordId(recordId: string): Promise<Transaction[]> {
-    try {
-      const transactions = await db.transactions
-        .where('settlementRecordId')
-        .equals(recordId)
-        .toArray()
+    const transactions = await db.transactions
+      .where('settlementRecordId')
+      .equals(recordId)
+      .toArray()
 
-      return excludeSoftDeleted(transactions)
-    } catch (error) {
-      console.error('Failed to find transactions by settlementRecordId:', error)
-      return []
-    }
+    return excludeSoftDeleted(transactions)
   }
 
   async update(

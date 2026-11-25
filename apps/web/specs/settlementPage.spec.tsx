@@ -12,6 +12,7 @@ import { useRouter } from 'next/router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import SettlementPage from '../src/pages/account-books/[id]/settlement'
 import SettlementRecordDetailPage from '../src/pages/account-books/[id]/settlement/[recordId]'
+import SettlementConfirmModal from '../src/components/settlement/SettlementConfirmModal'
 import { AccountBook } from '../src/entities/accountBook'
 import { User } from '../src/entities/user'
 import {
@@ -392,9 +393,12 @@ async function openSettlementReview() {
   fireEvent.click(button)
 }
 
-function openMarkdownDraft(review: ReturnType<typeof within>) {
-  fireEvent.click(review.getByRole('button', { name: 'Export Markdown draft' }))
-  const heading = screen.getByRole('heading', {
+async function openMarkdownDraft(review: ReturnType<typeof within>) {
+  fireEvent.click(review.getByRole('button', { name: 'Export draft' }))
+  const menu = within(await screen.findByRole('menu', { name: 'Export draft' }))
+  expect(menu.getByRole('menuitem', { name: 'Image (PNG)' })).toBeTruthy()
+  fireEvent.click(menu.getByRole('menuitem', { name: 'Markdown' }))
+  const heading = await screen.findByRole('heading', {
     name: 'Export as Markdown — Settlement draft',
   })
   const dialog = within(heading.closest<HTMLElement>('[role="dialog"]')!)
@@ -418,6 +422,29 @@ describe('Settlement page', () => {
   afterEach(async () => {
     await db.delete()
     jest.clearAllMocks()
+  })
+
+  it('disables image draft export while confirmation is submitting', () => {
+    const onConfirm = jest.fn(async () => undefined)
+    render(
+      <SettlementConfirmModal
+        isOpen
+        isSubmitting
+        memberStatuses={[]}
+        transferSuggestions={[]}
+        transactions={[createTransactionFixture()]}
+        users={[]}
+        categoryNames={new Map()}
+        currency="TWD"
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />
+    )
+    const action = screen.getByRole('button', { name: 'Export draft' })
+    expect(action).toHaveProperty('disabled', true)
+    fireEvent.click(action)
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(onConfirm).not.toHaveBeenCalled()
   })
 
   it('shows Shared Wallet and rounded results in confirmation and eligible expenses only in the draft', async () => {
@@ -492,7 +519,7 @@ describe('Settlement page', () => {
     fireEvent.click(dialog.getByRole('switch'))
     expect(dialog.getByText('150.25 TWD')).toBeTruthy()
 
-    const { markdown } = openMarkdownDraft(dialog)
+    const { markdown } = await openMarkdownDraft(dialog)
     expect(markdown).toContain('## Included expenses (2)')
     expect(markdown).toContain('2026/04/01 · Breakfast with friends · 300.5 TWD')
     expect(markdown).toContain('2026/04/01 · Wallet lunch · 90 TWD')
@@ -530,7 +557,7 @@ describe('Settlement page', () => {
       const review = within(screen.getByRole('dialog'))
 
       expect(review.getByText('61 TWD')).toBeTruthy()
-      const rounded = openMarkdownDraft(review)
+      const rounded = await openMarkdownDraft(review)
       expect(rounded.markdown).toMatch(
         /^# Settlement draft\n\nExported at \d{4}-.+Z/m
       )
@@ -549,7 +576,7 @@ describe('Settlement page', () => {
       expect(screen.getAllByRole('dialog')).toHaveLength(1)
       fireEvent.click(review.getByRole('switch'))
       expect(review.getByText('60.25 TWD')).toBeTruthy()
-      const precise = openMarkdownDraft(review)
+      const precise = await openMarkdownDraft(review)
       expect(precise.markdown).toContain('_Auto-rounding off_')
       expect(precise.markdown).toContain(
         `${userList[1]!.name} → ${userList[0]!.name}: 60.25 TWD`
@@ -644,10 +671,12 @@ describe('Settlement page', () => {
     }
   })
 
-  it('warns when the live review becomes empty and disables both actions', async () => {
+  it('warns when the live review becomes empty and closes and disables the export menu', async () => {
     renderSettlementPage()
     await openSettlementReview()
     const dialog = within(screen.getByRole('dialog'))
+    fireEvent.click(dialog.getByRole('button', { name: 'Export draft' }))
+    expect(await screen.findByRole('menu', { name: 'Export draft' })).toBeTruthy()
 
     await act(async () => {
       await new SettlementLocalRepo().create(
@@ -671,8 +700,9 @@ describe('Settlement page', () => {
       dialog.getByRole('button', { name: 'Create settlement record' })
     ).toHaveProperty('disabled', true)
     expect(
-      dialog.getByRole('button', { name: 'Export Markdown draft' })
+      dialog.getByRole('button', { name: 'Export draft' })
     ).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('menu', { name: 'Export draft' })).toBeNull()
     expect(await db.settlements.count()).toBe(1)
   })
 

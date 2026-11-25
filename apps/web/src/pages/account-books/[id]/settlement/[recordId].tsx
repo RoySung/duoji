@@ -49,8 +49,12 @@ export default function SettlementRecordDetailPage() {
   const { records, cancelSettlementRecord, completeTransfer } =
     useSettlement(accountBookId)
 
-  const { transactions: recordTransactions, isLoading: isLoadingTransactions } =
-    useSettlementRecordTransactions(settlementRecordId)
+  const {
+    transactions: recordTransactions,
+    status: transactionStatus,
+    isLoading: isLoadingTransactions,
+    loadTransactions,
+  } = useSettlementRecordTransactions(settlementRecordId)
   const { createTransaction, isMutating } = useAccountBookTransactions(
     accountBookId,
     null
@@ -194,9 +198,12 @@ export default function SettlementRecordDetailPage() {
         </Button>
 
         <SettlementRecordDetail
+          key={record.id}
           record={record}
           sequenceNumber={sequenceNumber}
           transactions={recordTransactions}
+          transactionStatus={transactionStatus}
+          onRetryTransactions={() => void loadTransactions(record.id)}
           currency={currentAccountBook?.currency ?? null}
           onCompleteTransfer={handleCompleteTransfer}
           onViewTransaction={openViewModal}

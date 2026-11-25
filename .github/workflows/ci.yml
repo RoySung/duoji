@@ -18,7 +18,8 @@ env:
 
 jobs:
   main:
-    runs-on: ubuntu-latest
+    # Playwright 1.53.1 supports Ubuntu 24.04 but lacks Ubuntu 26.04 browser builds.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:

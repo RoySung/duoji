@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import {
   Modal,
   ModalContent,
@@ -6,6 +7,10 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
   Switch,
 } from '@heroui/react'
 import { useTranslations } from 'next-intl'
@@ -13,7 +18,12 @@ import {
   SettlementMemberStatus,
   SettlementTransfer,
 } from '@/entities/settlement'
-import { PiFileTextBold } from 'react-icons/pi'
+import {
+  PiCaretDownBold,
+  PiExportBold,
+  PiFileTextBold,
+  PiImageBold,
+} from 'react-icons/pi'
 import { Transaction } from '@/entities/transaction'
 import { SharedWalletSummary } from '@/utils/settlementUtils'
 import type { User } from '@/entities/user'
@@ -23,6 +33,7 @@ import { AppButton } from '@/components/ui/AppButton'
 import {
   generateSettlementDraftMarkdown,
   settlementUserName,
+  type SettlementDraftExportData,
 } from '@/utils/settlementMarkdown'
 import {
   settlementModalActionClassName,
@@ -33,6 +44,8 @@ import {
   settlementModalHeaderClassName,
   settlementModalPrimaryActionClassName,
 } from './settlementModalStyles'
+
+const SettlementImageModal = dynamic(() => import('./SettlementImageModal'))
 
 type Props = {
   isOpen: boolean
@@ -73,7 +86,18 @@ export default function SettlementConfirmModal({
   const t = useTranslations()
   const [internalAutoRound, setInternalAutoRound] = useState(true)
   const [draftMarkdown, setDraftMarkdown] = useState<string | null>(null)
+  const [draftImage, setDraftImage] =
+    useState<SettlementDraftExportData | null>(null)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportTrigger = useRef<HTMLButtonElement>(null)
   const autoRound = autoRoundProp ?? internalAutoRound
+  const previewOpen = draftMarkdown !== null || draftImage !== null
+  const canExportDraft = !isSubmitting && transactions.length > 0
+  const showExportMenu = isOpen && canExportDraft && exportMenuOpen
+
+  useEffect(() => {
+    if (!isOpen || !canExportDraft) setExportMenuOpen(false)
+  }, [isOpen, canExportDraft])
 
   const handleAutoRoundChange = (val: boolean) => {
     setInternalAutoRound(val)
@@ -84,27 +108,39 @@ export default function SettlementConfirmModal({
   const getName = (userId: string) => settlementUserName(userId, userMap, t)
 
   function handleClose() {
+    setExportMenuOpen(false)
     setDraftMarkdown(null)
+    setDraftImage(null)
     onClose()
   }
 
-  function openDraft() {
-    if (transactions.length === 0 || isSubmitting) return
+  function openDraft(format: 'markdown' | 'image') {
+    if (!canExportDraft) return
 
-    setDraftMarkdown(
-      generateSettlementDraftMarkdown({
-        exportedAt: new Date(),
-        memberStatuses,
-        transfers: transferSuggestions,
-        sharedWalletSummary: sharedWalletSummary ?? null,
-        transactions,
-        currency,
-        autoRound,
-        userMap,
-        categoryMap: categoryNames,
-        t,
-      })
-    )
+    const draft: SettlementDraftExportData = {
+      exportedAt: new Date(),
+      memberStatuses,
+      transfers: transferSuggestions,
+      sharedWalletSummary: sharedWalletSummary ?? null,
+      transactions,
+      currency,
+      autoRound,
+      userMap,
+      categoryMap: categoryNames,
+      t,
+    }
+    if (format === 'image') setDraftImage(draft)
+    else setDraftMarkdown(generateSettlementDraftMarkdown(draft))
+  }
+
+  function selectDraft(format: 'markdown' | 'image') {
+    // Wait for the menu to close before the preview captures its return focus.
+    requestAnimationFrame(() => {
+      const trigger = exportTrigger.current
+      if (!trigger?.isConnected || trigger.disabled) return
+      trigger.focus()
+      openDraft(format)
+    })
   }
 
   return (
@@ -112,8 +148,8 @@ export default function SettlementConfirmModal({
       isOpen={isOpen}
       onOpenChange={(open) => !open && handleClose()}
       placement="bottom"
-      isDismissable={!isSubmitting && draftMarkdown === null}
-      isKeyboardDismissDisabled={isSubmitting || draftMarkdown !== null}
+      isDismissable={!isSubmitting && !previewOpen && !showExportMenu}
+      isKeyboardDismissDisabled={isSubmitting || previewOpen || showExportMenu}
       hideCloseButton={isSubmitting}
       scrollBehavior="inside"
       classNames={settlementModalClassNames}
@@ -285,17 +321,43 @@ export default function SettlementConfirmModal({
               {t('settlement.confirm.reviewChanged')}
             </p>
           )}
-          <Button
-            className={`${settlementModalActionClassName} col-span-2`}
-            variant="flat"
-            startContent={
-              <PiFileTextBold aria-hidden="true" className="size-4" />
-            }
-            isDisabled={isSubmitting || transactions.length === 0}
-            onPress={openDraft}
+          <Dropdown
+            disableAnimation
+            isOpen={showExportMenu}
+            onOpenChange={setExportMenuOpen}
+            placement="top"
           >
-            {t('settlement.confirm.exportDraft')}
-          </Button>
+            <DropdownTrigger>
+              <Button
+                ref={exportTrigger}
+                className={`${settlementModalActionClassName} col-span-2`}
+                variant="flat"
+                isDisabled={!canExportDraft}
+                startContent={<PiExportBold aria-hidden className="size-4" />}
+                endContent={<PiCaretDownBold aria-hidden className="size-3" />}
+              >
+                {t('settlement.confirm.exportDraft')}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu aria-label={t('settlement.confirm.exportDraft')}>
+              <DropdownItem
+                key="image"
+                className="min-h-11"
+                startContent={<PiImageBold aria-hidden className="size-4" />}
+                onAction={() => selectDraft('image')}
+              >
+                {t('settlement.confirm.draftImage')}
+              </DropdownItem>
+              <DropdownItem
+                key="markdown"
+                className="min-h-11"
+                startContent={<PiFileTextBold aria-hidden className="size-4" />}
+                onAction={() => selectDraft('markdown')}
+              >
+                {t('settlement.confirm.draftMarkdown')}
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
           <Button
             className={settlementModalActionClassName}
             isDisabled={isSubmitting}
@@ -317,6 +379,14 @@ export default function SettlementConfirmModal({
             markdown={draftMarkdown}
             title={t('settlement.markdown.draft.previewTitle')}
             onClose={() => setDraftMarkdown(null)}
+          />
+        )}
+        {draftImage && (
+          <SettlementImageModal
+            source={draftImage}
+            transactions={draftImage.transactions}
+            transactionStatus="ready"
+            onClose={() => setDraftImage(null)}
           />
         )}
       </ModalContent>
