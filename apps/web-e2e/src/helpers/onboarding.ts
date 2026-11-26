@@ -54,8 +54,8 @@ export async function createFirstAccountBook(
   page: Page,
   accountBookName: string
 ) {
-  const nameInput = page.getByLabel(/name|名稱/i).last()
-  await nameInput.fill(accountBookName)
+  const nameInput = page.getByRole('textbox', { name: /^(Name|名稱)$/i })
+  await nameInput.pressSequentially(accountBookName)
   await expect(nameInput).toHaveValue(accountBookName)
   const createBtn = page.getByRole('button', { name: /建立|Create/ })
   await expect(createBtn).toBeEnabled()

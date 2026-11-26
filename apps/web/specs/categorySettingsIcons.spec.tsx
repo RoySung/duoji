@@ -3,7 +3,7 @@ import {
   fireEvent,
   render,
   screen,
-  waitFor,
+  waitForElementToBeRemoved,
   within,
 } from '@testing-library/react'
 import CategorySettingsPage from '@/components/categorySettings/CategorySettingsPage'
@@ -37,8 +37,11 @@ function enterText(
 }
 
 async function openSettings(repo: CategoryLocalRepo) {
-  const store = createCategoryStore(repo)
-  await store.getState().initialize(bookId)
+  const store = createCategoryStore(repo, {
+    categories: await repo.findByAccountBookId(bookId),
+    scopedAccountBookId: bookId,
+    initialized: true,
+  })
 
   return render(
     <HeroUIProvider disableAnimation>
@@ -57,10 +60,10 @@ async function editCategory(name: string) {
 }
 
 async function saveSettings() {
+  const discardButton = screen.getByRole('button', { name: 'Discard' })
+  const saved = waitForElementToBeRemoved(discardButton, { timeout: 5_000 })
   clickButton(screen, 'Save')
-  await waitFor(() => {
-    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull()
-  })
+  await saved
 }
 
 describe('Category settings icon persistence', () => {
