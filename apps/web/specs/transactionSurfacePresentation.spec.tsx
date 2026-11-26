@@ -57,8 +57,13 @@ jest.mock('@heroui/react', () => {
   const React = jest.requireActual<typeof import('react')>('react')
 
   return {
-    Avatar: ({ name }: { name: string }) =>
-      React.createElement('span', { 'data-name': name }, name),
+    Avatar: ({
+      name,
+      fallback,
+    }: {
+      name?: string
+      fallback?: React.ReactNode
+    }) => React.createElement('span', { 'data-name': name }, fallback ?? name),
     AvatarGroup: ({ children }: { children: React.ReactNode }) =>
       React.createElement('span', null, children),
     Chip: ({
@@ -80,7 +85,10 @@ jest.mock('../src/stores/category', () => ({
         {
           id: 'category-1',
           name: 'A very long shared dinner category name',
-          imageUrl: '/category.webp',
+          icon: {
+            kind: 'custom',
+            url: 'https://images.example.com/category.webp',
+          },
         },
       ],
     }),
@@ -191,6 +199,14 @@ describe('transaction surface presentation', () => {
     const card = row.closest('[data-ui="surface-card"]')
 
     expect(card).toBeTruthy()
+    const icon = row.querySelector('img[data-category-icon="custom"]')
+    expect(icon?.getAttribute('src')).toBe(
+      'https://images.example.com/category.webp'
+    )
+    expect(icon?.classList.contains('size-5')).toBe(true)
+    fireEvent.error(icon!)
+    const fallback = row.querySelector('svg[data-category-icon="fallback"]')
+    expect(fallback?.classList.contains('size-5')).toBe(true)
     expect(
       screen.getAllByText('Alexandra With A Long Participant Name').length
     ).toBeGreaterThan(0)
@@ -245,9 +261,6 @@ describe('transaction surface presentation', () => {
     expect(expenseFormSource).toContain('<PiGitBranchBold size={16}')
     expect(categorySelectorSource).toContain('<PiWarning size={14}')
     expect(categorySelectorSource).toContain('<PiPlus size={12}')
-    expect(
-      categorySelectorSource.match(/classNames={{ img: 'p-0.5' }}/g)
-    ).toHaveLength(2)
     expect(paidByDetailModalSource).toContain(
       'text-title font-semibold text-foreground'
     )

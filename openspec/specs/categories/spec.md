@@ -345,7 +345,7 @@ tests:
 ---
 ### Requirement: Users can add sub-categories directly within the transaction form
 
-The system SHALL allow users to create a new sub-category under a root category group from within the transaction form. The created sub-category SHALL immediately be saved to the category store and selected in the form.
+The system SHALL allow users to create a new sub-category under a root category group from within the transaction form. In newly created account books, the icon choice SHALL support built-in icons and custom image URLs with the same validation as Category Settings. The created sub-category SHALL immediately be saved to the category store and selected in the form.
 
 #### Scenario: User adds a sub-category from the transaction form
 
@@ -353,9 +353,53 @@ The system SHALL allow users to create a new sub-category under a root category 
 - **AND** submits a valid name and icon for the sub-category
 - **THEN** the system SHALL create the sub-category with the selected root group's ID as `parentId` and the matching transaction type, persist it to the database, and automatically select the new sub-category in the transaction form
 
+#### Scenario: User adds a sub-category with a custom image from the transaction form
+
+- **WHEN** a user in a newly created account book submits a valid name and an absolute HTTPS image URL without embedded credentials for a new sub-category in the transaction form
+- **THEN** the system SHALL persist the custom URL with the new sub-category and show its icon on the selected category
+- **AND** the saved sub-category SHALL retain the URL when the account book is reopened
+
 <!-- @trace
-source: add-subcategory-in-transaction-form
-updated: 2026-07-16
+source: customize-category-icons
+updated: 2026-11-26
 code:
+  - .vscode/settings.json
+  - apps/web/src/components/categorySettings/SubCategoryItem.tsx
+  - apps/web/src/components/categorySettings/AddCategoryModal.tsx
+  - apps/web/src/components/categorySettings/CategorySettingsPage.tsx
+  - apps/web/src/components/report/reportTypes.ts
+  - apps/web/src/components/transaction/TransactionList.tsx
+  - apps/web/src/constants/categoryIcons.ts
+  - apps/web/src/i18n/messages/zh-TW.json
+  - apps/web/src/entities/category.ts
+  - apps/web/src/components/ui/CategoryIcon.tsx
+  - apps/web/src/utils/reportAggregate.ts
+  - apps/web/src/components/report/CategoryTransactionsModal.tsx
+  - apps/web/src/components/report/ReportCategoryBreakdown.tsx
+  - apps/web/src/components/categorySettings/CategoryGroupItem.tsx
+  - apps/web/src/i18n/messages/en-US.json
+  - apps/web/DESIGN.md
+  - apps/web/src/mocks/category.ts
+  - apps/web/src/constants/defaultCategories.ts
   - apps/web/src/components/TransactionModal/CategorySelector.tsx
+tests:
+  - apps/web/specs/categoryMemberPresentation.spec.tsx
+  - apps/web/specs/transactionSurfacePresentation.spec.tsx
+  - apps/web/specs/categoryIcon.spec.tsx
+  - apps/web/specs/transactionCategoryQuickAdd.spec.tsx
+  - apps/web/specs/reportSection.spec.tsx
+  - apps/web/specs/categorySettingsIcons.spec.tsx
+  - apps/web/specs/reportAggregate.spec.ts
+  - apps/web/src/utils/csvExport.test.ts
+  - apps/web/specs/categoryTransactionsModalPresentation.spec.tsx
+  - apps/web/specs/category.spec.ts
+  - apps/web/specs/transactionUtils.spec.ts
+  - apps/web/src/constants/defaultCategories.test.ts
+  - apps/web/specs/settlementPage.spec.tsx
+  - apps/web/specs/categoryStore.spec.ts
+  - apps/web-e2e/src/category-icons.spec.ts
+  - apps/web/specs/homeTransactions.spec.tsx
+  - apps/web/specs/settlementRecordDetailPage.spec.tsx
+  - apps/web/specs/reportCategoryBreakdown.spec.tsx
+  - apps/web/specs/accountBookSettings.spec.tsx
 -->

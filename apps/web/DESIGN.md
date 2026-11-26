@@ -168,7 +168,9 @@ Duoji is flat by default and uses depth only to separate overlays, the floating 
 ### Buttons
 
 - **Shape:** gently curved rectangles (`12px`) with a minimum height of `44px`; pills are limited to compact filters and chips.
-- **Primary:** Sage Action with white text and `10px 16px` padding; one primary action per immediate decision area.
+- **Primary:** Sage Action with `10px 16px` padding and one primary action per immediate decision area.
+- **Foreground:** Use white (`#FFFFFF`) for labels and icons on dark button fills. This covers solid primary, danger, and success in both themes and solid neutral in dark mode. Light fills use the theme’s contrasting foreground.
+- **Implementation:** Use `AppButton` for semantic actions. Set `tone` and `appearance` to select the shared fill and foreground. Keep the foreground in the component so feature-level typography classes such as `text-body` can change the size independently.
 - **Hover / Focus:** darken the current semantic color, use a 150–200ms color transition, and expose the focus treatment without movement.
 - **Secondary / Ghost:** use Surface Muted or a single Warm Divider boundary. Disabled controls retain readable labels and expose their existing explanation.
 
@@ -184,6 +186,21 @@ Duoji is flat by default and uses depth only to separate overlays, the floating 
 - **Shadow Strategy:** Ambient Low only when separation from the canvas is necessary.
 - **Border:** Warm Divider replaces the shadow for forms, lists, and grouped settings.
 - **Internal Padding:** `16px` on mobile and `24px` for spacious route-level groups.
+
+### Category icons
+
+Center the icon in its slot. Built-in icons, custom images, and the Shapes fallback share the same visual bounds on each surface. Fit custom images proportionally within those bounds so the entire image is visible. Keep the interactive area of the containing control independent of the artwork size.
+
+| Surface | Container | Icon bounds |
+| --- | --- | --- |
+| Transaction and settlement cards | 44px circle | 20px |
+| Transaction category selector tabs and child cards | 20px circle | 16px with a 2px inset |
+| Report category breakdown | 32px circle | 24px with a 4px inset |
+| Report category detail header | 44px circle | 20px |
+| Report category detail transaction row | 36px circle | 18px |
+| Category settings root and child rows | 40px and 36px circles | 18px and 14px, respectively |
+| Built-in picker | Button at least 44px in each dimension | 20px |
+| Custom image preview | 32px square | 32px |
 
 ### Inputs / Fields
 

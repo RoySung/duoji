@@ -5,6 +5,7 @@ import {
   PiPencilSimpleDuotone,
   PiTrashDuotone,
 } from 'react-icons/pi'
+import CategoryIcon from '@/components/ui/CategoryIcon'
 import { Category } from '@/entities/category'
 
 type SubCategoryItemProps = {
@@ -33,10 +34,9 @@ export default function SubCategoryItem({
       />
 
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary">
-        <img
-          alt={category.name}
-          className="size-[14px]"
-          src={category.imageUrl}
+        <CategoryIcon
+          className="size-[14px] text-muted-foreground"
+          icon={category.icon}
         />
       </div>
       <span className="min-w-0 flex-1 truncate text-body text-foreground">

@@ -9,6 +9,7 @@ import {
   PiTrashDuotone,
 } from 'react-icons/pi'
 import { Category } from '@/entities/category'
+import CategoryIcon from '@/components/ui/CategoryIcon'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import SubCategoryItem from './SubCategoryItem'
 
@@ -80,7 +81,10 @@ export default function CategoryGroupItem({
           onClick={() => setIsExpanded((v) => !v)}
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary">
-            <img alt={root.name} className="size-[18px]" src={root.imageUrl} />
+            <CategoryIcon
+              className="size-[18px] text-muted-foreground"
+              icon={root.icon}
+            />
           </div>
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-body font-semibold text-foreground">

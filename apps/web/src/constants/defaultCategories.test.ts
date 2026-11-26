@@ -2,13 +2,13 @@ import {
   getDefaultExpenseCategories,
   getDefaultIncomeCategories,
 } from './defaultCategories'
+import { BUILTIN_CATEGORY_ICONS } from './categoryIcons'
 
 describe('defaultCategories', () => {
   it('seeds expense categories with Chinese names when locale is zh-TW', () => {
     const cats = getDefaultExpenseCategories('ab-1', 'zh-TW')
-    const food = cats.find((c) => c.parentId === null && c.imageUrl)
+    const food = cats.find((c) => c.parentId === null && c.name === '餐飲')
     expect(food).toBeDefined()
-    expect(cats.some((c) => c.name === '餐飲')).toBe(true)
     expect(cats.some((c) => c.name === '食材費')).toBe(true)
     expect(cats.some((c) => c.name === '居家帳單')).toBe(true)
     expect(cats.some((c) => c.name === '其他')).toBe(true)
@@ -56,4 +56,30 @@ describe('defaultCategories', () => {
     const income = getDefaultIncomeCategories('ab-1', 'en-US', expense.length)
     expect(income[0].sortOrder).toBe(expense.length)
   })
+
+  it.each(['en-US', 'zh-TW'] as const)(
+    'assigns a built-in catalog key to default root and child categories in %s',
+    (locale) => {
+      const expense = getDefaultExpenseCategories('book', locale)
+      const income = getDefaultIncomeCategories('book', locale, expense.length)
+
+      for (const categories of [expense, income]) {
+        expect(
+          categories.some((category) => category.parentId === null)
+        ).toBe(true)
+        expect(
+          categories.some((category) => category.parentId !== null)
+        ).toBe(true)
+        for (const category of categories) {
+          expect(category.icon).toEqual({
+            kind: 'builtin',
+            key: expect.any(String),
+          })
+          if (category.icon?.kind === 'builtin') {
+            expect(BUILTIN_CATEGORY_ICONS).toHaveProperty(category.icon.key)
+          }
+        }
+      }
+    }
+  )
 })

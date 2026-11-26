@@ -41,9 +41,8 @@ const appearanceVariant: Record<
 /**
  * Application-owned semantic entry point for HeroUI buttons.
  *
- * Solid primary, danger, and success treatments receive their white foreground
- * from the shared HeroUI theme. Other treatments intentionally retain HeroUI's
- * contrast-appropriate foregrounds.
+ * Dark solid fills use white labels. Apply the important foreground utility
+ * after caller classes so class merging preserves it alongside custom typography.
  */
 export const AppButton = forwardRef<HTMLButtonElement, AppButtonProps>(
   ({ className, tone = 'primary', appearance = 'solid', ...props }, ref) => {
@@ -55,7 +54,11 @@ export const AppButton = forwardRef<HTMLButtonElement, AppButtonProps>(
       <Button
         {...props}
         ref={ref}
-        className={cn(usesWhiteSolidForeground && '!text-white', className)}
+        className={cn(
+          className,
+          usesWhiteSolidForeground && '!text-white',
+          appearance === 'solid' && tone === 'neutral' && 'dark:!text-white'
+        )}
         color={toneColor[tone]}
         variant={appearanceVariant[appearance]}
       />

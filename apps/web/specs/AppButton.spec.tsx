@@ -110,6 +110,23 @@ describe('AppButton', () => {
     }
   )
 
+  it('keeps the foreground white when callers supply typography and color classes', () => {
+    render(<AppButton className="text-body !text-foreground">Save</AppButton>)
+
+    const classes = screen.getByRole('button', { name: 'Save' }).classList
+    expect(classes.contains('text-body')).toBe(true)
+    expect(classes.contains('!text-white')).toBe(true)
+    expect(classes.contains('!text-foreground')).toBe(false)
+  })
+
+  it('uses white on the dark theme solid neutral fill', () => {
+    render(<AppButton tone="neutral">Action</AppButton>)
+
+    const classes = screen.getByRole('button', { name: 'Action' }).classList
+    expect(classes.contains('dark:!text-white')).toBe(true)
+    expect(classes.contains('!text-white')).toBe(false)
+  })
+
   it('forwards disabled, loading, keyboard, press, ARIA, test-id, and ref behavior', () => {
     const onKeyDown = jest.fn()
     const onPress = jest.fn()

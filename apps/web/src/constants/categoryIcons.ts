@@ -1,98 +1,153 @@
-const BASE = 'https://api.iconify.design'
-const PARAMS = '?color=%23666666&width=100&height=100'
+import {
+  Activity,
+  Baby,
+  Banknote,
+  Book,
+  BookOpen,
+  Box,
+  Briefcase,
+  Building,
+  Bus,
+  Calendar,
+  Car,
+  CarTaxiFront,
+  Cat,
+  ChartLine,
+  ChefHat,
+  CirclePlus,
+  Clock,
+  Coffee,
+  Cookie,
+  CreditCard,
+  Dog,
+  Droplet,
+  FileText,
+  Film,
+  Fuel,
+  Gamepad2,
+  Gift,
+  GraduationCap,
+  HeartPulse,
+  Home,
+  Laptop,
+  MapPin,
+  Music,
+  Package,
+  PawPrint,
+  Phone,
+  Pill,
+  Plane,
+  Receipt,
+  Sandwich,
+  School,
+  Scissors,
+  Shapes,
+  Shirt,
+  ShoppingBag,
+  Smartphone,
+  Sparkles,
+  SquareParking,
+  Stethoscope,
+  Ticket,
+  TrendingUp,
+  Trophy,
+  Undo,
+  Users,
+  Utensils,
+  Wallet,
+  Wifi,
+  Wrench,
+  Zap,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
-function iconUrl(set: string, name: string): string {
-  return `${BASE}/${set}:${name}.svg${PARAMS}`
-}
-
-// All available category icons, keyed by semantic name.
-// Add entries here to make new icons available throughout the app.
-export const CATEGORY_ICONS = {
+export const BUILTIN_CATEGORY_ICONS = {
   // Food & Dining
-  utensils: iconUrl('lucide', 'utensils'),
-  coffee: iconUrl('lucide', 'coffee'),
-  sandwich: iconUrl('lucide', 'sandwich'),
-  'chef-hat': iconUrl('lucide', 'chef-hat'),
-  cookie: iconUrl('lucide', 'cookie'),
+  utensils: Utensils,
+  coffee: Coffee,
+  sandwich: Sandwich,
+  'chef-hat': ChefHat,
+  cookie: Cookie,
 
   // Shopping
-  'shopping-bag': iconUrl('lucide', 'shopping-bag'),
-  shirt: iconUrl('lucide', 'shirt'),
-  'book-open': iconUrl('lucide', 'book-open'),
-  smartphone: iconUrl('lucide', 'smartphone'),
+  'shopping-bag': ShoppingBag,
+  shirt: Shirt,
+  'book-open': BookOpen,
+  smartphone: Smartphone,
 
   // Transportation
-  car: iconUrl('lucide', 'car'),
-  bus: iconUrl('lucide', 'bus'),
-  taxi: iconUrl('lucide', 'car-taxi-front'),
-  fuel: iconUrl('lucide', 'fuel'),
-  parking: iconUrl('lucide', 'square-parking'),
+  car: Car,
+  bus: Bus,
+  taxi: CarTaxiFront,
+  fuel: Fuel,
+  parking: SquareParking,
 
   // Entertainment
-  music: iconUrl('lucide', 'music'),
-  film: iconUrl('lucide', 'film'),
-  'gamepad-2': iconUrl('lucide', 'gamepad-2'),
+  music: Music,
+  film: Film,
+  'gamepad-2': Gamepad2,
 
   // Healthcare
-  'heart-pulse': iconUrl('lucide', 'heart-pulse'),
-  stethoscope: iconUrl('lucide', 'stethoscope'),
-  pill: iconUrl('lucide', 'pill'),
+  'heart-pulse': HeartPulse,
+  stethoscope: Stethoscope,
+  pill: Pill,
 
   // Education
-  'graduation-cap': iconUrl('lucide', 'graduation-cap'),
-  school: iconUrl('lucide', 'school'),
-  book: iconUrl('lucide', 'book'),
+  'graduation-cap': GraduationCap,
+  school: School,
+  book: Book,
 
   // Finance / Income
-  banknote: iconUrl('lucide', 'banknote'),
-  wallet: iconUrl('lucide', 'wallet'),
-  clock: iconUrl('lucide', 'clock'),
-  gift: iconUrl('lucide', 'gift'),
-  'trending-up': iconUrl('lucide', 'trending-up'),
-  'line-chart': iconUrl('lucide', 'line-chart'),
-  'file-text': iconUrl('lucide', 'file-text'),
-  building: iconUrl('lucide', 'building'),
+  banknote: Banknote,
+  wallet: Wallet,
+  clock: Clock,
+  gift: Gift,
+  'trending-up': TrendingUp,
+  'line-chart': ChartLine,
+  'file-text': FileText,
+  building: Building,
 
   // Work / Business
-  briefcase: iconUrl('lucide', 'briefcase'),
-  laptop: iconUrl('lucide', 'laptop'),
-  users: iconUrl('lucide', 'users'),
+  briefcase: Briefcase,
+  laptop: Laptop,
+  users: Users,
 
   // Pets
-  'paw-print': iconUrl('lucide', 'paw-print'),
-  dog: iconUrl('lucide', 'dog'),
-  cat: iconUrl('lucide', 'cat'),
+  'paw-print': PawPrint,
+  dog: Dog,
+  cat: Cat,
 
   // Supplies
-  package: iconUrl('lucide', 'package'),
-  box: iconUrl('lucide', 'box'),
-  wrench: iconUrl('lucide', 'wrench'),
-  sparkles: iconUrl('lucide', 'sparkles'),
+  package: Package,
+  box: Box,
+  wrench: Wrench,
+  sparkles: Sparkles,
 
   // Activities
-  calendar: iconUrl('lucide', 'calendar'),
-  ticket: iconUrl('lucide', 'ticket'),
-  trophy: iconUrl('lucide', 'trophy'),
-  activity: iconUrl('lucide', 'activity'),
+  calendar: Calendar,
+  ticket: Ticket,
+  trophy: Trophy,
+  activity: Activity,
 
   // Daily / Utilities
-  home: iconUrl('lucide', 'home'),
-  droplet: iconUrl('lucide', 'droplet'),
-  zap: iconUrl('lucide', 'zap'),
-  phone: iconUrl('lucide', 'phone'),
-  wifi: iconUrl('lucide', 'wifi'),
-  baby: iconUrl('lucide', 'baby'),
-  plane: iconUrl('lucide', 'plane'),
-  'map-pin': iconUrl('lucide', 'map-pin'),
-  receipt: iconUrl('lucide', 'receipt'),
-  scissors: iconUrl('lucide', 'scissors'),
+  home: Home,
+  droplet: Droplet,
+  zap: Zap,
+  phone: Phone,
+  wifi: Wifi,
+  baby: Baby,
+  plane: Plane,
+  'map-pin': MapPin,
+  receipt: Receipt,
+  scissors: Scissors,
 
   // Misc
-  'plus-circle': iconUrl('lucide', 'plus-circle'),
-  'credit-card': iconUrl('lucide', 'credit-card'),
-  undo: iconUrl('lucide', 'undo'),
-} as const
+  shapes: Shapes,
+  'plus-circle': CirclePlus,
+  'credit-card': CreditCard,
+  undo: Undo,
+} satisfies Record<string, LucideIcon>
 
-export type CategoryIconKey = keyof typeof CATEGORY_ICONS
+export type CategoryIconKey = keyof typeof BUILTIN_CATEGORY_ICONS
 
-export const DEFAULT_CATEGORY_ICON_KEY: CategoryIconKey = 'plus-circle'
+export const DEFAULT_CATEGORY_ICON_KEY: CategoryIconKey = 'shapes'

@@ -16,6 +16,7 @@ import {
   PiReceiptBold,
 } from 'react-icons/pi'
 import type { ApexOptions } from 'apexcharts'
+import CategoryIcon from '@/components/ui/CategoryIcon'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
 import { formatAmount } from '@/utils/amountUtils'
 import CategoryTransactionsModal from './CategoryTransactionsModal'
@@ -56,7 +57,7 @@ function buildDirectSummary(
   return {
     key: `${DIRECT_SUMMARY_PREFIX}${root.key}`,
     displayName: directLabel,
-    imageUrl: null,
+    icon: null,
     totalAmount: root.directAmount,
     transactionCount: root.directTransactionCount,
     directAmount: root.directAmount,
@@ -303,12 +304,17 @@ function BreakdownList({
             : 'border-border bg-card hover:border-primary/45 hover:bg-accent/10'
         }`}
       >
-        {summary.imageUrl ? (
+        {summary.icon ? (
           <Avatar
             className="row-span-2 h-8 w-8 bg-content2 lg:row-auto"
-            classNames={{ img: 'p-1' }}
+            classNames={{ fallback: 'size-full' }}
+            fallback={
+              <CategoryIcon
+                className="size-full p-1 text-muted-foreground"
+                icon={summary.icon}
+              />
+            }
             name={summary.displayName}
-            src={summary.imageUrl}
           />
         ) : (
           <div

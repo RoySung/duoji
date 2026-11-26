@@ -1,14 +1,12 @@
 import { Category } from '@/entities/category'
-import { CATEGORY_ICONS } from '@/constants/categoryIcons'
+import type { CategoryIconKey } from '@/constants/categoryIcons'
 import { genUuid } from '@/utils/genUuid'
 import type { Language } from '@/entities/settings'
-
-const I = CATEGORY_ICONS
 
 type DefaultCategoryRaw = {
   name: string
   description: string
-  icon: keyof typeof CATEGORY_ICONS
+  icon: CategoryIconKey
   children?: DefaultCategoryRaw[]
 }
 
@@ -303,7 +301,7 @@ function buildCategories(
       name: node.name,
       description: node.description,
       type,
-      imageUrl: I[node.icon],
+      icon: { kind: 'builtin', key: node.icon },
       parentId: null,
       accountBookId,
       sortOrder: order++,
@@ -314,7 +312,7 @@ function buildCategories(
         name: child.name,
         description: child.description,
         type,
-        imageUrl: I[child.icon],
+        icon: { kind: 'builtin', key: child.icon },
         parentId,
         accountBookId,
         sortOrder: order++,

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { AccountBook } from '@/entities/accountBook'
-import { Category } from '@/entities/category'
+import type { Category, CategoryIcon } from '@/entities/category'
 import { Transaction, TransactionType } from '@/entities/transaction'
 import {
   CategoryAggregateOptions,
@@ -88,7 +88,7 @@ export function groupByCategory(
   type Bucket = {
     key: string
     displayName: string
-    imageUrl: string | null
+    icon: CategoryIcon | null
     totalAmount: number
     transactionCount: number
     directAmount: number
@@ -163,7 +163,7 @@ export function groupByCategory(
   const toSummary = (bucket: Bucket): CategorySummary => ({
     key: bucket.key,
     displayName: bucket.displayName,
-    imageUrl: bucket.imageUrl,
+    icon: bucket.icon,
     totalAmount: bucket.totalAmount,
     transactionCount: bucket.transactionCount,
     directAmount: bucket.directAmount,
@@ -185,7 +185,7 @@ export function groupByCategory(
 type CategoryBucketIdentity = {
   key: string
   displayName: string
-  imageUrl: string | null
+  icon: CategoryIcon | null
 }
 
 function encodeCategoryKeySegment(value: string): string {
@@ -214,7 +214,7 @@ function getMalformedCategoryBucketIdentity(
       category.id
     )}`,
     displayName: category.name,
-    imageUrl: category.imageUrl,
+    icon: category.icon ?? null,
   }
 }
 
@@ -285,7 +285,7 @@ export function getCategoryHierarchyIdentity(
           category
         ),
         displayName: category.name,
-        imageUrl: category.imageUrl,
+        icon: category.icon ?? null,
       }
     : getCategoryBucketIdentity(transaction, category, false)
 
@@ -331,7 +331,7 @@ export function getCategoryBucketIdentity(
     return {
       key: `uncategorized::${transaction.type}`,
       displayName: UNCATEGORIZED_DISPLAY_NAME,
-      imageUrl: null,
+      icon: null,
     }
   }
 
@@ -339,14 +339,14 @@ export function getCategoryBucketIdentity(
     return {
       key: getCategoryBucketKey(transaction.type, category, true),
       displayName: category.name,
-      imageUrl: category.imageUrl,
+      icon: category.icon ?? null,
     }
   }
 
   return {
     key: getCategoryBucketKey(transaction.type, category, false),
     displayName: category.name,
-    imageUrl: category.imageUrl,
+    icon: category.icon ?? null,
   }
 }
 

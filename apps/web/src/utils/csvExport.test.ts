@@ -24,7 +24,7 @@ const baseTransaction: Transaction = {
 const baseCategory: Category = {
   id: 'cat-1',
   name: 'Food',
-  imageUrl: 'https://example.com/food.png',
+  icon: { kind: 'custom', url: 'https://example.com/food.png' } as const,
   description: '',
   type: 'expense',
   parentId: null,

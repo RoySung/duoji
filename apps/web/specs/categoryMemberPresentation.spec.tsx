@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ReactNode } from 'react'
-import { DEFAULT_CATEGORY_ICON_KEY } from '../src/constants/categoryIcons'
 import UserSection from '../src/components/accountBookSettings/UserSection'
 import AddCategoryModal from '../src/components/categorySettings/AddCategoryModal'
 import CategoryGroupItem from '../src/components/categorySettings/CategoryGroupItem'
@@ -52,6 +51,12 @@ jest.mock('next-intl', () => ({
       'categorySettings.deleteModal.title': 'Delete Category',
       'categorySettings.expense': 'Expense',
       'categorySettings.icon': 'Icon',
+      'categorySettings.iconSource.builtin': 'Built-in',
+      'categorySettings.iconSource.custom': 'Custom image',
+      'categorySettings.iconUrl': 'Image URL',
+      'categorySettings.iconUrlInvalid': 'Enter a valid HTTPS image URL.',
+      'categorySettings.iconPreview': 'Custom image preview',
+      'categorySettings.iconPreviewFailed': 'Image could not load.',
       'categorySettings.name': 'Name',
       'categorySettings.namePlaceholder': 'e.g. Dining',
       'categorySettings.nameRequired': 'Name is required.',
@@ -174,7 +179,7 @@ jest.mock('framer-motion', () => {
 const rootCategory = {
   id: 'root-1',
   name: 'A very long dining and household category group name',
-  imageUrl: 'https://example.com/dining.svg',
+  icon: { kind: 'builtin', key: 'utensils' } as const,
   description: '',
   type: 'expense' as const,
   parentId: null,
@@ -187,6 +192,10 @@ const subCategory = {
   id: 'sub-1',
   name: 'A very long neighborhood breakfast sub-category name',
   parentId: rootCategory.id,
+  icon: {
+    kind: 'custom',
+    url: 'https://images.example.com/breakfast',
+  } as const,
 }
 
 describe('Category and member presentation', () => {
@@ -221,6 +230,7 @@ describe('Category and member presentation', () => {
 
     const expandButton = rootName.closest('button')
     expect(expandButton?.className).toContain('min-h-11')
+    expect(expandButton?.querySelector('svg.lucide-utensils')).toBeTruthy()
 
     const editButton = screen.getByRole('button', {
       name: `Edit: ${rootCategory.name}`,
@@ -234,6 +244,14 @@ describe('Category and member presentation', () => {
     fireEvent.click(editButton)
     fireEvent.click(deleteButton)
     fireEvent.click(expandButton!)
+
+    const childRow = screen.getByText(subCategory.name).parentElement
+    const customIcon = childRow?.querySelector('img')
+    expect(customIcon?.getAttribute('src')).toBe(subCategory.icon.url)
+    fireEvent.error(customIcon!)
+    expect(
+      childRow?.querySelector('svg[data-category-icon="fallback"]')
+    ).toBeTruthy()
 
     expect(onEditRoot).toHaveBeenCalledWith(rootCategory)
     expect(onDeleteRoot).toHaveBeenCalledWith(rootCategory)
@@ -269,10 +287,15 @@ describe('Category and member presentation', () => {
     expect(screen.getByText('Name is required.')).toBeTruthy()
     expect(onSubmit).not.toHaveBeenCalled()
 
-    const firstIconButton = screen.getAllByRole('button', {
-      pressed: false,
-    })[0]
+    const firstIconButton = screen.getByRole('button', {
+      name: 'categorySettings.iconOptions.utensils',
+    })
     expect(firstIconButton?.className).toContain('min-h-11')
+    const selectedIcon = screen.getByRole('button', {
+      name: 'categorySettings.iconOptions.shapes',
+      pressed: true,
+    })
+    expect(selectedIcon.querySelector('svg.lucide-shapes')).toBeTruthy()
 
     fireEvent.change(screen.getByPlaceholderText('e.g. Dining'), {
       target: { value: 'Dining' },
@@ -281,10 +304,96 @@ describe('Category and member presentation', () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       name: 'Dining',
-      iconKey: DEFAULT_CATEGORY_ICON_KEY,
+      icon: { kind: 'builtin', key: 'shapes' },
       type: 'expense',
     })
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('previews a custom URL while the field stays focused and saves it if loading fails', async () => {
+    const onSubmit = jest.fn()
+    render(
+      <AddCategoryModal
+        isOpen
+        sectionType="expense"
+        onClose={jest.fn()}
+        onSubmit={onSubmit}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'Coffee' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Custom image' }))
+
+    const urlInput = screen.getByLabelText('Image URL')
+    const add = screen.getByRole('button', { name: 'Add' })
+    fireEvent.change(urlInput, {
+      target: { value: 'http://images.example.com/icon' },
+    })
+    fireEvent.click(add)
+    expect(screen.getByText('Enter a valid HTTPS image URL.')).toBeTruthy()
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    const url = 'https://images.example.com/icon?id=coffee'
+    fireEvent.focus(urlInput)
+    for (const value of ['https://images', 'https://images.example.co', `  ${url}  `]) {
+      fireEvent.change(urlInput, { target: { value } })
+      expect(screen.queryByRole('img', { name: 'Custom image preview' })).toBeNull()
+    }
+    const preview = await screen.findByRole('img', {
+      name: 'Custom image preview',
+    })
+    expect(preview.getAttribute('src')).toBe(url)
+
+    fireEvent.error(preview)
+    expect(screen.getByRole('status').textContent).toBe('Image could not load.')
+    expect(
+      screen.getByRole('img', { name: 'Custom image preview' }).tagName
+    ).toBe('svg')
+
+    fireEvent.click(add)
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'Coffee',
+      icon: { kind: 'custom', url },
+      type: 'expense',
+    })
+  })
+
+  it('switches a saved custom image back to a grid selection', () => {
+    const onSubmit = jest.fn()
+    const url = 'https://images.example.com/icon?id=coffee'
+    render(
+      <AddCategoryModal
+        isOpen
+        mode="edit"
+        initialValues={{ name: 'Coffee', icon: { kind: 'custom', url } }}
+        onClose={jest.fn()}
+        onSubmit={onSubmit}
+      />
+    )
+
+    expect((screen.getByLabelText('Image URL') as HTMLInputElement).value).toBe(
+      url
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Built-in' }))
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'categorySettings.iconOptions.coffee',
+      })
+    )
+    expect(
+      screen
+        .getByRole('button', { name: 'categorySettings.iconOptions.coffee' })
+        .getAttribute('aria-pressed')
+    ).toBe('true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'Coffee',
+      icon: { kind: 'builtin', key: 'coffee' },
+      type: 'expense',
+    })
   })
 
   it('wraps destructive confirmation content and preserves both callbacks', () => {

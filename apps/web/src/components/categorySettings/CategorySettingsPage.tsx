@@ -2,12 +2,7 @@ import { Button, Tab, Tabs, addToast } from '@heroui/react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Reorder, useDragControls } from 'framer-motion'
-import {
-  CATEGORY_ICONS,
-  CategoryIconKey,
-  DEFAULT_CATEGORY_ICON_KEY,
-} from '@/constants/categoryIcons'
-import { Category } from '@/entities/category'
+import type { Category, CategoryIcon } from '@/entities/category'
 import { TransactionType } from '@/entities/transaction'
 import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
@@ -17,7 +12,7 @@ import {
   PiXBold,
 } from 'react-icons/pi'
 import AccountBookNavHeader from '@/components/accountBookSettings/AccountBookNavHeader'
-import AddCategoryModal from './AddCategoryModal'
+import AddCategoryModal, { type CategoryFormValues } from './AddCategoryModal'
 import CategoryGroupItem from './CategoryGroupItem'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
@@ -130,12 +125,12 @@ export default function CategorySettingsPage({
   // --- Draft operations ---
   function draftAdd({
     name,
-    iconKey,
+    icon,
     type,
     parentId = null,
   }: {
     name: string
-    iconKey: CategoryIconKey
+    icon: CategoryIcon
     type: TransactionType
     parentId?: string | null
   }) {
@@ -152,7 +147,7 @@ export default function CategorySettingsPage({
     const newCat: Category = {
       id: draftId,
       name,
-      imageUrl: CATEGORY_ICONS[iconKey],
+      icon,
       description: '',
       type,
       parentId,
@@ -164,11 +159,9 @@ export default function CategorySettingsPage({
     setIsDirty(true)
   }
 
-  function draftEdit(id: string, name: string, iconKey: CategoryIconKey) {
+  function draftEdit(id: string, name: string, icon: CategoryIcon) {
     setDraftCategories((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, name, imageUrl: CATEGORY_ICONS[iconKey] } : c
-      )
+      prev.map((c) => (c.id === id ? { ...c, name, icon } : c))
     )
     if (!addedIds.current.has(id)) editedIds.current.add(id)
     setIsDirty(true)
@@ -230,7 +223,7 @@ export default function CategorySettingsPage({
       for (const cat of draftRoots) {
         const created = await addCategory({
           name: cat.name,
-          imageUrl: cat.imageUrl,
+          icon: cat.icon,
           description: cat.description,
           type: cat.type,
           parentId: null,
@@ -248,7 +241,7 @@ export default function CategorySettingsPage({
         const realParentId = draftToReal.get(cat.parentId!) ?? cat.parentId!
         await addCategory({
           name: cat.name,
-          imageUrl: cat.imageUrl,
+          icon: cat.icon,
           description: cat.description,
           type: cat.type,
           parentId: realParentId,
@@ -264,7 +257,7 @@ export default function CategorySettingsPage({
         if (!cat) continue
         await updateCategory(id, {
           name: cat.name,
-          imageUrl: cat.imageUrl,
+          icon: cat.icon,
           sortOrder: cat.sortOrder,
         })
       }
@@ -306,27 +299,13 @@ export default function CategorySettingsPage({
   }
 
   // --- Modal submit handlers ---
-  function handleAddSubmit({
-    name,
-    iconKey,
-    type,
-  }: {
-    name: string
-    iconKey: CategoryIconKey
-    type: TransactionType
-  }) {
-    draftAdd({ name, iconKey, type, parentId: parentForModal?.id ?? null })
+  function handleAddSubmit(values: CategoryFormValues) {
+    draftAdd({ ...values, parentId: parentForModal?.id ?? null })
     setAddModalOpen(false)
   }
 
-  function handleEditSubmit({
-    name,
-    iconKey,
-  }: {
-    name: string
-    iconKey: CategoryIconKey
-  }) {
-    if (editTarget) draftEdit(editTarget.id, name, iconKey)
+  function handleEditSubmit({ name, icon }: CategoryFormValues) {
+    if (editTarget) draftEdit(editTarget.id, name, icon)
     setEditModalOpen(false)
     setEditTarget(null)
   }
@@ -393,9 +372,7 @@ export default function CategorySettingsPage({
   const editInitialValues = editTarget
     ? {
         name: editTarget.name,
-        iconKey: (Object.entries(CATEGORY_ICONS).find(
-          ([, url]) => url === editTarget.imageUrl
-        )?.[0] ?? DEFAULT_CATEGORY_ICON_KEY) as CategoryIconKey,
+        icon: editTarget.icon,
       }
     : undefined
 

@@ -8,6 +8,7 @@ import {
 import { PiQuestionMark, PiReceiptBold } from 'react-icons/pi'
 import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
+import CategoryIcon from '@/components/ui/CategoryIcon'
 import { useCategoryStore } from '@/stores/category'
 import { formatAmount } from '@/utils/amountUtils'
 import { CategorySummary } from './reportTypes'
@@ -52,11 +53,17 @@ export default function CategoryTransactionsModal({
       <DrawerContent className="bg-card text-card-foreground shadow-[0_18px_60px_rgba(20,31,29,0.24)]">
         <DrawerHeader className="flex flex-col gap-1 border-b border-border px-4 pb-4 pt-5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            {summary?.imageUrl ? (
+            {summary?.icon ? (
               <Avatar
                 className="h-11 w-11 shrink-0 bg-secondary"
                 name={displayName}
-                src={summary.imageUrl}
+                classNames={{ fallback: 'size-full' }}
+                fallback={
+                  <CategoryIcon
+                    className="size-5 text-muted-foreground"
+                    icon={summary.icon}
+                  />
+                }
               />
             ) : (
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
@@ -105,7 +112,13 @@ export default function CategoryTransactionsModal({
                         <Avatar
                           className="mt-0.5 h-9 w-9 shrink-0 bg-secondary"
                           name={category.name}
-                          src={category.imageUrl}
+                          classNames={{ fallback: 'size-full' }}
+                          fallback={
+                            <CategoryIcon
+                              className="size-[18px] text-muted-foreground"
+                              icon={category.icon}
+                            />
+                          }
                         />
                       ) : (
                         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-content2 text-muted-foreground">

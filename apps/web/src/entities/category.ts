@@ -1,10 +1,40 @@
 import { z } from 'zod'
+import { BUILTIN_CATEGORY_ICONS } from '@/constants/categoryIcons'
+import type { CategoryIconKey } from '@/constants/categoryIcons'
 import { TransactionType, TransactionTypeSchema } from './transaction'
+
+export function isCustomCategoryIconUrl(value: string): boolean {
+  if (!/^https:\/\/[^/\\?#]/i.test(value) || /[\s\\]/.test(value)) return false
+
+  try {
+    const url = new URL(value)
+    return Boolean(url.hostname && !url.username && !url.password)
+  } catch {
+    return false
+  }
+}
+
+export const CategoryIconSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('builtin'),
+    key: z.custom<CategoryIconKey>(
+      (key) =>
+        typeof key === 'string' &&
+        Object.prototype.hasOwnProperty.call(BUILTIN_CATEGORY_ICONS, key)
+    ),
+  }),
+  z.object({
+    kind: z.literal('custom'),
+    url: z.string().refine(isCustomCategoryIconUrl),
+  }),
+])
+
+export type CategoryIcon = z.infer<typeof CategoryIconSchema>
 
 export type Category = {
   id: string
   name: string
-  imageUrl: string
+  icon: CategoryIcon
   description: string
   type: TransactionType
   parentId: string | null
@@ -38,7 +68,7 @@ export type CategoryBulkDeleteResult = CategoryBulkResult<'deletedIds', string>
 export const CategorySchema: z.ZodType<Category> = z.object({
   id: z.string(),
   name: z.string(),
-  imageUrl: z.url(),
+  icon: CategoryIconSchema,
   description: z.string(),
   type: TransactionTypeSchema,
   parentId: z.string().nullable(),

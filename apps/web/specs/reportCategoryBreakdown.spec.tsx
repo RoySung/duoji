@@ -1,19 +1,23 @@
 /// <reference types="jest" />
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import ReportCategoryBreakdown from '../src/components/report/ReportCategoryBreakdown'
 import type { CategorySummary } from '../src/components/report/reportTypes'
 
 jest.mock('@heroui/react', () => ({
   Avatar: ({
-    classNames,
+    className,
+    fallback,
     name,
   }: {
-    classNames?: { img?: string }
+    className?: string
+    fallback?: ReactNode
     name: string
   }) => (
-    <div data-image-class={classNames?.img} data-testid={`avatar-${name}`} />
+    <div className={className} data-testid={`avatar-${name}`}>
+      {fallback}
+    </div>
   ),
   Tabs: ({
     children,
@@ -109,7 +113,7 @@ function makeSummary(
   const summary: CategorySummary = {
     key: 'name::expense::Food',
     displayName: 'Food',
-    imageUrl: null,
+    icon: null,
     totalAmount: 300,
     transactionCount: 1,
     directAmount: 300,
@@ -166,7 +170,7 @@ describe('ReportCategoryBreakdown', () => {
       makeSummary({
         key: 'name::expense::Food',
         displayName: 'A very long restaurant category name',
-        imageUrl: 'https://example.com/restaurant.svg',
+        icon: { kind: 'custom', url: 'https://example.com/restaurant.svg' },
         totalAmount: 1234567,
         transactionCount: 2,
         directAmount: 1234567,
@@ -233,12 +237,24 @@ describe('ReportCategoryBreakdown', () => {
     expect(screen.getByText(/2 records/).className).toContain('text-label')
     expect(screen.getByText('1,234,567 TWD').className).toContain('text-body')
     expect(screen.queryByText('Breakfast')).not.toBeNull()
+    const iconContainer = screen.getByTestId(
+      'avatar-A very long restaurant category name'
+    )
+    expect(iconContainer.className).toContain('h-8 w-8')
+    const image = within(iconContainer).getByAltText('')
+    expect(image.getAttribute('src')).toBe('https://example.com/restaurant.svg')
+    expect(image.className).toContain('p-1')
+    fireEvent.error(image)
     expect(
-      screen
-        .getByTestId('avatar-A very long restaurant category name')
-        .getAttribute('data-image-class')
-    ).toContain('p-1')
+      iconContainer.querySelector('svg[data-category-icon="fallback"]')
+    ).not.toBeNull()
     expect(screen.queryByTestId('avatar-Breakfast')).toBeNull()
+    const breakfastRow = screen.getByRole('button', {
+      name: 'Open Breakfast transactions',
+    })
+    const chartFallback = breakfastRow.firstElementChild
+    expect(chartFallback?.classList.contains('bg-content2')).toBe(true)
+    expect(chartFallback?.querySelector('svg')).not.toBeNull()
     const viewButton = screen.getByRole('button', {
       name: 'View transactions for A very long restaurant category name',
     })
@@ -250,7 +266,7 @@ describe('ReportCategoryBreakdown', () => {
     const expense = [
       makeSummary({
         totalAmount: 300,
-        imageUrl: 'https://example.com/food.svg',
+        icon: { kind: 'builtin', key: 'utensils' },
         percentage: 75,
       }),
       makeSummary({
@@ -298,7 +314,11 @@ describe('ReportCategoryBreakdown', () => {
     expect(foodRow.getAttribute('style')).toContain(
       '--category-chart-color: hsl(var(--chart-1))'
     )
-    expect(screen.queryByTestId('avatar-Food')).not.toBeNull()
+    const foodIcon = screen
+      .getByTestId('avatar-Food')
+      .querySelector('svg[data-category-icon="builtin"]')
+    expect(foodIcon?.getAttribute('class')).toContain('lucide-utensils')
+    expect(foodIcon?.getAttribute('class')).toContain('p-1')
     expect(transportRow.className).toContain('before:w-2')
     expect(transportRow.getAttribute('data-chart-color')).toBe(
       'hsl(var(--chart-2))'

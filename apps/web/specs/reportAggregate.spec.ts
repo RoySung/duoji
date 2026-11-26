@@ -62,7 +62,7 @@ function makeCategory(
     name,
     description: '',
     type: 'expense',
-    imageUrl: 'https://example.com/category.png',
+    icon: { kind: 'builtin', key: 'utensils' },
     parentId: null,
     accountBookId: 'ab-1',
     sortOrder: 0,
@@ -153,7 +153,13 @@ describe('groupByCategory', () => {
   it('rolls direct and child transactions into sorted root summaries', () => {
     const hierarchicalCategories = [
       makeCategory('food', 'Food'),
-      makeCategory('dining', 'Dining', { parentId: 'food' }),
+      makeCategory('dining', 'Dining', {
+        parentId: 'food',
+        icon: {
+          kind: 'custom',
+          url: 'https://images.example.com/icon?id=dining',
+        },
+      }),
       makeCategory('groceries', 'Groceries', { parentId: 'food' }),
       makeCategory('transport', 'Transport'),
       makeCategory('transit', 'Transit', { parentId: 'transport' }),
@@ -176,6 +182,7 @@ describe('groupByCategory', () => {
     const food = result[0]
     expect(food).toMatchObject({
       key: 'id::expense::food',
+      icon: { kind: 'builtin', key: 'utensils' },
       totalAmount: 500,
       transactionCount: 3,
       directAmount: 120,
@@ -194,6 +201,10 @@ describe('groupByCategory', () => {
       'Groceries',
     ])
     expect(food.children[0]).toMatchObject({
+      icon: {
+        kind: 'custom',
+        url: 'https://images.example.com/icon?id=dining',
+      },
       totalAmount: 300,
       transactionCount: 1,
       directAmount: 300,
@@ -215,6 +226,7 @@ describe('groupByCategory', () => {
       makeCategory('dining-a', 'Dining', {
         parentId: 'food-a',
         accountBookId: 'ab-1',
+        icon: { kind: 'custom', url: 'https://images.example.com/dining' },
       }),
       makeCategory('food-b', 'Food', { accountBookId: 'ab-2' }),
       makeCategory('dining-b', 'Dining', {
@@ -246,6 +258,7 @@ describe('groupByCategory', () => {
     expect(food.children[0]).toMatchObject({
       key: 'name::expense::Food::Dining',
       displayName: 'Dining',
+      icon: { kind: 'custom', url: 'https://images.example.com/dining' },
       totalAmount: 200,
     })
     expect(travel.children).toHaveLength(1)
@@ -262,6 +275,7 @@ describe('groupByCategory', () => {
     expect(result[0]).toMatchObject({
       key: 'uncategorized::expense',
       displayName: 'Uncategorized',
+      icon: null,
       totalAmount: 110,
       transactionCount: 2,
       directAmount: 110,

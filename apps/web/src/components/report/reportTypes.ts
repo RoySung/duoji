@@ -1,3 +1,4 @@
+import type { CategoryIcon } from '@/entities/category'
 import { Transaction, TransactionType } from '@/entities/transaction'
 
 export type TimeRangePreset = 'thisWeek' | 'month' | '3m' | '1y' | 'all'
@@ -5,7 +6,7 @@ export type TimeRangePreset = 'thisWeek' | 'month' | '3m' | '1y' | 'all'
 export type CategorySummary = {
   key: string
   displayName: string
-  imageUrl: string | null
+  icon: CategoryIcon | null
   totalAmount: number
   transactionCount: number
   directAmount: number

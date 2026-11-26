@@ -4,9 +4,10 @@ import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 import { PiWarning, PiPlus } from 'react-icons/pi'
 import { useCategoryStore } from '@/stores/category'
-import AddCategoryModal from '@/components/categorySettings/AddCategoryModal'
-import { CategoryIconKey, CATEGORY_ICONS } from '@/constants/categoryIcons'
-import { TransactionType } from '@/entities/transaction'
+import AddCategoryModal, {
+  type CategoryFormValues,
+} from '@/components/categorySettings/AddCategoryModal'
+import CategoryIcon from '@/components/ui/CategoryIcon'
 import { useTranslations } from 'next-intl'
 import { transactionTabsClassNames } from './formControlStyles'
 
@@ -72,20 +73,12 @@ export default function CategorySelector({
     setSelectedRootCategoryId(defaultSelectedRootCategoryId || '')
   }, [defaultSelectedRootCategoryId])
 
-  async function handleAddSubSubmit({
-    name,
-    iconKey,
-    type,
-  }: {
-    name: string
-    iconKey: CategoryIconKey
-    type: TransactionType
-  }) {
+  async function handleAddSubSubmit({ name, icon, type }: CategoryFormValues) {
     if (!addSubParent) return
     try {
       const created = await addCategory({
         name,
-        imageUrl: CATEGORY_ICONS[iconKey],
+        icon,
         description: '',
         type,
         parentId: addSubParent.id,
@@ -136,10 +129,15 @@ export default function CategorySelector({
               title={
                 <div className="flex items-center gap-2">
                   <Avatar
-                    src={category.imageUrl}
-                    alt={category.name}
+                    aria-hidden="true"
                     className="h-5 w-5 shrink-0 bg-primary/15"
-                    classNames={{ img: 'p-0.5' }}
+                    classNames={{ fallback: 'size-full' }}
+                    fallback={
+                      <CategoryIcon
+                        className="size-full p-0.5 text-muted-foreground"
+                        icon={category.icon}
+                      />
+                    }
                   />
                   <span className="max-w-32 truncate text-foreground">
                     {category.name}
@@ -170,10 +168,15 @@ export default function CategorySelector({
                     }}
                   >
                     <Avatar
-                      src={child.imageUrl}
-                      alt={child.name}
+                      aria-hidden="true"
                       className="h-5 w-5 shrink-0 bg-card/80"
-                      classNames={{ img: 'p-0.5' }}
+                      classNames={{ fallback: 'size-full' }}
+                      fallback={
+                        <CategoryIcon
+                          className="size-full p-0.5 text-muted-foreground"
+                          icon={child.icon}
+                        />
+                      }
                     />
                     <span className="w-[max-content] max-w-40 truncate text-inherit">
                       {child.name}

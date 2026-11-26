@@ -15,6 +15,7 @@ import Settings from '../src/pages/settings'
 import NewAccountBookRoute from '../src/pages/account-books/new'
 import AccountBookSettingsRoute from '../src/pages/account-books/[id]/settings'
 import AccountBookForm from '../src/components/accountBookSettings/AccountBookForm'
+import AccountBookStep from '../src/components/onboarding/AccountBookStep'
 import NavBar from '../src/components/layout/navbar'
 import { AccountBook, AccountBookRepo } from '../src/entities/accountBook'
 import {
@@ -31,6 +32,8 @@ import {
   createSettingsStore,
 } from '../src/stores/settings'
 import { THEME_STORAGE_KEY } from '../src/constants/theme'
+import { db } from '../src/lib/dexie'
+import { CategoryLocalRepo } from '../src/repositories/categoryRepo'
 
 const FAKE_SETTINGS_REPO = {
   async getSettings() {
@@ -475,6 +478,7 @@ const mockedUseRouter = useRouter as jest.Mock
 
 type RenderOptions = {
   accountBooks?: AccountBook[]
+  categoryRepo?: CategoryRepo
   currentAccountBookId?: string | null
   pathname?: string
   query?: Record<string, unknown>
@@ -512,7 +516,9 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
     store.getState().setCurrentAccountBookId(options.currentAccountBookId)
   }
 
-  const categoryStore = createCategoryStore(new InMemoryCategoryRepo())
+  const categoryStore = createCategoryStore(
+    options.categoryRepo ?? new InMemoryCategoryRepo()
+  )
   const seededRegisteredUser = {
     id: 'test-registered-user',
     name: 'Test User',
@@ -564,6 +570,46 @@ async function renderWithProviders(ui: ReactNode, options: RenderOptions = {}) {
     store,
     ...renderResult!,
   }
+}
+
+async function expectSeededIconsAfterReload(
+  categoryRepo: CategoryRepo,
+  accountBookId: string
+) {
+  const saved = await categoryRepo.findByAccountBookId(accountBookId)
+
+  expect(saved).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: 'Food & Dining',
+        type: 'expense',
+        parentId: null,
+        icon: { kind: 'builtin', key: 'utensils' },
+      }),
+      expect.objectContaining({
+        name: 'Breakfast',
+        type: 'expense',
+        parentId: expect.any(String),
+        icon: { kind: 'builtin', key: 'coffee' },
+      }),
+      expect.objectContaining({
+        name: 'Salary',
+        type: 'income',
+        parentId: null,
+        icon: { kind: 'builtin', key: 'banknote' },
+      }),
+      expect.objectContaining({
+        name: 'Base Salary',
+        type: 'income',
+        parentId: expect.any(String),
+        icon: { kind: 'builtin', key: 'wallet' },
+      }),
+    ])
+  )
+
+  const reloadedStore = createCategoryStore(categoryRepo)
+  await reloadedStore.getState().initialize(accountBookId)
+  expect(reloadedStore.getState().categories).toEqual(saved)
 }
 
 describe('Account book settings pages', () => {
@@ -681,10 +727,13 @@ describe('Account book settings pages', () => {
   })
 
   it('renders the new account book page and creates a new account book', async () => {
+    await db.open()
+    const categoryRepo = new CategoryLocalRepo()
     const { back, push, store } = await renderWithProviders(
       <NewAccountBookRoute />,
       {
         pathname: '/account-books/new',
+        categoryRepo,
       }
     )
 
@@ -722,6 +771,32 @@ describe('Account book settings pages', () => {
         expect.stringMatching(/^\/account-books\/.+\/settings$/)
       )
     })
+
+    const created = store
+      .getState()
+      .accountBooks.find((book) => book.name === 'Weekend Trip')!
+    await expectSeededIconsAfterReload(categoryRepo, created.id)
+  })
+
+  it('seeds built-in category icons when creating the first account book', async () => {
+    await db.open()
+    const categoryRepo = new CategoryLocalRepo()
+    const onCreated = jest.fn()
+    const { store } = await renderWithProviders(
+      <AccountBookStep ownerId="test-registered-user" onCreated={onCreated} />,
+      { accountBooks: [], categoryRepo }
+    )
+
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'First account book' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
+
+    const [created] = store.getState().accountBooks
+    expect(onCreated).toHaveBeenCalledWith(created.id)
+    await expectSeededIconsAfterReload(categoryRepo, created.id)
   })
 
   it('preserves a custom currency value when creating an account book', async () => {

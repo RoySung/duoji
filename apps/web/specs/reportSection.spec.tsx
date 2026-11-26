@@ -89,7 +89,7 @@ function makeCategory(overrides: Partial<Category>): Category {
     name: 'Food',
     description: '',
     type: 'expense',
-    imageUrl: 'https://example.com/category.png',
+    icon: { kind: 'builtin', key: 'utensils' },
     parentId: null,
     accountBookId: 'book-1',
     sortOrder: 0,

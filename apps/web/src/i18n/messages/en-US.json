@@ -343,6 +343,14 @@
     "tabsAriaLabel": "Category type",
     "subCategoryCount": "{count, plural, one {# sub-category} other {# sub-categories}}",
     "nameRequired": "Name is required.",
+    "iconSource": {
+      "builtin": "Built-in",
+      "custom": "Custom image"
+    },
+    "iconUrl": "Image URL",
+    "iconUrlInvalid": "Enter a valid HTTPS image URL without credentials.",
+    "iconPreview": "Custom image preview",
+    "iconPreviewFailed": "Image could not load. A default icon will appear until the image is available.",
     "iconOptions": {
       "utensils": "Utensils",
       "coffee": "Coffee",
@@ -377,7 +385,8 @@
       "briefcase": "Briefcase",
       "laptop": "Laptop",
       "users": "Team",
-      "plus-circle": "Default",
+      "shapes": "Shapes",
+      "plus-circle": "Plus circle",
       "credit-card": "Credit Card",
       "undo": "Refund",
       "paw-print": "Paw Print",

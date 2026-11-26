@@ -343,6 +343,14 @@
     "tabsAriaLabel": "分類類型",
     "subCategoryCount": "{count} 個子分類",
     "nameRequired": "請輸入名稱。",
+    "iconSource": {
+      "builtin": "內建圖示",
+      "custom": "自訂圖片"
+    },
+    "iconUrl": "圖片網址",
+    "iconUrlInvalid": "請輸入有效且不含帳號密碼的 HTTPS 圖片網址。",
+    "iconPreview": "自訂圖片預覽",
+    "iconPreviewFailed": "無法載入圖片，圖片恢復前會顯示預設圖示。",
     "iconOptions": {
       "utensils": "餐具",
       "coffee": "咖啡",
@@ -377,7 +385,8 @@
       "briefcase": "公事包",
       "laptop": "筆電",
       "users": "團隊",
-      "plus-circle": "預設",
+      "shapes": "幾何圖形",
+      "plus-circle": "圓形加號",
       "credit-card": "信用卡",
       "undo": "退款",
       "paw-print": "寵物足跡",

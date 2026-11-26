@@ -18,6 +18,7 @@ import { useAccountBookStore } from '@/stores/accountBook'
 import { useCategoryStore } from '@/stores/category'
 import { useUserStore } from '@/stores/user'
 import { formatAmount } from '@/utils/amountUtils'
+import CategoryIcon from '@/components/ui/CategoryIcon'
 import { SurfaceCard } from '@/components/ui/SurfaceCard'
 
 type Props = {
@@ -194,9 +195,15 @@ export default function TransactionList({
                     <div className="flex items-start gap-3">
                       {category ? (
                         <Avatar
-                          className="h-11 w-11 shrink-0 bg-primary/15 p-2 text-primary"
-                          name={category.name}
-                          src={category.imageUrl}
+                          aria-hidden="true"
+                          className="h-11 w-11 shrink-0 bg-primary/15 text-primary"
+                          classNames={{ fallback: 'size-full' }}
+                          fallback={
+                            <CategoryIcon
+                              className="size-5 text-primary"
+                              icon={category.icon}
+                            />
+                          }
                         />
                       ) : (
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
