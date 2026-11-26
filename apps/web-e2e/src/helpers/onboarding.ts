@@ -55,10 +55,7 @@ export async function createFirstAccountBook(
   accountBookName: string
 ) {
   const nameInput = page.getByLabel(/name|名稱/i).last()
-  await expect(nameInput).toBeVisible()
-  await nameInput.focus()
-  await nameInput.clear()
-  await page.keyboard.type(accountBookName)
+  await nameInput.fill(accountBookName)
   await expect(nameInput).toHaveValue(accountBookName)
   const createBtn = page.getByRole('button', { name: /建立|Create/ })
   await expect(createBtn).toBeEnabled()

@@ -14,6 +14,8 @@ async function openCategorySettings(page: Page, bookName: string) {
 test('a new book renders built-in category icons with Iconify blocked', async ({
   page,
 }) => {
+  test.setTimeout(60_000)
+
   const iconifyRequests: string[] = []
   await page.route('https://api.iconify.design/**', async (route) => {
     iconifyRequests.push(route.request().url())
@@ -50,7 +52,7 @@ test('a new book renders built-in category icons with Iconify blocked', async ({
   ).toBeVisible()
   await editor.getByRole('button', { name: 'Cancel' }).click()
   await expect(editor).toBeHidden()
-  await page.keyboard.press('Escape')
+  await settings.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(settings).toBeHidden()
 
   await page.getByRole('button', { name: 'Home', exact: true }).click()

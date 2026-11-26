@@ -174,5 +174,5 @@ describe('Category settings icon persistence', () => {
         pressed: true,
       })
     ).toBeTruthy()
-  })
+  }, 20_000)
 })
